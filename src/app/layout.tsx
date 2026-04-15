@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Nunito } from "next/font/google";
+import { ClientShell } from "@/components/client-shell";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "700", "800", "900"] });
 
 export const metadata: Metadata = {
   title: "DuoTots — Visual Learning",
-  description: "Premium visual vocabulary app for young learners.",
+  description: "Duolingo-style vocabulary app for young learners.",
 };
 
 export const viewport: Viewport = {
@@ -15,13 +15,15 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#c8b88a",
+  themeColor: "#58cc02",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
+      <body className="min-h-full" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+        <ClientShell>{children}</ClientShell>
+      </body>
     </html>
   );
 }

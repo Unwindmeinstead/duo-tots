@@ -1,134 +1,246 @@
-import Link from "next/link";
-import type { ReactNode } from "react";
+"use client";
 
-export function AppShell({ children }: { children: ReactNode }) {
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+import { IconHome, IconGrid, IconChart, IconBack, IconX } from "./icons";
+
+/* ─── Tab Bar (fixed bottom, persistent across all routes) ─── */
+
+const TABS = [
+  { href: "/", label: "Home", Icon: IconHome },
+  { href: "/explore", label: "Explore", Icon: IconGrid },
+  { href: "/progress", label: "Stats", Icon: IconChart },
+] as const;
+
+export function TabBar() {
+  const pathname = usePathname();
+  const isLesson = pathname.startsWith("/lesson") || pathname.startsWith("/practice");
+
+  if (isLesson) return null;
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-5 sm:py-6">
-      <div className="flex flex-col gap-4 rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_28px_52px_-28px_var(--shadow)] sm:gap-5 sm:p-6">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[var(--border)] bg-white"
+      style={{ paddingBottom: "var(--safe-bottom)" }}
+    >
+      <div className="mx-auto flex max-w-lg">
+        {TABS.map(({ href, label, Icon }) => {
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold tracking-wide transition-colors ${
+                active ? "text-[var(--duo-green)]" : "text-[var(--ink-light)]"
+              }`}
+            >
+              <Icon size={26} />
+              <span>{label}</span>
+              {active && (
+                <span className="mt-0.5 h-[3px] w-6 rounded-full bg-[var(--duo-green)]" />
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/* ─── NavBar (sticky top bar with back/close + title) ─── */
+
+export function NavBar({ title, backHref, onClose, right }: {
+  title?: string;
+  backHref?: string;
+  onClose?: string;
+  right?: ReactNode;
+}) {
+  return (
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-white/95 px-4 backdrop-blur-sm">
+      {backHref && (
+        <Link href={backHref} className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--ink-light)] transition hover:bg-[var(--surface-hover)]">
+          <IconBack size={24} />
+        </Link>
+      )}
+      {onClose && (
+        <Link href={onClose} className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--ink-light)] transition hover:bg-[var(--surface-hover)]">
+          <IconX size={24} />
+        </Link>
+      )}
+      {title && (
+        <h1 className="flex-1 truncate text-center text-[15px] font-extrabold uppercase tracking-wide text-[var(--ink)]">
+          {title}
+        </h1>
+      )}
+      {!title && <span className="flex-1" />}
+      {right ?? <span className="w-10" />}
+    </header>
+  );
+}
+
+/* ─── Progress Bar (Duolingo-style thin bar below NavBar) ─── */
+
+export function ProgressBar({ value, max, color = "green" }: {
+  value: number;
+  max: number;
+  color?: "green" | "blue" | "orange" | "purple";
+}) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  const colorMap = {
+    green: "bg-[var(--duo-green)]",
+    blue: "bg-[var(--duo-blue)]",
+    orange: "bg-[var(--duo-orange)]",
+    purple: "bg-[var(--duo-purple)]",
+  };
+  return (
+    <div className="mx-4 h-3 overflow-hidden rounded-full bg-[var(--border)]">
+      <div
+        className={`progress-bar h-full rounded-full ${colorMap[color]}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+/* ─── App Shell (edge-to-edge on mobile, centered on desktop) ─── */
+
+export function AppShell({ children, noTabs }: { children: ReactNode; noTabs?: boolean }) {
+  return (
+    <div className={`min-h-dvh bg-white ${noTabs ? "" : ""}`}>
+      <div className="mx-auto w-full max-w-2xl">
         {children}
       </div>
     </div>
   );
 }
 
-export function TopBar({ label, title, subtitle, children }: {
-  label: string;
-  title: string;
-  subtitle?: string;
-  children?: ReactNode;
-}) {
+/* ─── Page Header (hero section below NavBar) ─── */
+
+export function PageHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <header className="rounded-[1.4rem] bg-[var(--card-alt)] p-5 sm:p-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--accent-coral)]">{label}</p>
-      <h1 className="mt-1.5 text-[clamp(1.6rem,5vw,2.4rem)] font-black leading-[1.1] tracking-tight text-[var(--ink)]">
-        {title}
-      </h1>
-      {subtitle && <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--ink-soft)]">{subtitle}</p>}
+    <div className={`px-5 py-4 ${className}`}>
       {children}
-    </header>
-  );
-}
-
-export function Card({ children, className = "", accent }: {
-  children: ReactNode;
-  className?: string;
-  accent?: "pink" | "yellow" | "green" | "teal" | "coral";
-}) {
-  const accentBorder = accent ? {
-    pink: "border-[var(--accent-pink)]",
-    yellow: "border-[var(--accent-yellow)]",
-    green: "border-[var(--accent-green)]",
-    teal: "border-[var(--accent-teal)]",
-    coral: "border-[var(--accent-coral)]",
-  }[accent] : "border-[var(--border-light)]";
-
-  return (
-    <section className={`rounded-[1.2rem] border bg-[var(--card-alt)] shadow-[0_8px_20px_-14px_var(--shadow)] ${accentBorder} ${className}`}>
-      {children}
-    </section>
-  );
-}
-
-export function StatChip({ label, value, color }: {
-  label: string;
-  value: string | number;
-  color: "pink" | "yellow" | "green" | "teal" | "coral";
-}) {
-  const colorMap = {
-    pink: "bg-[var(--accent-pink)]",
-    yellow: "bg-[var(--accent-yellow)]",
-    green: "bg-[var(--accent-green)]",
-    teal: "bg-[var(--accent-teal)]",
-    coral: "bg-[var(--accent-coral)]",
-  };
-  return (
-    <div className={`rounded-2xl ${colorMap[color]} p-4`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-black/50">{label}</p>
-      <p className="mt-0.5 text-2xl font-black text-[var(--ink)]">{value}</p>
     </div>
   );
 }
 
-export function Btn({ children, className = "", onClick, disabled, variant = "dark" }: {
+/* ─── Section (padded content block) ─── */
+
+export function Section({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`px-5 py-3 ${className}`}>{children}</div>;
+}
+
+/* ─── 3D Button (Duolingo signature press effect) ─── */
+
+export function Btn3D({ children, className = "", onClick, disabled, color = "green" }: {
   children: ReactNode;
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: "dark" | "soft" | "accent";
+  color?: "green" | "blue" | "orange" | "red" | "white" | "gray";
 }) {
   const styles = {
-    dark: "bg-[var(--accent-dark)] text-white hover:brightness-125",
-    soft: "bg-[var(--card)] text-[var(--ink-soft)] hover:bg-[var(--border-light)]",
-    accent: "bg-[var(--accent-teal)] text-[var(--ink)] hover:brightness-110",
+    green: "bg-[var(--duo-green)] border-b-[var(--duo-green-dark)] text-white",
+    blue: "bg-[var(--duo-blue)] border-b-[var(--duo-blue-dark)] text-white",
+    orange: "bg-[var(--duo-orange)] border-b-[var(--duo-orange-dark)] text-white",
+    red: "bg-[var(--duo-red)] border-b-[var(--duo-red-dark)] text-white",
+    white: "bg-white border-b-[var(--border-dark)] text-[var(--ink)] border-2 border-[var(--border)]",
+    gray: "bg-[var(--surface-hover)] border-b-[var(--border-dark)] text-[var(--ink-light)]",
   };
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${styles[variant]} ${className}`}
+      className={`btn-3d rounded-2xl px-6 py-3.5 text-[15px] font-extrabold tracking-wide uppercase transition-all disabled:cursor-not-allowed disabled:opacity-40 ${styles[color]} ${className}`}
     >
       {children}
     </button>
   );
 }
 
-export function NavLink({ href, children, variant = "dark" }: {
-  href: string;
+/* ─── Link styled as 3D Button ─── */
+
+export function LinkBtn3D({ children, href, color = "green", className = "" }: {
   children: ReactNode;
-  variant?: "dark" | "soft" | "accent";
+  href: string;
+  color?: "green" | "blue" | "orange" | "white" | "gray";
+  className?: string;
 }) {
   const styles = {
-    dark: "bg-[var(--accent-dark)] text-white hover:brightness-125",
-    soft: "bg-[var(--card)] text-[var(--ink-soft)] hover:bg-[var(--border-light)]",
-    accent: "bg-[var(--accent-teal)] text-[var(--ink)] hover:brightness-110",
+    green: "bg-[var(--duo-green)] border-b-[var(--duo-green-dark)] text-white",
+    blue: "bg-[var(--duo-blue)] border-b-[var(--duo-blue-dark)] text-white",
+    orange: "bg-[var(--duo-orange)] border-b-[var(--duo-orange-dark)] text-white",
+    white: "bg-white border-b-[var(--border-dark)] text-[var(--ink)] border-2 border-[var(--border)]",
+    gray: "bg-[var(--surface-hover)] border-b-[var(--border-dark)] text-[var(--ink-light)]",
   };
   return (
-    <Link href={href} className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${styles[variant]}`}>
+    <Link
+      href={href}
+      className={`btn-3d inline-flex items-center justify-center rounded-2xl px-6 py-3.5 text-[15px] font-extrabold tracking-wide uppercase ${styles[color]} ${className}`}
+    >
       {children}
     </Link>
   );
 }
 
-export function BottomBar({ children }: { children: ReactNode }) {
+/* ─── Stat Bubble (XP, streak, etc.) ─── */
+
+export function StatBubble({ icon, value, label, color = "green" }: {
+  icon: ReactNode;
+  value: string | number;
+  label: string;
+  color?: "green" | "blue" | "orange" | "gold" | "purple";
+}) {
+  const bgMap = {
+    green: "bg-[var(--duo-green-bg)]",
+    blue: "bg-blue-50",
+    orange: "bg-orange-50",
+    gold: "bg-amber-50",
+    purple: "bg-purple-50",
+  };
   return (
-    <footer className="flex flex-wrap items-center gap-2 rounded-[1.2rem] bg-[var(--card)] p-3">
-      {children}
-    </footer>
+    <div className={`flex flex-col items-center rounded-2xl ${bgMap[color]} p-4`}>
+      <span className="text-2xl">{icon}</span>
+      <p className="mt-1 text-2xl font-black text-[var(--ink)]">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--ink-light)]">{label}</p>
+    </div>
   );
 }
 
-export function Tag({ children, color = "pink" }: { children: ReactNode; color?: "pink" | "yellow" | "green" | "teal" | "coral" }) {
-  const colorMap = {
-    pink: "bg-[var(--accent-pink)]/60 text-[#6b2040]",
-    yellow: "bg-[var(--accent-yellow)]/60 text-[#5c4a10]",
-    green: "bg-[var(--accent-green)]/60 text-[#1a5030]",
-    teal: "bg-[var(--accent-teal)]/60 text-[#1a4a44]",
-    coral: "bg-[var(--accent-coral)]/60 text-[#5c2016]",
+/* ─── Card (white with border, Duolingo style) ─── */
+
+export function Card({ children, className = "" }: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-2xl border-2 border-[var(--border)] bg-white ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ─── Option Button (quiz answer, Duolingo style) ─── */
+
+export function OptionBtn({ children, onClick, state = "idle" }: {
+  children: ReactNode;
+  onClick?: () => void;
+  state?: "idle" | "correct" | "wrong" | "disabled";
+}) {
+  const stateStyles = {
+    idle: "border-2 border-[var(--border)] bg-white text-[var(--ink)] hover:bg-[var(--surface-hover)] active:border-b-0 active:mt-1",
+    correct: "border-2 border-[var(--duo-green)] bg-[var(--duo-green-bg)] text-[var(--duo-green-dark)]",
+    wrong: "border-2 border-[var(--duo-red)] bg-red-50 text-[var(--duo-red-dark)]",
+    disabled: "border-2 border-[var(--border)] bg-[var(--surface-hover)] text-[var(--ink-light)] cursor-not-allowed",
   };
   return (
-    <span className={`inline-block rounded-lg px-2.5 py-1 text-xs font-bold ${colorMap[color]}`}>
+    <button
+      type="button"
+      onClick={state === "idle" ? onClick : undefined}
+      className={`btn-3d w-full rounded-2xl border-b-4 border-b-[var(--border-dark)] px-5 py-4 text-left text-[17px] font-bold transition-all ${stateStyles[state]}`}
+    >
       {children}
-    </span>
+    </button>
   );
 }

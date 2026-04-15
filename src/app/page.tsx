@@ -1,49 +1,71 @@
 import Link from "next/link";
-import { AppShell, TopBar, Card, StatChip, BottomBar, NavLink, Tag } from "@/components/ui";
+import { AppShell, NavBar, PageHeader, Section, LinkBtn3D } from "@/components/ui";
+import { IconFire, IconStar } from "@/components/icons";
 import { categories } from "@/lib/vocab";
 
-const ACCENT_CYCLE = ["pink", "yellow", "green", "teal", "coral"] as const;
+const COLORS = ["#58cc02", "#1cb0f6", "#ce82ff", "#ff9600", "#ff4b4b"] as const;
 
 export default function Home() {
+  const totalWords = categories.reduce((n, c) => n + c.items.length, 0);
+
   return (
     <AppShell>
-      <TopBar
-        label="DuoTots"
-        title="Let's Learn Today"
-        subtitle="Tap any topic below to start exploring words with real images and sounds."
-      >
-        <div className="mt-5 grid grid-cols-3 gap-2.5">
-          <StatChip label="Topics" value={categories.length} color="pink" />
-          <StatChip label="Mode" value="Tap" color="yellow" />
-          <StatChip label="Level" value="All" color="green" />
+      <NavBar title="DuoTots" />
+
+      <PageHeader>
+        <div className="flex items-center gap-3">
+          <IconFire size={32} />
+          <div>
+            <h2 className="text-2xl font-black text-[var(--ink)]">Hey there!</h2>
+            <p className="text-sm text-[var(--ink-light)]">{totalWords} words to explore</p>
+          </div>
+          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5">
+            <IconStar size={18} />
+            <span className="text-sm font-extrabold text-[var(--ink)]">0</span>
+          </span>
         </div>
-      </TopBar>
+      </PageHeader>
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {categories.map((cat, i) => {
-          const accent = ACCENT_CYCLE[i % ACCENT_CYCLE.length];
-          return (
-            <Card key={cat.id} accent={accent}>
-              <Link href={`/lesson/${cat.id}`} className="block p-5 transition-transform active:scale-[0.98]">
-                <div className="flex items-start justify-between">
-                  <span className="text-3xl leading-none">{cat.icon}</span>
-                  <Tag color={accent}>{cat.items.length} words</Tag>
+      <Section>
+        <h3 className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+          Pick a topic
+        </h3>
+        <div className="grid gap-3">
+          {categories.map((cat, i) => {
+            const color = COLORS[i % COLORS.length];
+            return (
+              <Link
+                key={cat.id}
+                href={`/lesson/${cat.id}`}
+                className="group flex items-center gap-4 rounded-2xl border-2 border-[var(--border)] border-b-4 border-b-[var(--border-dark)] bg-white p-4 transition-all active:border-b-2 active:mt-0.5"
+              >
+                <span
+                  className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl text-2xl"
+                  style={{ backgroundColor: `${color}22` }}
+                >
+                  {cat.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[16px] font-extrabold text-[var(--ink)]">{cat.name}</p>
+                  <p className="text-[13px] text-[var(--ink-light)]">{cat.items.length} words</p>
                 </div>
-                <h2 className="mt-3 text-xl font-extrabold tracking-tight text-[var(--ink)]">{cat.name}</h2>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ink-muted)]">{cat.description}</p>
+                <span
+                  className="rounded-xl px-3 py-1.5 text-xs font-extrabold text-white"
+                  style={{ backgroundColor: color }}
+                >
+                  Start
+                </span>
               </Link>
-            </Card>
-          );
-        })}
-      </section>
+            );
+          })}
+        </div>
+      </Section>
 
-      <BottomBar>
-        <NavLink href="/progress" variant="dark">Dashboard</NavLink>
-        <span className="flex-1" />
-        <p className="text-xs font-medium text-[var(--ink-muted)]">
-          {categories.reduce((n, c) => n + c.items.length, 0)} words across {categories.length} topics
-        </p>
-      </BottomBar>
+      <Section className="pb-8">
+        <LinkBtn3D href="/progress" color="blue" className="w-full text-center">
+          View my progress
+        </LinkBtn3D>
+      </Section>
     </AppShell>
   );
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { resolveWordImage } from "@/lib/media";
-import { AppShell, TopBar, Card, BottomBar, NavLink, StatChip } from "@/components/ui";
+import { AppShell, NavBar, ProgressBar, Section, OptionBtn, Btn3D } from "@/components/ui";
 import {
   loadProgress,
   recordPracticeAttempt,
@@ -20,12 +20,15 @@ const pickOptions = (items: VocabItem[], answer: VocabItem) => {
 
 export function PracticeClient({ category }: { category: VocabCategory }) {
   const [round, setRound] = useState(0);
+  const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [imageUrl, setImageUrl] = useState<string>(category.items[0].fallbackImage);
   const [imageState, setImageState] = useState<"loading" | "ready" | "fallback">("loading");
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
+  const [score, setScore] = useState(0);
 
-  const answer = category.items[round % category.items.length];
+  const total = category.items.length;
+  const answer = category.items[round % total];
   const options = useMemo(() => pickOptions(category.items, answer), [category.items, answer]);
 
   useEffect(() => {
@@ -41,79 +44,102 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
 
   const choose = (word: string) => {
     if (feedback) return;
+    setSelected(word);
     const isCorrect = word === answer.word;
     const next = recordPracticeAttempt(progress, category.id, answer.word, isCorrect);
     saveProgress(next);
     setProgress(next);
     setFeedback(isCorrect ? "correct" : "wrong");
-    if (isCorrect) {
-      setTimeout(() => {
-        setImageState("loading");
-        setRound((c) => c + 1);
-        setFeedback(null);
-      }, 800);
-    } else {
-      setTimeout(() => setFeedback(null), 600);
-    }
+    if (isCorrect) setScore((s) => s + 1);
+  };
+
+  const advance = () => {
+    setImageState("loading");
+    setRound((c) => c + 1);
+    setFeedback(null);
+    setSelected(null);
+  };
+
+  const optionState = (word: string) => {
+    if (!feedback) return "idle" as const;
+    if (word === answer.word) return "correct" as const;
+    if (word === selected) return "wrong" as const;
+    return "disabled" as const;
   };
 
   return (
-    <AppShell>
-      <TopBar label="Practice" title={category.name} subtitle="Tap the word that matches the picture." />
+    <AppShell noTabs>
+      <NavBar onClose="/" title={category.name} />
+      <ProgressBar value={Math.min(round + 1, total)} max={total} color="orange" />
 
-      <Card
-        accent="coral"
-        className={`overflow-hidden transition-transform ${feedback === "correct" ? "card-pop" : ""}`}
-      >
-        <div className="relative aspect-[4/3] w-full bg-[var(--card)]">
-          {imageState === "loading" && (
-            <div className="absolute inset-0 animate-pulse bg-[var(--border-light)]" />
-          )}
-          <Image
-            src={imageUrl}
-            alt="Guess this word"
-            fill
-            className="object-cover transition-opacity duration-500"
-            style={{ opacity: imageState === "loading" ? 0.3 : 1 }}
-            sizes="(max-width: 768px) 100vw, 900px"
-          />
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
-
-          {feedback && (
-            <div className={`absolute inset-0 flex items-center justify-center ${
-              feedback === "correct" ? "bg-green-500/20" : "bg-red-400/20"
-            }`}>
-              <span className="rounded-2xl bg-white/90 px-6 py-3 text-2xl font-black text-[var(--ink)]">
-                {feedback === "correct" ? "Correct!" : "Try again"}
-              </span>
-            </div>
-          )}
+      <Section className="mt-4">
+        <p className="mb-3 text-center text-sm font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+          What is this?
+        </p>
+        <div className={`overflow-hidden rounded-3xl border-2 bg-[var(--surface-hover)] transition-colors ${
+          feedback === "correct" ? "border-[var(--duo-green)]" : feedback === "wrong" ? "border-[var(--duo-red)]" : "border-[var(--border)]"
+        }`}>
+          <div className="relative aspect-[4/3] w-full">
+            {imageState === "loading" && (
+              <div className="absolute inset-0 animate-pulse bg-[var(--border)]" />
+            )}
+            <Image
+              src={imageUrl}
+              alt="Guess this word"
+              fill
+              className="object-cover transition-opacity duration-500"
+              style={{ opacity: imageState === "loading" ? 0.2 : 1 }}
+              sizes="(max-width: 768px) 100vw, 700px"
+            />
+            {feedback === "correct" && (
+              <div className="absolute inset-0 flex items-center justify-center bg-[var(--duo-green)]/20 fade-in">
+                <span className="rounded-2xl bg-white px-6 py-3 text-2xl font-black text-[var(--duo-green-dark)] shadow-lg">
+                  Correct!
+                </span>
+              </div>
+            )}
+          </div>
         </div>
+      </Section>
 
-        <div className="grid gap-2.5 p-5 sm:p-6">
+      <Section>
+        <div className="grid gap-2.5">
           {options.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => choose(option.word)}
-              className="h-14 rounded-2xl border border-[var(--border-light)] bg-[var(--card-alt)] text-lg font-bold text-[var(--ink)] transition-all hover:bg-[var(--card)] active:scale-[0.98]"
-            >
+            <OptionBtn key={option.id} onClick={() => choose(option.word)} state={optionState(option.word)}>
               {option.word}
-            </button>
+            </OptionBtn>
           ))}
         </div>
-      </Card>
+      </Section>
 
-      <div className="grid grid-cols-3 gap-2.5">
-        <StatChip label="Stars" value={progress.stars} color="yellow" />
-        <StatChip label="Streak" value={progress.streak} color="teal" />
-        <StatChip label="Practiced" value={progress.practicedWords} color="green" />
-      </div>
+      {feedback && (
+        <Section>
+          <div className={`rounded-2xl p-4 ${
+            feedback === "correct" ? "bg-[var(--duo-green-bg)]" : "bg-red-50"
+          }`}>
+            <p className={`text-center text-sm font-extrabold ${
+              feedback === "correct" ? "text-[var(--duo-green-dark)]" : "text-[var(--duo-red-dark)]"
+            }`}>
+              {feedback === "correct" ? `+2 XP · ${score} correct so far` : `The answer is "${answer.word}"`}
+            </p>
+          </div>
+          <Btn3D
+            onClick={advance}
+            color={feedback === "correct" ? "green" : "red"}
+            className="mt-3 w-full"
+          >
+            Continue
+          </Btn3D>
+        </Section>
+      )}
 
-      <BottomBar>
-        <NavLink href={`/lesson/${category.id}`} variant="soft">Back to Lesson</NavLink>
-        <NavLink href="/progress" variant="dark">Dashboard</NavLink>
-      </BottomBar>
+      <Section className="pb-6">
+        <div className="flex justify-center gap-6 text-sm font-bold text-[var(--ink-light)]">
+          <span>Round {(round % total) + 1}/{total}</span>
+          <span>·</span>
+          <span>{score} correct</span>
+        </div>
+      </Section>
     </AppShell>
   );
 }

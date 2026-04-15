@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { VOICE_MODE_KEY, type VoiceMode } from "@/lib/audio";
-import { AppShell, TopBar, Card, Btn, BottomBar, NavLink, StatChip, Tag } from "@/components/ui";
+import { AppShell, NavBar, PageHeader, Section, Card, StatBubble, Btn3D } from "@/components/ui";
+import { IconFire, IconStar } from "@/components/icons";
 import { initialProgress, loadProgress, saveProgress, type ProgressState } from "@/lib/progress";
 import { categoriesById, type CategoryId } from "@/lib/vocab";
 
@@ -38,118 +39,135 @@ export function ProgressClient() {
   const topWords = Object.entries(progress.wordStats)
     .map(([word, s]) => ({ word, ...s, score: s.correct - s.wrong }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, 6);
+    .slice(0, 8);
 
   const struggles = Object.entries(progress.wordStats)
     .map(([word, s]) => ({ word, ...s }))
     .sort((a, b) => b.wrong - a.wrong || a.correct - b.correct)
     .filter((e) => e.wrong > 0)
-    .slice(0, 6);
+    .slice(0, 8);
 
   return (
     <AppShell>
-      <TopBar label="Dashboard" title="Learning Progress" subtitle="Track what your child knows, where they struggle, and how far they've come." />
+      <NavBar title="Stats" />
 
-      <div className="grid grid-cols-3 gap-2.5">
-        <StatChip label="Stars" value={progress.stars} color="yellow" />
-        <StatChip label="Streak" value={progress.streak} color="teal" />
-        <StatChip label="Words" value={progress.practicedWords} color="green" />
-      </div>
+      <PageHeader>
+        <div className="grid grid-cols-3 gap-3">
+          <StatBubble icon={<IconStar size={28} />} value={progress.stars} label="XP" color="gold" />
+          <StatBubble icon={<IconFire size={28} />} value={progress.streak} label="Streak" color="orange" />
+          <StatBubble icon="📚" value={progress.practicedWords} label="Words" color="blue" />
+        </div>
+      </PageHeader>
 
       {progress.completedCategories.length > 0 && (
-        <Card accent="green" className="p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-muted)]">Completed Topics</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
+        <Section>
+          <h3 className="mb-2 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+            Completed Topics
+          </h3>
+          <div className="flex flex-wrap gap-2">
             {progress.completedCategories.map((id) => (
-              <Tag key={id} color="green">{categoriesById[id].icon} {categoriesById[id].name}</Tag>
+              <span key={id} className="rounded-xl bg-[var(--duo-green-bg)] px-3 py-1.5 text-sm font-bold text-[var(--duo-green-dark)]">
+                {categoriesById[id].icon} {categoriesById[id].name}
+              </span>
             ))}
           </div>
-        </Card>
+        </Section>
       )}
 
       {areaPerformance.length > 0 && (
-        <Card accent="teal" className="p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-muted)]">Learning Areas</h2>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Section>
+          <h3 className="mb-2 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+            Performance by Topic
+          </h3>
+          <Card className="divide-y divide-[var(--border)]">
             {areaPerformance.map((area) => (
-              <div key={area.id} className="flex items-center gap-3 rounded-xl bg-[var(--card)] p-3">
-                <span className="text-xl leading-none">{categoriesById[area.id].icon}</span>
+              <div key={area.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="text-xl">{categoriesById[area.id].icon}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-[var(--ink)]">{categoriesById[area.id].name}</p>
-                  <p className="text-xs text-[var(--ink-muted)]">{area.accuracy}% accuracy · {area.attempts} tries</p>
-                </div>
-                <div className="h-8 w-8 flex-shrink-0">
-                  <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="var(--border-light)" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="16" fill="none"
-                      stroke="var(--accent-teal)" strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray={`${area.accuracy} ${100 - area.accuracy}`}
+                  <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--border)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--duo-green)] progress-bar"
+                      style={{ width: `${area.accuracy}%` }}
                     />
-                  </svg>
+                  </div>
                 </div>
+                <span className="text-sm font-extrabold text-[var(--ink)]">{area.accuracy}%</span>
               </div>
             ))}
-          </div>
-        </Card>
+          </Card>
+        </Section>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card accent="green" className="p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-muted)]">Top Known Words</h2>
-          {topWords.length === 0 ? (
-            <p className="mt-3 text-sm text-[var(--ink-muted)]">No word data yet.</p>
-          ) : (
-            <div className="mt-3 grid gap-1.5">
-              {topWords.map((w) => (
-                <div key={w.word} className="flex items-center justify-between rounded-xl bg-[var(--card)] px-3 py-2.5">
-                  <span className="text-sm font-semibold text-[var(--ink)]">{w.word}</span>
-                  <span className="text-xs font-medium text-[var(--accent-green)]">{w.correct}/{w.attempts}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Card accent="coral" className="p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-muted)]">Needs Practice</h2>
-          {struggles.length === 0 ? (
-            <p className="mt-3 text-sm text-[var(--ink-muted)]">No struggles recorded.</p>
-          ) : (
-            <div className="mt-3 grid gap-1.5">
-              {struggles.map((w) => (
-                <div key={w.word} className="flex items-center justify-between rounded-xl bg-[var(--card)] px-3 py-2.5">
-                  <span className="text-sm font-semibold text-[var(--ink)]">{w.word}</span>
-                  <span className="text-xs font-medium text-[var(--accent-coral)]">{w.wrong} wrong</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-
-      <Card className="p-5">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-muted)]">Parent Settings</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(["auto", "gentle", "clear"] as VoiceMode[]).map((mode) => (
-            <Btn
-              key={mode}
-              variant={voiceMode === mode ? "dark" : "soft"}
-              onClick={() => setMode(mode)}
-            >
-              Voice: {mode}
-            </Btn>
-          ))}
+      <Section>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <h3 className="mb-2 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+              Top Words
+            </h3>
+            <Card className="divide-y divide-[var(--border)]">
+              {topWords.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-[var(--ink-light)]">Practice to see stats</p>
+              ) : (
+                topWords.map((w) => (
+                  <div key={w.word} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm font-bold text-[var(--ink)]">{w.word}</span>
+                    <span className="text-xs font-extrabold text-[var(--duo-green)]">{w.correct}/{w.attempts}</span>
+                  </div>
+                ))
+              )}
+            </Card>
+          </div>
+          <div>
+            <h3 className="mb-2 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+              Needs Work
+            </h3>
+            <Card className="divide-y divide-[var(--border)]">
+              {struggles.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-[var(--ink-light)]">No struggles yet</p>
+              ) : (
+                struggles.map((w) => (
+                  <div key={w.word} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm font-bold text-[var(--ink)]">{w.word}</span>
+                    <span className="text-xs font-extrabold text-[var(--duo-red)]">{w.wrong}x wrong</span>
+                  </div>
+                ))
+              )}
+            </Card>
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Btn variant="soft" onClick={clearMediaCache}>Refresh Cache</Btn>
-          <Btn variant="soft" onClick={reset}>Reset All Progress</Btn>
-        </div>
-      </Card>
+      </Section>
 
-      <BottomBar>
-        <NavLink href="/" variant="dark">Home</NavLink>
-      </BottomBar>
+      <Section>
+        <h3 className="mb-2 text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+          Parent Settings
+        </h3>
+        <Card className="p-4">
+          <p className="mb-3 text-sm font-bold text-[var(--ink)]">Voice Mode</p>
+          <div className="flex gap-2">
+            {(["auto", "gentle", "clear"] as VoiceMode[]).map((mode) => (
+              <Btn3D
+                key={mode}
+                color={voiceMode === mode ? "blue" : "white"}
+                onClick={() => setMode(mode)}
+                className="flex-1 text-xs"
+              >
+                {mode}
+              </Btn3D>
+            ))}
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Btn3D color="white" onClick={clearMediaCache} className="flex-1 text-xs">
+              Clear Cache
+            </Btn3D>
+            <Btn3D color="red" onClick={reset} className="flex-1 text-xs">
+              Reset All
+            </Btn3D>
+          </div>
+        </Card>
+      </Section>
+
+      <div className="h-8" />
     </AppShell>
   );
 }
