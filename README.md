@@ -4,11 +4,17 @@ DuoTots is a visual vocabulary PWA for toddlers. It teaches English words with r
 
 ## Features
 
-- 6 vocabulary categories with visual flashcards.
-- Tap-to-speak pronunciation using browser speech synthesis.
+- Premium mobile-first UI with app-like cards, depth, and gradients.
+- 6 vocabulary categories with visual flashcards and deterministic image lookup.
+- Better voice pipeline: dictionary audio first, browser premium-voice fallback.
 - Practice mode with quick image-to-word matching.
 - Local progress tracking (stars, streak, practiced words).
 - PWA support with offline fallback page.
+
+## Media + Voice Sources (Free APIs)
+
+- Images: Wikipedia REST API (`/api/media`) with local cache and fallback image.
+- Voice: Dictionary API audio (`/api/tts`) with browser speech fallback.
 
 ## Run locally
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "DuoTots Visual Vocab",
-  description: "Visual vocabulary learning app for toddlers.",
+  description: "Premium visual vocabulary learning app for toddlers.",
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-slate-100 text-slate-900">
+      <body className="min-h-full text-slate-900">
         <div className="flex min-h-screen flex-col">{children}</div>
       </body>
     </html>
