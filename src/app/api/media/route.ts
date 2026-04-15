@@ -9,35 +9,43 @@ export async function GET(request: Request) {
   }
 
   try {
-    const endpoint = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-      query,
-    )}`;
-    const wikiRes = await fetch(endpoint, {
-      headers: {
-        accept: "application/json",
-      },
-      next: { revalidate: 60 * 60 * 24 * 7 },
+    const params = new URLSearchParams({
+      action: "query",
+      titles: query,
+      prop: "pageimages",
+      piprop: "original|thumbnail",
+      pithumbsize: "800",
+      format: "json",
+      redirects: "1",
+    });
+    const endpoint = `https://en.wikipedia.org/w/api.php?${params}`;
+    const res = await fetch(endpoint, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 60 * 60 * 24 * 30 },
     });
 
-    if (!wikiRes.ok) {
-      throw new Error("wiki request failed");
-    }
+    if (!res.ok) throw new Error("wiki request failed");
 
-    const data = (await wikiRes.json()) as {
-      thumbnail?: { source?: string };
-      originalimage?: { source?: string };
-      content_urls?: { desktop?: { page?: string } };
+    const data = (await res.json()) as {
+      query?: {
+        pages?: Record<string, {
+          thumbnail?: { source?: string };
+          original?: { source?: string };
+        }>;
+      };
     };
 
-    const imageUrl = data.originalimage?.source ?? data.thumbnail?.source ?? null;
-    if (!imageUrl) {
-      throw new Error("no image");
-    }
+    const pages = data.query?.pages;
+    if (!pages) throw new Error("no pages");
 
-    return NextResponse.json({
-      imageUrl,
-      source: data.content_urls?.desktop?.page ?? "wikipedia",
-    });
+    const page = Object.values(pages)[0];
+    const imageUrl = page?.thumbnail?.source ?? page?.original?.source ?? null;
+    if (!imageUrl) throw new Error("no image");
+
+    return NextResponse.json(
+      { imageUrl, source: "wikipedia" },
+      { headers: { "Cache-Control": "public, max-age=2592000, s-maxage=2592000" } },
+    );
   } catch {
     return NextResponse.json({ imageUrl: "", source: "none" }, { status: 404 });
   }

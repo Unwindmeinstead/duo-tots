@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { speakWord } from "@/lib/audio";
-import { resolveWordImage } from "@/lib/media";
+import { resolveWordImage, prefetchWordImages } from "@/lib/media";
 import { NavBar, ProgressBar, Btn3D } from "@/components/ui";
 import { IconVolume } from "@/components/icons";
 import {
@@ -15,8 +15,8 @@ import type { VocabCategory } from "@/lib/vocab";
 
 export function LessonClient({ category }: { category: VocabCategory }) {
   const [index, setIndex] = useState(0);
-  const [imageUrl, setImageUrl] = useState<string>(category.items[0].fallbackImage);
-  const [imageState, setImageState] = useState<"loading" | "ready" | "fallback">("loading");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageState, setImageState] = useState<"loading" | "ready" | "none">("loading");
   const [audioState, setAudioState] = useState<"idle" | "playing">("idle");
 
   useState(() => {
@@ -29,15 +29,27 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const total = category.items.length;
 
   useEffect(() => {
+    const ahead = category.items.slice(index + 1, index + 4);
+    if (ahead.length > 0) {
+      prefetchWordImages(ahead.map((i) => i.imageQuery));
+    }
+  }, [index, category.items]);
+
+  useEffect(() => {
     let ignore = false;
-    resolveWordImage(current.imageQuery, current.fallbackImage).then((result) => {
+    resolveWordImage(current.imageQuery).then((result) => {
       if (!ignore) {
-        setImageUrl(result.imageUrl);
-        setImageState(result.source === "fallback" ? "fallback" : "ready");
+        if (result.imageUrl && result.source !== "fallback") {
+          setImageUrl(result.imageUrl);
+          setImageState("ready");
+        } else {
+          setImageUrl(null);
+          setImageState("none");
+        }
       }
     });
     return () => { ignore = true; };
-  }, [current.fallbackImage, current.imageQuery]);
+  }, [current.imageQuery]);
 
   const speak = async () => {
     setAudioState("playing");
@@ -47,12 +59,12 @@ export function LessonClient({ category }: { category: VocabCategory }) {
 
   const go = (dir: -1 | 1) => {
     setImageState("loading");
+    setImageUrl(null);
     setIndex((prev) => (prev + dir + total) % total);
   };
 
   return (
     <div className="flex h-dvh flex-col bg-white">
-      {/* Fixed top: NavBar + progress */}
       <div className="flex-shrink-0">
         <NavBar onClose="/" title={category.name}
           right={
@@ -66,26 +78,35 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         <ProgressBar value={index + 1} max={total} />
       </div>
 
-      {/* Image — fills remaining space, shows full image */}
+      {/* Image area */}
       <div className="relative mx-4 mt-3 flex-1 overflow-hidden rounded-2xl border-2 border-[var(--border)] bg-[#f0f0f0]">
         {imageState === "loading" && (
-          <div className="absolute inset-0 z-10 animate-pulse bg-[var(--border)]" />
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <span className="text-7xl">{current.emoji}</span>
+            <div className="absolute inset-0 animate-pulse bg-[var(--border)]/30" />
+          </div>
         )}
-        <Image
-          src={imageUrl}
-          alt={current.word}
-          fill
-          className="object-contain p-1 transition-opacity duration-500"
-          style={{ opacity: imageState === "loading" ? 0.15 : 1 }}
-          sizes="(max-width: 768px) 100vw, 700px"
-          priority
-        />
+        {imageState === "none" && (
+          <div className="flex h-full items-center justify-center">
+            <span className="text-[8rem] leading-none">{current.emoji}</span>
+          </div>
+        )}
+        {imageState === "ready" && imageUrl && (
+          <Image
+            src={imageUrl}
+            alt={current.word}
+            fill
+            className="object-contain p-1 fade-in"
+            sizes="(max-width: 768px) 100vw, 700px"
+            priority
+          />
+        )}
       </div>
 
-      {/* Bottom section: word + buttons — always visible */}
+      {/* Bottom controls */}
       <div className="flex-shrink-0 px-4 pb-[max(env(safe-area-inset-bottom,8px),8px)] pt-3">
         <h2 className="mb-3 text-center text-3xl font-black tracking-tight text-[var(--ink)]">
-          {current.word}
+          {current.emoji} {current.word}
         </h2>
 
         <Btn3D onClick={speak} disabled={audioState === "playing"} color="blue" className="mb-2 w-full">
@@ -98,8 +119,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
 
         <div className="mt-2 flex justify-center">
-          <a
-            href={`/practice?category=${category.id}`}
+          <a href={`/practice?category=${category.id}`}
             className="py-2 text-sm font-extrabold uppercase tracking-wide text-[var(--duo-green)] underline-offset-4 hover:underline"
           >
             Skip to quiz →

@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "en.wikipedia.org",
       },
     ],
   },
@@ -28,7 +28,7 @@ export default withPWA({
         options: {
           cacheName: "duotots-images",
           expiration: {
-            maxEntries: 120,
+            maxEntries: 400,
             maxAgeSeconds: 60 * 60 * 24 * 30,
           },
         },
@@ -39,7 +39,7 @@ export default withPWA({
         options: {
           cacheName: "duotots-audio",
           expiration: {
-            maxEntries: 120,
+            maxEntries: 400,
             maxAgeSeconds: 60 * 60 * 24 * 30,
           },
         },
