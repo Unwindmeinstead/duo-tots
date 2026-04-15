@@ -31,6 +31,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
   const options = useMemo(() => pickOptions(category.items, answer), [category.items, answer]);
   const CatIcon = CATEGORY_ICONS[category.id];
   const pct = Math.round(((Math.min(round + 1, total)) / total) * 100);
+  const accuracy = round > 0 ? Math.round((score / round) * 100) : 100;
 
   const immersive = true;
 
@@ -96,6 +97,20 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
         </div>
         <h1 className="text-headline">Quiz complete</h1>
         <p className="text-subtitle mt-2">{score} of {total} correct</p>
+        <div className="mt-4 grid w-full max-w-sm grid-cols-3 gap-2.5">
+          <div className="rounded-[var(--radius-xl)] bg-[var(--surface)] px-3 py-3" style={{ boxShadow: "var(--shadow-xs)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">Accuracy</p>
+            <p className="mt-1 text-[1.05rem] font-black text-[var(--ink)]">{scorePct}%</p>
+          </div>
+          <div className="rounded-[var(--radius-xl)] bg-[var(--surface)] px-3 py-3" style={{ boxShadow: "var(--shadow-xs)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">Topic</p>
+            <p className="mt-1 truncate text-[1.05rem] font-black text-[var(--ink)]">{category.name}</p>
+          </div>
+          <div className="rounded-[var(--radius-xl)] bg-[var(--surface)] px-3 py-3" style={{ boxShadow: "var(--shadow-xs)" }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">XP</p>
+            <p className="mt-1 text-[1.05rem] font-black text-[var(--ink)]">+{score * 2}</p>
+          </div>
+        </div>
         <div className="mt-4 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-white" style={{ background: "#1b4332", boxShadow: "0 4px 16px rgba(27,67,50,.25)" }}>
           <IconStar size={20} className="text-[#f0c040]" />
           <span className="text-[15px] font-bold">+{score * 2} XP earned</span>
@@ -137,6 +152,29 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
       <div className={`px-4 ${immersive ? "pb-1" : "pb-2"}`}>
         <div className={`overflow-hidden rounded-full bg-[var(--surface-secondary)] ${immersive ? "h-1.5" : "h-3"}`}>
           <div className="progress-bar h-full rounded-full" style={{ width: `${pct}%`, background: category.color }} />
+        </div>
+      </div>
+
+      <div className="px-4 pb-2">
+        <div className="surface-soft flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: category.color }}>
+              Quick check
+            </p>
+            <p className="mt-1 text-[1.1rem] font-black tracking-[-0.03em] text-[var(--ink)]">Match the picture to the word.</p>
+            <p className="mt-1 text-[12px] font-medium text-[var(--ink-tertiary)]">
+              {feedback ? `Answer locked in. ${round + 1 >= total ? "Results next." : "Review and continue."}` : `Running accuracy ${accuracy}%`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={audioState === "playing" ? undefined : speak}
+            disabled={audioState === "playing"}
+            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-white transition-all active:scale-95 disabled:opacity-50"
+            style={{ background: category.color, boxShadow: `0 8px 18px ${category.color}2e` }}
+          >
+            {CatIcon ? <CatIcon size={18} /> : <IconStar size={18} />}
+          </button>
         </div>
       </div>
 

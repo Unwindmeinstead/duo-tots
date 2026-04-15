@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { IconHome, IconGrid, IconChart, IconX, IconFire, IconStar, IconCheck, IconTrophy } from "./icons";
+import { IconHome, IconGrid, IconChart, IconX, IconFire, IconStar, IconCheck, IconTrophy, IconArrowRight } from "./icons";
 
 /* ─── Tab Bar ─── */
 
@@ -69,7 +69,7 @@ export function TopBar({ streak, xp, level, dailyDone, dailyGoal, wordsLearned, 
 
   return (
     <div className="px-4 pt-3 pb-1">
-      <div className="mx-auto flex max-w-2xl items-center justify-between gap-2">
+      <div className="mx-auto grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
         {pills.map((p, i) => (
           <Link key={i} href="/progress"
             className="surface-soft flex items-center gap-2 px-3 py-2.5 transition-all hover:scale-[1.02] active:scale-[.98]"
@@ -120,7 +120,13 @@ export function ProgressBar({ value, max, color }: { value: number; max: number;
 
 export function AppShell({ children, noTabs }: { children: ReactNode; noTabs?: boolean }) {
   return (
-    <div className="min-h-dvh bg-[var(--bg)]" style={noTabs ? undefined : { paddingBottom: "calc(var(--tab-height) + var(--safe-bottom))" }}>
+    <div
+      className="min-h-dvh bg-[var(--bg)]"
+      style={{
+        backgroundImage: "radial-gradient(circle at top, rgba(255,255,255,.42), transparent 34%), linear-gradient(180deg, rgba(255,255,255,.2), transparent 28%)",
+        paddingBottom: noTabs ? undefined : "calc(var(--tab-height) + var(--safe-bottom))",
+      }}
+    >
       <div className="mx-auto w-full max-w-2xl">{children}</div>
     </div>
   );
@@ -134,6 +140,155 @@ export function PageHeader({ children, className = "" }: { children: ReactNode; 
 
 export function Section({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`px-5 py-3 ${className}`}>{children}</div>;
+}
+
+export function PageIntro({ eyebrow, title, subtitle, className = "", actions }: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  className?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className={`px-5 pt-4 pb-2 ${className}`}>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-overline">{eyebrow}</p>
+          <h1 className="text-headline mt-1">{title}</h1>
+          {subtitle && <p className="text-subtitle mt-1.5 max-w-[34rem]">{subtitle}</p>}
+        </div>
+        {actions}
+      </div>
+    </div>
+  );
+}
+
+export function StageBadge({ label, color, meta }: { label: string; color: string; meta?: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2.5">
+      <span className="flex h-7 items-center rounded-lg px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-white" style={{ background: color }}>
+        {label}
+      </span>
+      {meta && <span className="text-[12px] font-medium text-[var(--ink-tertiary)]">{meta}</span>}
+    </div>
+  );
+}
+
+export function SpotlightCard({
+  eyebrow,
+  title,
+  description,
+  accent,
+  children,
+  className = "",
+}: {
+  eyebrow: string;
+  title: string;
+  description?: string;
+  accent: string;
+  children?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-[var(--radius-2xl)] border px-5 py-5 text-white ${className}`}
+      style={{
+        borderColor: `${accent}26`,
+        background: `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 74%, #101010) 100%)`,
+        boxShadow: `0 18px 40px ${accent}24`,
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,.24),transparent_68%)]" />
+      <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/8 blur-2xl" />
+      <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-black/10 blur-2xl" />
+      <div className="relative">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70">{eyebrow}</p>
+        <h2 className="mt-2 text-[1.5rem] font-black leading-tight tracking-[-0.03em]">{title}</h2>
+        {description && <p className="mt-2 max-w-[34rem] text-[13px] font-medium leading-relaxed text-white/76">{description}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function MiniStat({
+  label,
+  value,
+  tone = "light",
+}: {
+  label: string;
+  value: string | number;
+  tone?: "light" | "dark";
+}) {
+  return (
+    <div className={`rounded-[var(--radius-xl)] px-3.5 py-3 ${tone === "dark" ? "bg-white/12 text-white" : "bg-[var(--surface)] text-[var(--ink)]"}`}>
+      <p className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${tone === "dark" ? "text-white/62" : "text-[var(--ink-tertiary)]"}`}>{label}</p>
+      <p className="mt-1 text-[1.1rem] font-black leading-none tracking-[-0.03em]">{value}</p>
+    </div>
+  );
+}
+
+export function TopicRowCard({
+  href,
+  color,
+  label,
+  meta,
+  icon,
+  mastery,
+}: {
+  href: string;
+  color: string;
+  label: string;
+  meta: string;
+  icon: ReactNode;
+  mastery: number;
+}) {
+  return (
+    <Link href={href} className="surface-soft group flex items-center gap-4 p-4 transition-all hover:scale-[1.01] active:scale-[.98]">
+      <MasteryRing pct={mastery} color={color} size={58}>
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${color}14`, color }}>
+          {icon}
+        </span>
+      </MasteryRing>
+      <div className="min-w-0 flex-1">
+        <p className="text-title">{label}</p>
+        <p className="mt-0.5 text-caption font-medium">{meta}</p>
+      </div>
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--ink-tertiary)] transition-all group-hover:bg-[var(--surface-secondary)] group-hover:text-[var(--ink)]">
+        <IconArrowRight size={16} />
+      </span>
+    </Link>
+  );
+}
+
+export function TopicTile({
+  href,
+  color,
+  label,
+  icon,
+  mastery,
+}: {
+  href: string;
+  color: string;
+  label: string;
+  icon: ReactNode;
+  mastery: number;
+}) {
+  return (
+    <Link href={href} className="surface-soft group flex flex-col items-center gap-3 p-4 text-center transition-all hover:scale-[1.03] active:scale-[.97]">
+      <MasteryRing pct={mastery} color={color} size={56}>
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${color}14`, color }}>
+          {icon}
+        </span>
+      </MasteryRing>
+      <div>
+        <p className="text-[12px] font-semibold leading-tight tracking-tight text-[var(--ink)]">{label}</p>
+        <p className="mt-1 text-[10px] font-semibold tabular-nums" style={{ color: mastery > 0 ? color : "var(--ink-tertiary)" }}>
+          {mastery > 0 ? `${mastery}% mastered` : "Start"}
+        </p>
+      </div>
+    </Link>
+  );
 }
 
 /* ─── Primary Button ─── */

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { VOICE_MODE_KEY, type VoiceMode } from "@/lib/audio";
-import { AppShell, TopBar, PageHeader, Section, Card, StatCard, BtnPrimary, BtnSurface } from "@/components/ui";
+import Link from "next/link";
+import { AppShell, TopBar, PageHeader, Section, Card, StatCard, BtnPrimary, BtnSurface, PageIntro, SpotlightCard, MiniStat } from "@/components/ui";
 import { IconFire, IconStar, IconTrophy } from "@/components/icons";
 import { initialProgress, loadProgress, saveProgress, type ProgressState } from "@/lib/progress";
 import { categories, categoriesById, type CategoryId } from "@/lib/vocab";
@@ -23,7 +24,7 @@ export function ProgressClient() {
   const clearMediaCache = () => {
     if (typeof window === "undefined") return;
     Object.keys(window.localStorage)
-      .filter((k) => k.startsWith("duotots-img3:") || k.startsWith("duotots-audio:"))
+      .filter((k) => k.startsWith("duotots-img4:") || k.startsWith("duotots-audio:"))
       .forEach((k) => window.localStorage.removeItem(k));
   };
 
@@ -44,15 +45,37 @@ export function ProgressClient() {
     .filter((e) => e.wrong > 0).slice(0, 8);
 
   const totalWords = categories.reduce((n, c) => n + c.items.length, 0);
+  const masteryCount = areaPerformance.filter((area) => area.accuracy >= 80).length;
+  const weakestArea = [...areaPerformance].reverse().find((area) => area.attempts > 0);
+  const nextGoal = Math.max(progress.dailyGoal - progress.dailyDone, 0);
 
   return (
     <AppShell>
       <TopBar streak={progress.streak} xp={progress.stars} level={progress.level} dailyDone={progress.dailyDone} dailyGoal={progress.dailyGoal} wordsLearned={progress.practicedWords} totalWords={totalWords} />
+      <PageIntro eyebrow="Your journey" title="Progress" subtitle={`${progress.completedCategories.length} topics opened · ${progress.practicedWords} words practiced`} />
 
-      <div className="px-5 pt-4 pb-2">
-        <p className="text-overline">Your journey</p>
-        <h1 className="text-headline mt-1">Progress</h1>
-      </div>
+      <Section className="pt-2">
+        <SpotlightCard
+          eyebrow="Snapshot"
+          title={progress.dailyDone >= progress.dailyGoal ? "Today is on track." : `${nextGoal} more correct answers hits today’s goal.`}
+          description="This page now emphasizes momentum, coverage, and the places that need another rep before they become weak habits."
+          accent="#1b4332"
+        >
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
+            <MiniStat label="Mastered" value={masteryCount} tone="dark" />
+            <MiniStat label="Topics" value={progress.completedCategories.length} tone="dark" />
+            <MiniStat label="Weakest" value={weakestArea ? `${categoriesById[weakestArea.id]?.name ?? "None"} ${weakestArea.accuracy}%` : "None"} tone="dark" />
+          </div>
+          {weakestArea && categoriesById[weakestArea.id] && (
+            <Link
+              href={`/lesson/${weakestArea.id}`}
+              className="mt-4 inline-flex items-center rounded-[var(--radius-xl)] bg-white px-4 py-2.5 text-[13px] font-semibold text-[var(--accent)] transition-all hover:scale-[1.02] active:scale-[.98]"
+            >
+              Review weakest topic
+            </Link>
+          )}
+        </SpotlightCard>
+      </Section>
 
       <PageHeader>
         <div className="grid grid-cols-3 gap-3">
@@ -153,7 +176,8 @@ export function ProgressClient() {
       <Section className="pb-8">
         <p className="text-overline mb-3">Settings</p>
         <Card className="p-5">
-          <p className="mb-3 text-[14px] font-bold text-[var(--ink)]">Voice Mode</p>
+          <p className="mb-1 text-[14px] font-bold text-[var(--ink)]">Voice Mode</p>
+          <p className="mb-3 text-[12px] font-medium text-[var(--ink-tertiary)]">Keep playback behavior consistent across lessons and quizzes.</p>
           <div className="flex gap-2">
             {(["auto", "gentle", "clear"] as VoiceMode[]).map((mode) => (
               voiceMode === mode

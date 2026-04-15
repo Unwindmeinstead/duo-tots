@@ -23,6 +23,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const total = category.items.length;
   const CatIcon = CATEGORY_ICONS[category.id];
   const pct = Math.round(((index + 1) / total) * 100);
+  const remaining = total - index - 1;
 
   useEffect(() => {
     if (category.imageMode !== "photo" && category.imageMode !== "vector") return;
@@ -68,6 +69,29 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
+      <div className="px-4 pb-2">
+        <div className="surface-soft flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: category.color }}>
+              Current word
+            </p>
+            <h1 className="mt-1 truncate text-[1.4rem] font-black tracking-[-0.03em] text-[var(--ink)]">{current.word}</h1>
+            <p className="mt-1 text-[12px] font-medium text-[var(--ink-tertiary)]">
+              {remaining > 0 ? `${remaining} more in ${category.name}` : "Last card in this topic"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={speak}
+            disabled={audioState === "playing"}
+            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-white transition-all active:scale-95 disabled:opacity-50"
+            style={{ background: category.color, boxShadow: `0 8px 18px ${category.color}2e` }}
+          >
+            <IconVolume size={18} />
+          </button>
+        </div>
+      </div>
+
       {/* Word title card — hidden for immersive modes */}
       {!immersive && (
         <div className="mx-4 mb-3 rounded-[var(--radius-xl)] border border-white/15 p-4 text-center text-white shadow-md" style={{ background: `linear-gradient(160deg, ${category.color}, ${category.color}dd)` }}>
@@ -92,6 +116,17 @@ export function LessonClient({ category }: { category: VocabCategory }) {
           categoryId={category.id}
           onClick={speak}
         />
+      </div>
+
+      <div className="px-4 pb-2">
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-semibold text-[var(--ink-secondary)]" style={{ boxShadow: "var(--shadow-xs)" }}>
+            Tap the art to hear the word
+          </span>
+          <span className="rounded-full bg-[var(--surface)] px-3 py-1.5 text-[11px] font-semibold text-[var(--ink-secondary)]" style={{ boxShadow: "var(--shadow-xs)" }}>
+            {index + 1 === total ? "Quiz is ready next" : "Swipe through the full set"}
+          </span>
+        </div>
       </div>
 
       {/* Bottom controls — slim for immersive */}
