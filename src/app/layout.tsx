@@ -1,13 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClientShell } from "@/components/client-shell";
 import "./globals.css";
 
-const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], weight: ["400", "700", "800", "900"] });
+const sans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  weight: ["500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "DuoTots — Visual Learning",
-  description: "Duolingo-style vocabulary app for young learners.",
+  description: "Premium vocabulary app for young learners.",
 };
 
 export const viewport: Viewport = {
@@ -15,13 +20,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#58cc02",
+  themeColor: "#ede4d3",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full" style={{ fontFamily: "var(--font-nunito), system-ui, sans-serif" }}>
+    <html lang="en" className={`${sans.variable} h-full`}>
+      <body className="min-h-full font-sans antialiased">
         <ClientShell>{children}</ClientShell>
       </body>
     </html>

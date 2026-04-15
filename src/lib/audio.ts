@@ -1,85 +1,72 @@
-const AUDIO_CACHE_PREFIX = "duotots-audio:";
 export const VOICE_MODE_KEY = "duotots-voice-mode";
 export type VoiceMode = "auto" | "gentle" | "clear";
 
-type AudioLookup = {
-  audioUrl: string | null;
-  source: string;
-};
+let lockedVoice: SpeechSynthesisVoice | null = null;
 
-async function lookupWordAudio(word: string): Promise<AudioLookup> {
-  if (typeof window === "undefined") {
-    return { audioUrl: null, source: "none" };
+function getVoice(): SpeechSynthesisVoice | null {
+  if (lockedVoice) return lockedVoice;
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+
+  const voices = window.speechSynthesis.getVoices();
+  const english = voices.filter((v) => /^en[-_]/i.test(v.lang));
+
+  const ranked = [
+    /Samantha/i,
+    /Karen/i,
+    /Daniel/i,
+    /Google US English/i,
+    /Google UK English Female/i,
+    /Microsoft Zira/i,
+    /Microsoft David/i,
+    /Enhanced/i,
+    /Premium/i,
+  ];
+
+  for (const re of ranked) {
+    const match = english.find((v) => re.test(v.name));
+    if (match) { lockedVoice = match; return match; }
   }
 
-  const key = `${AUDIO_CACHE_PREFIX}${word.toLowerCase()}`;
-  const cached = window.localStorage.getItem(key);
-  if (cached) {
-    return JSON.parse(cached) as AudioLookup;
-  }
-
-  try {
-    const res = await fetch(`/api/tts?word=${encodeURIComponent(word)}`);
-    if (!res.ok) {
-      throw new Error("audio lookup failed");
-    }
-
-    const payload = (await res.json()) as AudioLookup;
-    window.localStorage.setItem(key, JSON.stringify(payload));
-    return payload;
-  } catch {
-    const payload = { audioUrl: null, source: "none" };
-    window.localStorage.setItem(key, JSON.stringify(payload));
-    return payload;
-  }
+  lockedVoice = english[0] ?? voices[0] ?? null;
+  return lockedVoice;
 }
 
-function pickBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  const preferred = voices.find((voice) =>
-    /Google|Siri|Microsoft|Enhanced|Premium/i.test(voice.name),
-  );
-  return preferred ?? voices[0] ?? null;
+if (typeof window !== "undefined" && "speechSynthesis" in window) {
+  window.speechSynthesis.onvoiceschanged = () => { lockedVoice = null; getVoice(); };
 }
 
 export async function speakWord(word: string): Promise<{ source: string }> {
-  if (typeof window === "undefined") {
-    return { source: "none" };
-  }
-
-  const lookup = await lookupWordAudio(word);
-  if (lookup.audioUrl) {
-    const audio = new Audio(lookup.audioUrl);
-    audio.preload = "auto";
-    await audio.play();
-    return { source: lookup.source };
-  }
-
-  if (!("speechSynthesis" in window)) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return { source: "none" };
   }
 
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(word);
-  const voices = window.speechSynthesis.getVoices();
-  const bestVoice = pickBestVoice(voices);
-  const voiceMode = (window.localStorage.getItem(VOICE_MODE_KEY) as VoiceMode | null) ?? "auto";
-  if (bestVoice) {
-    utterance.voice = bestVoice;
-    utterance.lang = bestVoice.lang || "en-US";
+  const voice = getVoice();
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
   } else {
     utterance.lang = "en-US";
   }
+
+  const voiceMode = (window.localStorage.getItem(VOICE_MODE_KEY) as VoiceMode | null) ?? "auto";
   if (voiceMode === "gentle") {
-    utterance.rate = 0.76;
+    utterance.rate = 0.72;
     utterance.pitch = 1.1;
   } else if (voiceMode === "clear") {
-    utterance.rate = 0.88;
+    utterance.rate = 0.85;
     utterance.pitch = 0.98;
   } else {
-    utterance.rate = 0.82;
-    utterance.pitch = 1;
+    utterance.rate = 0.78;
+    utterance.pitch = 1.0;
   }
   utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
-  return { source: "browser-fallback" };
+
+  return new Promise((resolve) => {
+    utterance.onend = () => resolve({ source: "speech-synthesis" });
+    utterance.onerror = () => resolve({ source: "none" });
+    window.speechSynthesis.speak(utterance);
+  });
 }

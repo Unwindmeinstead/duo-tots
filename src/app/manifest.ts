@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Visual vocabulary learning app for toddlers.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#58cc02",
+    background_color: "#ede4d3",
+    theme_color: "#ede4d3",
     icons: [
       {
         src: "/icon-192.svg",

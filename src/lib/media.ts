@@ -1,21 +1,26 @@
-const IMAGE_CACHE_PREFIX = "duotots-image:";
+import type { ImageMode } from "./vocab";
+
+/** Bump when media resolution logic changes (forces clients to refetch). */
+const IMAGE_CACHE_PREFIX = "duotots-img4:";
 
 type MediaResponse = {
   imageUrl: string;
   source: string;
 };
 
-export async function resolveWordImage(query: string): Promise<MediaResponse> {
-  if (typeof window === "undefined") {
-    return { imageUrl: "", source: "none" };
+export async function resolveWordImage(query: string, mode: ImageMode = "photo"): Promise<MediaResponse> {
+  if (typeof window === "undefined") return { imageUrl: "", source: "none" };
+  if (mode !== "photo" && mode !== "vector") return { imageUrl: "", source: "skip" };
+
+  const cacheKey = `${IMAGE_CACHE_PREFIX}${mode}:${query.toLowerCase()}`;
+  const cached = window.localStorage.getItem(cacheKey);
+  if (cached) {
+    try { return JSON.parse(cached) as MediaResponse; }
+    catch { window.localStorage.removeItem(cacheKey); }
   }
 
-  const cacheKey = `${IMAGE_CACHE_PREFIX}${query.toLowerCase()}`;
-  const cached = window.localStorage.getItem(cacheKey);
-  if (cached) return JSON.parse(cached) as MediaResponse;
-
   try {
-    const res = await fetch(`/api/media?query=${encodeURIComponent(query)}`);
+    const res = await fetch(`/api/media?query=${encodeURIComponent(query)}&mode=${mode}`);
     if (!res.ok) throw new Error("media lookup failed");
 
     const payload = (await res.json()) as MediaResponse;
@@ -31,15 +36,16 @@ export async function resolveWordImage(query: string): Promise<MediaResponse> {
 
 const prefetchInFlight = new Set<string>();
 
-export function prefetchWordImages(queries: string[]) {
+export function prefetchWordImages(queries: string[], mode: ImageMode = "photo") {
+  if (mode !== "photo" && mode !== "vector") return;
   for (const query of queries) {
-    const key = query.toLowerCase();
+    const key = `${mode}:${query.toLowerCase()}`;
     if (prefetchInFlight.has(key)) continue;
     const cacheKey = `${IMAGE_CACHE_PREFIX}${key}`;
     if (typeof window !== "undefined" && window.localStorage.getItem(cacheKey)) continue;
 
     prefetchInFlight.add(key);
-    resolveWordImage(query)
+    resolveWordImage(query, mode)
       .then((result) => {
         if (result.imageUrl) {
           const img = new window.Image();

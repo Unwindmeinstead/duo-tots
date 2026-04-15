@@ -12,6 +12,26 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "en.wikipedia.org",
       },
+      {
+        protocol: "https",
+        hostname: "pixabay.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.pixabay.com",
+      },
+      {
+        protocol: "https",
+        hostname: "static.vecteezy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.vecteezy.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.vecteezy.com",
+      },
     ],
   },
 };
@@ -23,7 +43,7 @@ export default withPWA({
     runtimeCaching: [
       ...runtimeCaching,
       {
-        urlPattern: /^https:\/\/upload\.wikimedia\.org\/.*/i,
+        urlPattern: /^https:\/\/(upload\.wikimedia\.org|pixabay\.com|cdn\.pixabay\.com|static\.vecteezy\.com|images\.vecteezy\.com|www\.vecteezy\.com)\/.*/i,
         handler: "CacheFirst",
         options: {
           cacheName: "duotots-images",

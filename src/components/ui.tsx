@@ -3,42 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { IconHome, IconGrid, IconChart, IconBack, IconX } from "./icons";
+import { IconHome, IconGrid, IconChart, IconX, IconFire, IconStar, IconCheck, IconTrophy } from "./icons";
 
-/* ─── Tab Bar (fixed bottom, persistent across all routes) ─── */
+/* ─── Tab Bar ─── */
 
 const TABS = [
-  { href: "/", label: "Home", Icon: IconHome },
+  { href: "/", label: "Learn", Icon: IconHome },
   { href: "/explore", label: "Explore", Icon: IconGrid },
   { href: "/progress", label: "Stats", Icon: IconChart },
 ] as const;
 
 export function TabBar() {
   const pathname = usePathname();
-  const isLesson = pathname.startsWith("/lesson") || pathname.startsWith("/practice");
-
-  if (isLesson) return null;
-
+  const hide = pathname.startsWith("/lesson") || pathname.startsWith("/practice");
+  if (hide) return null;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t-2 border-[var(--border)] bg-white"
-      style={{ paddingBottom: "var(--safe-bottom)" }}
-    >
+    <nav className="glass fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)]" style={{ paddingBottom: "var(--safe-bottom)" }}>
       <div className="mx-auto flex max-w-lg">
         {TABS.map(({ href, label, Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold tracking-wide transition-colors ${
-                active ? "text-[var(--duo-green)]" : "text-[var(--ink-light)]"
-              }`}
+            <Link key={href} href={href}
+              className={`relative flex flex-1 flex-col items-center gap-1 pb-2 pt-3.5 text-[10px] font-semibold tracking-[0.06em] uppercase transition-colors ${active ? "text-[var(--accent)]" : "text-[var(--ink-tertiary)]"}`}
             >
-              <Icon size={26} />
+              <Icon size={22} />
               <span>{label}</span>
-              {active && (
-                <span className="mt-0.5 h-[3px] w-6 rounded-full bg-[var(--duo-green)]" />
-              )}
+              {active && <span className="absolute -top-[0.5px] left-1/2 h-[3px] w-9 -translate-x-1/2 rounded-b-full bg-[var(--coral)]" />}
             </Link>
           );
         })}
@@ -47,200 +37,199 @@ export function TabBar() {
   );
 }
 
-/* ─── NavBar (sticky top bar with back/close + title) ─── */
+/* ─── Floating Metric Pills ─── */
 
-export function NavBar({ title, backHref, onClose, right }: {
-  title?: string;
-  backHref?: string;
-  onClose?: string;
-  right?: ReactNode;
-}) {
+function MetricRing({ pct, color, size = 38, children }: { pct: number; color: string; size?: number; children: React.ReactNode }) {
+  const r = (size - 6) / 2;
+  const c = 2 * Math.PI * r;
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-3 bg-white/95 px-4 backdrop-blur-sm">
-      {backHref && (
-        <Link href={backHref} className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--ink-light)] transition hover:bg-[var(--surface-hover)]">
-          <IconBack size={24} />
-        </Link>
-      )}
-      {onClose && (
-        <Link href={onClose} className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--ink-light)] transition hover:bg-[var(--surface-hover)]">
-          <IconX size={24} />
-        </Link>
-      )}
-      {title && (
-        <h1 className="flex-1 truncate text-center text-[15px] font-extrabold uppercase tracking-wide text-[var(--ink)]">
-          {title}
-        </h1>
-      )}
-      {!title && <span className="flex-1" />}
-      {right ?? <span className="w-10" />}
-    </header>
-  );
-}
-
-/* ─── Progress Bar (Duolingo-style thin bar below NavBar) ─── */
-
-export function ProgressBar({ value, max, color = "green" }: {
-  value: number;
-  max: number;
-  color?: "green" | "blue" | "orange" | "purple";
-}) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  const colorMap = {
-    green: "bg-[var(--duo-green)]",
-    blue: "bg-[var(--duo-blue)]",
-    orange: "bg-[var(--duo-orange)]",
-    purple: "bg-[var(--duo-purple)]",
-  };
-  return (
-    <div className="mx-4 h-3 overflow-hidden rounded-full bg-[var(--border)]">
-      <div
-        className={`progress-bar h-full rounded-full ${colorMap[color]}`}
-        style={{ width: `${pct}%` }}
-      />
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="absolute" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}22`} strokeWidth="3" />
+        {pct > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="3.5" strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round" className="transition-all duration-700" />}
+      </svg>
+      <span className="relative">{children}</span>
     </div>
   );
 }
 
-/* ─── App Shell (edge-to-edge on mobile, centered on desktop) ─── */
+export function TopBar({ streak, xp, level, dailyDone, dailyGoal, wordsLearned, totalWords }: {
+  streak?: number; xp?: number; level?: number; dailyDone?: number; dailyGoal?: number; wordsLearned?: number; totalWords?: number;
+}) {
+  const dailyPct = dailyGoal && dailyGoal > 0 ? Math.min(100, Math.round(((dailyDone ?? 0) / dailyGoal) * 100)) : 0;
+  const levelPct = level ? Math.round(((xp ?? 0) % 50) / 50 * 100) : 0;
+  const wordsPct = totalWords && totalWords > 0 ? Math.min(100, Math.round(((wordsLearned ?? 0) / totalWords) * 100)) : 0;
 
-export function AppShell({ children, noTabs }: { children: ReactNode; noTabs?: boolean }) {
+  const pills = [
+    { pct: Math.min(100, (streak ?? 0) * 15), color: "#e76f51", icon: <IconFire size={16} />, value: `${streak ?? 0}`, sub: "streak" },
+    { pct: dailyPct, color: "#00b894", icon: <IconCheck size={14} />, value: `${dailyDone ?? 0}/${dailyGoal ?? 5}`, sub: "today" },
+    { pct: levelPct, color: "#6c5ce7", icon: <IconStar size={15} />, value: `Lv ${level ?? 1}`, sub: `${xp ?? 0} xp` },
+    { pct: wordsPct, color: "#daa520", icon: <IconTrophy size={14} />, value: `${wordsLearned ?? 0}`, sub: "words" },
+  ];
+
   return (
-    <div className="min-h-dvh bg-white" style={noTabs ? undefined : { paddingBottom: "calc(var(--tab-height) + var(--safe-bottom))" }}>
-      <div className="mx-auto w-full max-w-2xl">
-        {children}
+    <div className="px-4 pt-3 pb-1">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-2">
+        {pills.map((p, i) => (
+          <Link key={i} href="/progress"
+            className="surface-soft flex items-center gap-2 px-3 py-2.5 transition-all hover:scale-[1.02] active:scale-[.98]"
+          >
+            <MetricRing pct={p.pct} color={p.color}>
+              <span style={{ color: p.color }}>{p.icon}</span>
+            </MetricRing>
+            <div className="pr-0.5">
+              <p className="text-[13px] font-semibold leading-none tracking-tight text-[var(--ink)]">{p.value}</p>
+              <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">{p.sub}</p>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ─── Page Header (hero section below NavBar) ─── */
+/* ─── Sub NavBar (lesson/practice) ─── */
 
-export function PageHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function NavBar({ title, onClose, right }: { title?: string; onClose?: string; right?: ReactNode }) {
   return (
-    <div className={`px-5 py-4 ${className}`}>
-      {children}
+    <header className="flex h-12 items-center gap-2 px-3">
+      {onClose && (
+        <Link href={onClose} className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--ink-secondary)] transition-colors hover:bg-black/5 active:scale-90">
+          <IconX size={18} />
+        </Link>
+      )}
+      {title && <p className="flex-1 truncate text-center text-[14px] font-bold text-[var(--ink-secondary)]">{title}</p>}
+      {!title && <span className="flex-1" />}
+      {right ?? <span className="w-9" />}
+    </header>
+  );
+}
+
+/* ─── Progress Bar ─── */
+
+export function ProgressBar({ value, max, color }: { value: number; max: number; color?: string }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="mx-4 h-2 overflow-hidden rounded-full bg-[var(--surface-secondary)]">
+      <div className="progress-bar h-full rounded-full" style={{ width: `${pct}%`, background: color || "var(--accent)" }} />
     </div>
   );
 }
 
-/* ─── Section (padded content block) ─── */
+/* ─── App Shell ─── */
+
+export function AppShell({ children, noTabs }: { children: ReactNode; noTabs?: boolean }) {
+  return (
+    <div className="min-h-dvh bg-[var(--bg)]" style={noTabs ? undefined : { paddingBottom: "calc(var(--tab-height) + var(--safe-bottom))" }}>
+      <div className="mx-auto w-full max-w-2xl">{children}</div>
+    </div>
+  );
+}
+
+/* ─── Sections ─── */
+
+export function PageHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`px-5 pb-3 pt-5 ${className}`}>{children}</div>;
+}
 
 export function Section({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`px-5 py-3 ${className}`}>{children}</div>;
 }
 
-/* ─── 3D Button (Duolingo signature press effect) ─── */
+/* ─── Primary Button ─── */
 
-export function Btn3D({ children, className = "", onClick, disabled, color = "green" }: {
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  color?: "green" | "blue" | "orange" | "red" | "white" | "gray";
+export function BtnPrimary({ children, className = "", onClick, disabled, color }: {
+  children: ReactNode; className?: string; onClick?: () => void; disabled?: boolean; color?: string;
 }) {
-  const styles = {
-    green: "bg-[var(--duo-green)] border-b-[var(--duo-green-dark)] text-white",
-    blue: "bg-[var(--duo-blue)] border-b-[var(--duo-blue-dark)] text-white",
-    orange: "bg-[var(--duo-orange)] border-b-[var(--duo-orange-dark)] text-white",
-    red: "bg-[var(--duo-red)] border-b-[var(--duo-red-dark)] text-white",
-    white: "bg-white border-b-[var(--border-dark)] text-[var(--ink)] border-2 border-[var(--border)]",
-    gray: "bg-[var(--surface-hover)] border-b-[var(--border-dark)] text-[var(--ink-light)]",
-  };
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`btn-3d rounded-2xl px-6 py-3.5 text-[15px] font-extrabold tracking-wide uppercase transition-all disabled:cursor-not-allowed disabled:opacity-40 ${styles[color]} ${className}`}
-    >
-      {children}
-    </button>
+    <button type="button" disabled={disabled} onClick={onClick}
+      className={`btn-primary flex items-center justify-center rounded-[var(--radius-xl)] px-6 py-3.5 text-[15px] font-semibold tracking-tight text-white outline-none ring-offset-2 ring-offset-[var(--bg)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      style={{ background: color || "var(--accent)", boxShadow: "var(--shadow-sm)" }}
+    >{children}</button>
   );
 }
 
-/* ─── Link styled as 3D Button ─── */
+/* ─── Surface Button ─── */
 
-export function LinkBtn3D({ children, href, color = "green", className = "" }: {
-  children: ReactNode;
-  href: string;
-  color?: "green" | "blue" | "orange" | "white" | "gray";
-  className?: string;
+export function BtnSurface({ children, className = "", onClick, disabled }: {
+  children: ReactNode; className?: string; onClick?: () => void; disabled?: boolean;
 }) {
-  const styles = {
-    green: "bg-[var(--duo-green)] border-b-[var(--duo-green-dark)] text-white",
-    blue: "bg-[var(--duo-blue)] border-b-[var(--duo-blue-dark)] text-white",
-    orange: "bg-[var(--duo-orange)] border-b-[var(--duo-orange-dark)] text-white",
-    white: "bg-white border-b-[var(--border-dark)] text-[var(--ink)] border-2 border-[var(--border)]",
-    gray: "bg-[var(--surface-hover)] border-b-[var(--border-dark)] text-[var(--ink-light)]",
-  };
   return (
-    <Link
-      href={href}
-      className={`btn-3d inline-flex items-center justify-center rounded-2xl px-6 py-3.5 text-[15px] font-extrabold tracking-wide uppercase ${styles[color]} ${className}`}
-    >
-      {children}
-    </Link>
+    <button type="button" disabled={disabled} onClick={onClick}
+      className={`btn-surface flex items-center justify-center rounded-[var(--radius-xl)] border border-[var(--border-solid)] bg-[var(--surface)] px-6 py-3.5 text-[15px] font-semibold tracking-tight text-[var(--ink)] outline-none ring-offset-2 ring-offset-[var(--bg)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      style={{ boxShadow: "var(--shadow-xs)" }}
+    >{children}</button>
   );
 }
 
-/* ─── Stat Bubble (XP, streak, etc.) ─── */
+/* ─── Link Button ─── */
 
-export function StatBubble({ icon, value, label, color = "green" }: {
-  icon: ReactNode;
-  value: string | number;
-  label: string;
-  color?: "green" | "blue" | "orange" | "gold" | "purple";
+export function LinkBtn({ children, href, color, className = "" }: {
+  children: ReactNode; href: string; color?: string; className?: string;
 }) {
-  const bgMap = {
-    green: "bg-[var(--duo-green-bg)]",
-    blue: "bg-blue-50",
-    orange: "bg-orange-50",
-    gold: "bg-amber-50",
-    purple: "bg-purple-50",
-  };
   return (
-    <div className={`flex flex-col items-center rounded-2xl ${bgMap[color]} p-4`}>
-      <span className="text-2xl">{icon}</span>
-      <p className="mt-1 text-2xl font-black text-[var(--ink)]">{value}</p>
-      <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--ink-light)]">{label}</p>
+    <Link href={href}
+      className={`btn-primary inline-flex items-center justify-center rounded-[var(--radius-xl)] px-6 py-3.5 text-[15px] font-semibold tracking-tight text-white ${className}`}
+      style={{ background: color || "var(--accent)", boxShadow: "var(--shadow-sm)" }}
+    >{children}</Link>
+  );
+}
+
+/* ─── Stat Card (colored) ─── */
+
+export function StatCard({ icon, value, label, bg, dark }: { icon: ReactNode; value: string | number; label: string; bg?: string; dark?: boolean }) {
+  return (
+    <div className="flex flex-col items-center rounded-[var(--radius-xl)] border p-5" style={{ background: bg || "var(--surface)", borderColor: dark ? "transparent" : "var(--border)", boxShadow: "var(--shadow-sm)" }}>
+      <span className={dark ? "text-white/70" : "text-[var(--ink-tertiary)]"}>{icon}</span>
+      <p className={`mt-2 text-[26px] font-extrabold tracking-tight tabular-nums ${dark ? "text-white" : "text-[var(--ink)]"}`}>{value}</p>
+      <p className={`mt-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${dark ? "text-white/55" : "text-[var(--ink-tertiary)]"}`}>{label}</p>
     </div>
   );
 }
 
-/* ─── Card (white with border, Duolingo style) ─── */
+/* ─── Card ─── */
 
-export function Card({ children, className = "" }: {
-  children: ReactNode;
-  className?: string;
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`surface-soft overflow-hidden ${className}`}>{children}</div>;
+}
+
+/* ─── Option Button (quiz) ─── */
+
+export function OptionBtn({ children, onClick, state = "idle", className = "" }: {
+  children: ReactNode; onClick?: () => void; state?: "idle" | "correct" | "wrong" | "disabled"; className?: string;
 }) {
+  const s: Record<string, string> = {
+    idle: "border-[var(--border-solid)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--ink-muted)] hover:bg-[var(--surface-secondary)] active:scale-[.99]",
+    correct: "border-[var(--teal)] bg-[var(--teal-bg)] text-[var(--green-dark)]",
+    wrong: "border-[var(--coral)] bg-[var(--coral-bg)] text-[var(--coral-dark)]",
+    disabled: "border-[var(--border-solid)] bg-[var(--surface-secondary)] text-[var(--ink-tertiary)] cursor-not-allowed",
+  };
   return (
-    <div className={`rounded-2xl border-2 border-[var(--border)] bg-white ${className}`}>
-      {children}
-    </div>
+    <button type="button" onClick={state === "idle" ? onClick : undefined}
+      className={`btn-surface w-full rounded-[var(--radius-xl)] border-2 px-5 py-4 text-left text-[16px] font-semibold tracking-tight transition-all ${s[state]} ${className}`.trim()}
+      style={{ boxShadow: state === "idle" ? "var(--shadow-xs)" : undefined }}
+    >{children}</button>
   );
 }
 
-/* ─── Option Button (quiz answer, Duolingo style) ─── */
+/* ─── Mastery Ring ─── */
 
-export function OptionBtn({ children, onClick, state = "idle" }: {
-  children: ReactNode;
-  onClick?: () => void;
-  state?: "idle" | "correct" | "wrong" | "disabled";
+export function MasteryRing({ pct, color, size = 60, children }: {
+  pct: number; color: string; size?: number; children: ReactNode;
 }) {
-  const stateStyles = {
-    idle: "border-2 border-[var(--border)] bg-white text-[var(--ink)] hover:bg-[var(--surface-hover)] active:border-b-0 active:mt-1",
-    correct: "border-2 border-[var(--duo-green)] bg-[var(--duo-green-bg)] text-[var(--duo-green-dark)]",
-    wrong: "border-2 border-[var(--duo-red)] bg-red-50 text-[var(--duo-red-dark)]",
-    disabled: "border-2 border-[var(--border)] bg-[var(--surface-hover)] text-[var(--ink-light)] cursor-not-allowed",
-  };
+  const sw = size > 48 ? 4 : 3;
+  const r = (size - sw * 2) / 2;
+  const c = 2 * Math.PI * r;
   return (
-    <button
-      type="button"
-      onClick={state === "idle" ? onClick : undefined}
-      className={`btn-3d w-full rounded-2xl border-b-4 border-b-[var(--border-dark)] px-5 py-4 text-left text-[17px] font-bold transition-all ${stateStyles[state]}`}
-    >
-      {children}
-    </button>
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="absolute" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}18`} strokeWidth={sw} />
+        {pct > 0 && (
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw}
+            strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round" className="transition-all duration-700" />
+        )}
+      </svg>
+      <span className="relative">{children}</span>
+    </div>
   );
 }
