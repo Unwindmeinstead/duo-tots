@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { resolveWordImage } from "@/lib/media";
-import { AppShell, NavBar, ProgressBar, Section, OptionBtn, Btn3D } from "@/components/ui";
+import { NavBar, ProgressBar, OptionBtn, Btn3D } from "@/components/ui";
 import {
   loadProgress,
   recordPracticeAttempt,
@@ -68,78 +68,73 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
   };
 
   return (
-    <AppShell noTabs>
-      <NavBar onClose="/" title={category.name} />
-      <ProgressBar value={Math.min(round + 1, total)} max={total} color="orange" />
-
-      <Section className="mt-4">
-        <p className="mb-3 text-center text-sm font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
+    <div className="flex h-dvh flex-col bg-white">
+      {/* Fixed top */}
+      <div className="flex-shrink-0">
+        <NavBar onClose="/" title={category.name} />
+        <ProgressBar value={Math.min(round + 1, total)} max={total} color="orange" />
+        <p className="mt-2 text-center text-xs font-extrabold uppercase tracking-widest text-[var(--ink-light)]">
           What is this?
         </p>
-        <div className={`overflow-hidden rounded-3xl border-2 bg-[var(--surface-hover)] transition-colors ${
-          feedback === "correct" ? "border-[var(--duo-green)]" : feedback === "wrong" ? "border-[var(--duo-red)]" : "border-[var(--border)]"
-        }`}>
-          <div className="relative aspect-[4/3] w-full">
-            {imageState === "loading" && (
-              <div className="absolute inset-0 animate-pulse bg-[var(--border)]" />
-            )}
-            <Image
-              src={imageUrl}
-              alt="Guess this word"
-              fill
-              className="object-cover transition-opacity duration-500"
-              style={{ opacity: imageState === "loading" ? 0.2 : 1 }}
-              sizes="(max-width: 768px) 100vw, 700px"
-            />
-            {feedback === "correct" && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[var(--duo-green)]/20 fade-in">
-                <span className="rounded-2xl bg-white px-6 py-3 text-2xl font-black text-[var(--duo-green-dark)] shadow-lg">
-                  Correct!
-                </span>
-              </div>
-            )}
+      </div>
+
+      {/* Image — flexible, shows full image */}
+      <div className={`relative mx-4 mt-2 flex-1 overflow-hidden rounded-2xl border-2 bg-[#f0f0f0] transition-colors ${
+        feedback === "correct" ? "border-[var(--duo-green)]" : feedback === "wrong" ? "border-[var(--duo-red)]" : "border-[var(--border)]"
+      }`}>
+        {imageState === "loading" && (
+          <div className="absolute inset-0 z-10 animate-pulse bg-[var(--border)]" />
+        )}
+        <Image
+          src={imageUrl}
+          alt="Guess this word"
+          fill
+          className="object-contain p-1 transition-opacity duration-500"
+          style={{ opacity: imageState === "loading" ? 0.15 : 1 }}
+          sizes="(max-width: 768px) 100vw, 700px"
+        />
+        {feedback === "correct" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[var(--duo-green)]/20 fade-in">
+            <span className="rounded-2xl bg-white px-6 py-3 text-xl font-black text-[var(--duo-green-dark)] shadow-lg">
+              Correct!
+            </span>
           </div>
-        </div>
-      </Section>
+        )}
+      </div>
 
-      <Section>
-        <div className="grid gap-2.5">
-          {options.map((option) => (
-            <OptionBtn key={option.id} onClick={() => choose(option.word)} state={optionState(option.word)}>
-              {option.word}
-            </OptionBtn>
-          ))}
-        </div>
-      </Section>
+      {/* Bottom: options + feedback — always visible */}
+      <div className="flex-shrink-0 px-4 pb-[max(env(safe-area-inset-bottom,8px),8px)] pt-3">
+        {!feedback && (
+          <div className="grid gap-2">
+            {options.map((option) => (
+              <OptionBtn key={option.id} onClick={() => choose(option.word)} state={optionState(option.word)}>
+                {option.word}
+              </OptionBtn>
+            ))}
+          </div>
+        )}
 
-      {feedback && (
-        <Section>
-          <div className={`rounded-2xl p-4 ${
-            feedback === "correct" ? "bg-[var(--duo-green-bg)]" : "bg-red-50"
-          }`}>
-            <p className={`text-center text-sm font-extrabold ${
-              feedback === "correct" ? "text-[var(--duo-green-dark)]" : "text-[var(--duo-red-dark)]"
+        {feedback && (
+          <>
+            <div className={`mb-2 rounded-2xl p-3 text-center ${
+              feedback === "correct" ? "bg-[var(--duo-green-bg)]" : "bg-red-50"
             }`}>
-              {feedback === "correct" ? `+2 XP · ${score} correct so far` : `The answer is "${answer.word}"`}
-            </p>
-          </div>
-          <Btn3D
-            onClick={advance}
-            color={feedback === "correct" ? "green" : "red"}
-            className="mt-3 w-full"
-          >
-            Continue
-          </Btn3D>
-        </Section>
-      )}
+              <p className={`text-sm font-extrabold ${
+                feedback === "correct" ? "text-[var(--duo-green-dark)]" : "text-[var(--duo-red-dark)]"
+              }`}>
+                {feedback === "correct" ? `+2 XP · ${score} correct so far` : `Answer: "${answer.word}"`}
+              </p>
+            </div>
+            <Btn3D onClick={advance} color={feedback === "correct" ? "green" : "red"} className="w-full">
+              Continue
+            </Btn3D>
+          </>
+        )}
 
-      <Section className="pb-6">
-        <div className="flex justify-center gap-6 text-sm font-bold text-[var(--ink-light)]">
-          <span>Round {(round % total) + 1}/{total}</span>
-          <span>·</span>
-          <span>{score} correct</span>
-        </div>
-      </Section>
-    </AppShell>
+        <p className="mt-2 text-center text-xs font-bold text-[var(--ink-light)]">
+          Round {(round % total) + 1}/{total} · {score} correct
+        </p>
+      </div>
+    </div>
   );
 }

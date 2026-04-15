@@ -106,7 +106,7 @@ export function ProgressBar({ value, max, color = "green" }: {
 
 export function AppShell({ children, noTabs }: { children: ReactNode; noTabs?: boolean }) {
   return (
-    <div className={`min-h-dvh bg-white ${noTabs ? "" : ""}`}>
+    <div className="min-h-dvh bg-white" style={noTabs ? undefined : { paddingBottom: "calc(var(--tab-height) + var(--safe-bottom))" }}>
       <div className="mx-auto w-full max-w-2xl">
         {children}
       </div>
