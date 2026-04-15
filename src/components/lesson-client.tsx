@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { speakWord } from "@/lib/audio";
 import { resolveWordImage } from "@/lib/media";
-import { AppShell, BottomNav, PrimaryButton, ProgressChip, SurfaceCard, TopBar } from "@/components/ui";
+import { AppShell, TopBar, Card, Btn, BottomBar, NavLink, Tag } from "@/components/ui";
 import {
   loadProgress,
   recordCategoryView,
@@ -14,16 +13,11 @@ import {
 } from "@/lib/progress";
 import type { VocabCategory } from "@/lib/vocab";
 
-type LessonClientProps = {
-  category: VocabCategory;
-};
-
-export function LessonClient({ category }: LessonClientProps) {
+export function LessonClient({ category }: { category: VocabCategory }) {
   const [index, setIndex] = useState(0);
   const [imageUrl, setImageUrl] = useState<string>(category.items[0].fallbackImage);
   const [imageState, setImageState] = useState<"loading" | "ready" | "fallback">("loading");
   const [audioState, setAudioState] = useState<"idle" | "playing">("idle");
-  const [audioSource, setAudioSource] = useState<string>("none");
   const [progress] = useState<ProgressState>(() => {
     const loaded = loadProgress();
     const updated = recordCategoryView(loaded, category.id);
@@ -31,6 +25,7 @@ export function LessonClient({ category }: LessonClientProps) {
     return updated;
   });
   const current = useMemo(() => category.items[index], [category.items, index]);
+  const total = category.items.length;
 
   useEffect(() => {
     let ignore = false;
@@ -40,110 +35,71 @@ export function LessonClient({ category }: LessonClientProps) {
         setImageState(result.source === "fallback" ? "fallback" : "ready");
       }
     });
-    return () => {
-      ignore = true;
-    };
+    return () => { ignore = true; };
   }, [current.fallbackImage, current.imageQuery]);
 
   const speak = async () => {
     setAudioState("playing");
-    const result = await speakWord(current.word);
-    setAudioSource(result.source);
+    await speakWord(current.word);
     setAudioState("idle");
+  };
+
+  const go = (dir: -1 | 1) => {
+    setImageState("loading");
+    setIndex((prev) => (prev + dir + total) % total);
   };
 
   return (
     <AppShell>
-      <TopBar>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-500">
-          Lesson
-        </p>
-        <h1 className="mt-2 text-4xl font-black text-slate-950">{category.name}</h1>
-        <p className="mt-2 text-base text-slate-600">{category.description}</p>
-        <p className="mt-3 text-sm font-medium text-slate-500">
-          Card {index + 1} of {category.items.length}
-        </p>
+      <TopBar label="Lesson" title={category.name} subtitle={category.description}>
+        <div className="mt-4 flex items-center gap-3">
+          <Tag color="teal">{index + 1} / {total}</Tag>
+          <Tag color="yellow">{progress.stars} stars</Tag>
+        </div>
       </TopBar>
 
-      <SurfaceCard className="overflow-hidden">
-        <div className="relative h-80 w-full bg-slate-200 sm:h-[26rem]">
+      <Card accent="teal" className="overflow-hidden">
+        <div className="relative aspect-[4/3] w-full bg-[var(--card)]">
           {imageState === "loading" && (
-            <div className="absolute inset-0 animate-pulse bg-slate-300/70" />
+            <div className="absolute inset-0 animate-pulse bg-[var(--border-light)]" />
           )}
           <Image
             src={imageUrl}
             alt={current.word}
             fill
-            className="object-cover transition duration-500"
+            className="object-cover transition-opacity duration-500"
+            style={{ opacity: imageState === "loading" ? 0.3 : 1 }}
             sizes="(max-width: 768px) 100vw, 900px"
             priority
           />
-          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-900/50 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
           {imageState === "fallback" && (
-            <p className="absolute left-3 top-3 rounded-lg bg-slate-900/60 px-2 py-1 text-xs font-semibold text-white">
-              Fallback image
-            </p>
+            <span className="absolute left-3 top-3 rounded-lg bg-black/50 px-2 py-1 text-[10px] font-semibold text-white/80">
+              Fallback
+            </span>
           )}
         </div>
-        <div className="flex flex-col gap-4 p-6">
-          <h2 className="text-center text-5xl font-black tracking-tight text-slate-900">
+
+        <div className="flex flex-col gap-4 p-5 sm:p-6">
+          <h2 className="text-center text-[clamp(2rem,7vw,3.2rem)] font-black leading-none tracking-tight text-[var(--ink)]">
             {current.word}
           </h2>
-          <PrimaryButton
-            onClick={speak}
-            className="h-14 text-lg font-bold"
-            disabled={audioState === "playing"}
-          >
-            {audioState === "playing" ? "Playing..." : `Hear ${current.word}`}
-          </PrimaryButton>
-          <div className="flex gap-2">
-            <ProgressChip label="Audio source" value={audioSource} />
-            <ProgressChip label="Image state" value={imageState} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setImageState("loading");
-                setIndex((prev) => (prev - 1 + category.items.length) % category.items.length);
-              }}
-              className="h-12 rounded-2xl bg-slate-100 text-base font-semibold text-slate-800 transition hover:bg-slate-200"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setImageState("loading");
-                setIndex((prev) => (prev + 1) % category.items.length);
-              }}
-              className="h-12 rounded-2xl bg-indigo-500 text-base font-semibold text-white transition hover:bg-indigo-600"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </SurfaceCard>
 
-      <BottomNav>
-        <p className="text-sm font-semibold text-slate-600">
-          Stars earned: <span className="text-slate-900">{progress.stars}</span>
-        </p>
-        <div className="flex gap-2">
-          <Link
-            href={`/practice?category=${category.id}`}
-            className="rounded-xl bg-violet-500 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-600"
-          >
-            Practice
-          </Link>
-          <Link
-            href="/"
-            className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-          >
-            Home
-          </Link>
+          <Btn onClick={speak} disabled={audioState === "playing"} variant="dark" className="h-14 text-base">
+            {audioState === "playing" ? "Playing..." : `Hear "${current.word}"`}
+          </Btn>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Btn onClick={() => go(-1)} variant="soft" className="h-12">Previous</Btn>
+            <Btn onClick={() => go(1)} variant="accent" className="h-12">Next</Btn>
+          </div>
         </div>
-      </BottomNav>
+      </Card>
+
+      <BottomBar>
+        <NavLink href={`/practice?category=${category.id}`} variant="accent">Practice Quiz</NavLink>
+        <NavLink href="/" variant="soft">Home</NavLink>
+      </BottomBar>
     </AppShell>
   );
 }
