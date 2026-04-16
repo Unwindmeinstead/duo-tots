@@ -34,6 +34,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
   const accuracy = round > 0 ? Math.round((score / round) * 100) : 100;
 
   const immersive = true;
+  const isNumbers = category.id === "numbers";
 
   useEffect(() => {
     if (category.imageMode !== "photo" && category.imageMode !== "vector") return;
@@ -86,7 +87,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
     const scorePct = total > 0 ? Math.round((score / total) * 100) : 0;
     const isGood = scorePct >= 70;
     return (
-      <div className="flex h-dvh flex-col items-center justify-center bg-[var(--bg)] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center overflow-y-auto bg-[var(--bg)] px-6 py-6 text-center">
         <div className="scale-in relative mb-6 flex h-36 w-36 items-center justify-center">
           <svg width={144} height={144} className="absolute" style={{ transform: "rotate(-90deg)" }}>
             <circle cx={72} cy={72} r={62} fill="none" stroke="var(--surface-secondary)" strokeWidth="8" />
@@ -97,7 +98,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
         </div>
         <h1 className="text-headline">Quiz complete</h1>
         <p className="text-subtitle mt-2">{score} of {total} correct</p>
-        <div className="mt-4 grid w-full max-w-sm grid-cols-3 gap-2.5">
+        <div className="mt-4 grid w-full max-w-sm grid-cols-1 gap-2.5 sm:grid-cols-3">
           <div className="rounded-[var(--radius-xl)] bg-[var(--surface)] px-3 py-3" style={{ boxShadow: "var(--shadow-xs)" }}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">Accuracy</p>
             <p className="mt-1 text-[1.05rem] font-black text-[var(--ink)]">{scorePct}%</p>
@@ -127,24 +128,27 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
 
   /* ── Quiz ── */
   return (
-    <div className="flex h-dvh flex-col bg-[var(--bg)]">
+    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-[var(--bg)]">
       {/* Top bar — compact when visual is immersive */}
-      <div className={`flex flex-shrink-0 items-center gap-2 px-4 ${immersive ? "pt-2 pb-1" : "pt-3 pb-2"}`}>
+      <div className={`grid flex-shrink-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 px-4 ${immersive ? "pt-2 pb-1" : "pt-3 pb-2"}`}>
         <Link href="/" className={`surface-soft flex items-center justify-center text-[var(--ink-secondary)] transition-all active:scale-90 ${immersive ? "h-9 w-9" : "h-10 w-10"}`}>
           <IconX size={immersive ? 16 : 18} />
         </Link>
-        <div className={`flex items-center rounded-[var(--radius-lg)] border border-white/15 text-white shadow-sm ${immersive ? "gap-1.5 px-3 py-1.5" : "gap-2 px-3.5 py-2"}`} style={{ background: category.color }}>
-          {CatIcon && <CatIcon size={immersive ? 14 : 16} />}
-          <span className={`font-semibold tracking-tight ${immersive ? "text-[11px]" : "text-[12px]"}`}>Quiz</span>
-        </div>
-        <div className="flex-1" />
-        <div className={`surface-soft flex items-center gap-1.5 ${immersive ? "px-3 py-1.5" : "px-3.5 py-2"}`}>
-          <IconStar size={14} className="text-[#f0c040]" />
-          <span className={`font-semibold tabular-nums text-[var(--ink)] ${immersive ? "text-[12px]" : "text-[13px]"}`}>{score}</span>
-        </div>
-        <div className={`surface-soft flex items-center ${immersive ? "gap-1.5 px-3 py-1.5" : "gap-2 px-3.5 py-2"}`}>
-          <span className={`font-semibold tabular-nums ${immersive ? "text-[12px]" : "text-[13px]"}`} style={{ color: category.color }}>{pct}%</span>
-          <span className={`font-medium tabular-nums text-[var(--ink-tertiary)] ${immersive ? "text-[10px]" : "text-[11px]"}`}>{(round % total) + 1}/{total}</span>
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <div className={`flex min-w-0 items-center rounded-[var(--radius-lg)] border border-white/15 text-white shadow-sm ${immersive ? "gap-1.5 px-3 py-1.5" : "gap-2 px-3.5 py-2"}`} style={{ background: category.color }}>
+            {CatIcon && <CatIcon size={immersive ? 14 : 16} />}
+            <span className={`truncate font-semibold tracking-tight ${immersive ? "text-[11px]" : "text-[12px]"}`}>Quiz</span>
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <div className={`surface-soft flex items-center gap-1.5 ${immersive ? "px-3 py-1.5" : "px-3.5 py-2"}`}>
+              <IconStar size={14} className="text-[#f0c040]" />
+              <span className={`font-semibold tabular-nums text-[var(--ink)] ${immersive ? "text-[12px]" : "text-[13px]"}`}>{score}</span>
+            </div>
+            <div className={`surface-soft flex items-center ${immersive ? "gap-1.5 px-3 py-1.5" : "gap-2 px-3.5 py-2"}`}>
+              <span className={`font-semibold tabular-nums ${immersive ? "text-[12px]" : "text-[13px]"}`} style={{ color: category.color }}>{pct}%</span>
+              <span className={`font-medium tabular-nums text-[var(--ink-tertiary)] ${immersive ? "text-[10px]" : "text-[11px]"}`}>{(round % total) + 1}/{total}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -155,13 +159,15 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
-      <div className="px-4 pb-2">
-        <div className="surface-soft flex items-center justify-between gap-3 px-4 py-3">
+      <div className={`px-4 ${isNumbers ? "pb-1" : "pb-2"}`}>
+        <div className={`surface-soft flex items-start justify-between gap-2.5 px-3.5 ${isNumbers ? "py-2" : "py-3"}`}>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: category.color }}>
-              Quick check
+              {isNumbers ? "Number check" : "Quick check"}
             </p>
-            <p className="mt-1 text-[1.1rem] font-black tracking-[-0.03em] text-[var(--ink)]">Match the picture to the word.</p>
+            <p className="mt-1 text-[1rem] font-black tracking-[-0.03em] text-[var(--ink)] sm:text-[1.1rem]">
+              {isNumbers ? "Which number is on the card?" : "Match the picture to the word."}
+            </p>
             <p className="mt-1 text-[12px] font-medium text-[var(--ink-tertiary)]">
               {feedback ? `Answer locked in. ${round + 1 >= total ? "Results next." : "Review and continue."}` : `Running accuracy ${accuracy}%`}
             </p>
@@ -170,7 +176,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
             type="button"
             onClick={audioState === "playing" ? undefined : speak}
             disabled={audioState === "playing"}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl text-white transition-all active:scale-95 disabled:opacity-50"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl text-white transition-all active:scale-95 disabled:opacity-50 sm:h-12 sm:w-12"
             style={{ background: category.color, boxShadow: `0 8px 18px ${category.color}2e` }}
           >
             {CatIcon ? <CatIcon size={18} /> : <IconStar size={18} />}
@@ -180,11 +186,11 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
 
       {/* Question */}
       <p className={`px-4 text-center font-semibold uppercase tracking-[0.1em] ${immersive ? "py-0.5 text-[10px]" : "text-[11px]"}`} style={{ color: category.color }}>
-        What is this?
+        {isNumbers ? "Pick the matching number" : "What is this?"}
       </p>
 
       {/* Visual card with feedback overlay */}
-      <div className={`relative flex-1 min-h-0 overflow-hidden rounded-3xl transition-all ${immersive ? "mx-3 mt-1" : "mx-4 mt-2"} ${
+      <div className={`relative flex-1 overflow-hidden rounded-3xl transition-all ${isNumbers ? "min-h-[44vh]" : "min-h-[32vh]"} ${immersive ? "mx-2 mt-1" : "mx-4 mt-2"} ${
         feedback === "correct" ? "ring-4 ring-[#1b4332]" : feedback === "wrong" ? "ring-4 ring-[#e76f51]" : ""
       }`}>
         <WordVisual
@@ -196,6 +202,7 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
           categoryColor={category.color}
           categoryId={category.id}
           onClick={audioState === "playing" ? undefined : speak}
+          immersive={immersive}
         />
 
         {/* Correct overlay */}
@@ -223,11 +230,11 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
       </div>
 
       {/* Options / Feedback */}
-      <div className={`flex-shrink-0 px-4 ${immersive ? "pt-1" : "pt-3"}`} style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 12px), 16px)" }}>
+      <div className={`flex-shrink-0 px-4 ${immersive ? "pt-2" : "pt-3"}`} style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 12px), 16px)" }}>
         {!feedback && (
           <div className={`grid ${immersive ? "gap-2" : "gap-2.5"}`}>
             {options.map((option) => (
-              <OptionBtn key={option.id} onClick={() => choose(option.word)} state={optionState(option.word)} className={immersive ? "min-h-12 py-3 text-[15px]" : undefined}>
+              <OptionBtn key={option.id} onClick={() => choose(option.word)} state={optionState(option.word)} className={immersive ? "min-h-[3.25rem] py-3 text-[14px] leading-tight sm:text-[15px]" : undefined}>
                 {option.word}
               </OptionBtn>
             ))}
@@ -240,9 +247,9 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
               style={{ background: feedback === "correct" ? "#1b4332" : "#e76f51", boxShadow: `0 4px 16px ${feedback === "correct" ? "rgba(27,67,50,.25)" : "rgba(231,111,81,.25)"}` }}
             >
               {feedback === "correct" ? <IconCheck size={22} /> : <IconX size={22} />}
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-bold">{feedback === "correct" ? "Correct!" : "Not quite"}</p>
-                <p className="text-[12px] font-semibold opacity-70">{feedback === "correct" ? `+2 XP · ${score} total` : `The answer was ${answer.word}`}</p>
+                <p className="text-[12px] font-semibold break-words opacity-70">{feedback === "correct" ? `+2 XP · ${score} total` : `The answer was ${answer.word}`}</p>
               </div>
             </div>
             <button type="button" onClick={advance}

@@ -30,7 +30,12 @@ const m = (prefix: string, words: Array<{ word: string; q?: string; a?: string }
   }));
 
 export const categories: VocabCategory[] = [
-  /* ═══ FOUNDATION (first words a 2yo needs) ═══ */
+  /* ═══ FOUNDATION (first words a 2yo needs) — Numbers first: baseline immersive topic ═══ */
+  {
+    id: "numbers", name: "Numbers", color: "#0071e3", stage: "foundation", imageMode: "digit",
+    description: "Counting is the gateway to all mathematics.",
+    items: Array.from({ length: 101 }, (_, i) => ({ id: `num-${i}`, word: String(i), imageQuery: String(i) })),
+  },
   {
     id: "actions", name: "Actions", color: "#ff9500", stage: "foundation", imageMode: "action",
     description: "Verbs are how toddlers request and describe the world.",
@@ -67,11 +72,6 @@ export const categories: VocabCategory[] = [
       { word: "Cone" }, { word: "Spiral" }, { word: "Cross", q: "Cross symbol" },
       { word: "Pentagon" }, { word: "Octagon" }, { word: "Pyramid", q: "Pyramid (geometry)" },
     ]),
-  },
-  {
-    id: "numbers", name: "Numbers", color: "#0071e3", stage: "foundation", imageMode: "digit",
-    description: "Counting is the gateway to all mathematics.",
-    items: Array.from({ length: 101 }, (_, i) => ({ id: `num-${i}`, word: String(i), imageQuery: String(i) })),
   },
   {
     id: "everyday", name: "Everyday", color: "#636366", stage: "foundation", imageMode: "static",

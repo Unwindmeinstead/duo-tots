@@ -2,36 +2,16 @@ import type { NextConfig } from "next";
 import withPWA, { runtimeCaching } from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: process.cwd(),
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "upload.wikimedia.org",
-      },
-      {
-        protocol: "https",
-        hostname: "en.wikipedia.org",
-      },
-      {
-        protocol: "https",
-        hostname: "pixabay.com",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.pixabay.com",
-      },
-      {
-        protocol: "https",
-        hostname: "static.vecteezy.com",
-      },
-      {
-        protocol: "https",
-        hostname: "images.vecteezy.com",
-      },
-      {
-        protocol: "https",
-        hostname: "www.vecteezy.com",
-      },
+      { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "en.wikipedia.org" },
+      { protocol: "https", hostname: "pixabay.com" },
+      { protocol: "https", hostname: "cdn.pixabay.com" },
+      { protocol: "https", hostname: "static.vecteezy.com" },
+      { protocol: "https", hostname: "images.vecteezy.com" },
+      { protocol: "https", hostname: "www.vecteezy.com" },
     ],
   },
 };
@@ -47,10 +27,7 @@ export default withPWA({
         handler: "CacheFirst",
         options: {
           cacheName: "duotots-images",
-          expiration: {
-            maxEntries: 400,
-            maxAgeSeconds: 60 * 60 * 24 * 30,
-          },
+          expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
         },
       },
       {
@@ -58,15 +35,10 @@ export default withPWA({
         handler: "StaleWhileRevalidate",
         options: {
           cacheName: "duotots-audio",
-          expiration: {
-            maxEntries: 400,
-            maxAgeSeconds: 60 * 60 * 24 * 30,
-          },
+          expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
         },
       },
     ],
   },
-  fallbacks: {
-    document: "/~offline",
-  },
+  fallbacks: { document: "/~offline" },
 })(nextConfig);

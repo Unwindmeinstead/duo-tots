@@ -361,7 +361,7 @@ export function OptionBtn({ children, onClick, state = "idle", className = "" }:
   };
   return (
     <button type="button" onClick={state === "idle" ? onClick : undefined}
-      className={`btn-surface w-full rounded-[var(--radius-xl)] border-2 px-5 py-4 text-left text-[16px] font-semibold tracking-tight transition-all ${s[state]} ${className}`.trim()}
+      className={`btn-surface w-full rounded-[var(--radius-xl)] border-2 px-5 py-4 text-left text-[16px] font-semibold tracking-tight whitespace-normal break-words transition-all ${s[state]} ${className}`.trim()}
       style={{ boxShadow: state === "idle" ? "var(--shadow-xs)" : undefined }}
     >{children}</button>
   );

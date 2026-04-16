@@ -18,6 +18,7 @@ const cat = (p: P) => ({
 /* ─── Navigation ─── */
 
 export function IconHome(p: P) { return <svg {...d(p)}><path d="M3 10.5L12 3l9 7.5V20a2 2 0 01-2 2H5a2 2 0 01-2-2V10.5z" /><path d="M9 22V12h6v10" /></svg>; }
+export function IconPlan(p: P) { return <svg {...d(p)}><path d="M4 6.5A2.5 2.5 0 016.5 4H12v16H6.5A2.5 2.5 0 004 22V6.5z" /><path d="M20 6.5A2.5 2.5 0 0017.5 4H12v16h5.5A2.5 2.5 0 0120 22V6.5z" /><path d="M8 8h2M8 12h2M14 10h2M14 14h2" /></svg>; }
 export function IconGrid(p: P) { return <svg {...d(p)}><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></svg>; }
 export function IconChart(p: P) { return <svg {...d(p)}><path d="M3 3v18h18" /><path d="M7 17V13" /><path d="M11 17V9" /><path d="M15 17V5" /><path d="M19 17V11" /></svg>; }
 export function IconBack(p: P) { return <svg {...d(p)}><path d="M15 18l-6-6 6-6" /></svg>; }

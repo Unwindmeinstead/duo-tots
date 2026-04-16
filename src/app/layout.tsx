@@ -1,14 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClientShell } from "@/components/client-shell";
 import "./globals.css";
 
-const sans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+// Using local font stack to avoid network dependency on Google Fonts
+const sans = {
   variable: "--font-sans",
-  display: "swap",
-  weight: ["500", "600", "700", "800"],
-});
+  className: "font-sans",
+};
 
 export const metadata: Metadata = {
   title: "DuoTots — Visual Learning",
@@ -25,7 +23,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} h-full`}>
+    <html lang="en" className="h-full">
       <body className="min-h-full font-sans antialiased">
         <ClientShell>{children}</ClientShell>
       </body>

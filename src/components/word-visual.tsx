@@ -1,46 +1,357 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { resolveWordImage } from "@/lib/media";
-import { CATEGORY_ICONS } from "./icons";
+import { CATEGORY_ICONS, IconBack } from "./icons";
 import { getLocalIllustration } from "./local-illustrations";
 import type { ImageMode } from "@/lib/vocab";
 
-const COLOR_MAP: Record<string, string> = {
-  Red: "#e74c3c", Blue: "#3498db", Green: "#2ecc71", Yellow: "#f1c40f",
-  Orange: "#e67e22", Purple: "#9b59b6", Pink: "#e84393", White: "#ffffff",
-  Black: "#1a1a2e", Brown: "#8B4513", Gold: "#daa520", Silver: "#C0C0C0",
-  Gray: "#95a5a6", Cyan: "#00bcd4", Magenta: "#e91e63", Indigo: "#3f51b5",
-  Turquoise: "#1abc9c", Maroon: "#800000", Navy: "#001f3f", Beige: "#f5f5dc",
-};
+const CAPTION = "text-center text-[13px] font-semibold tracking-tight pb-3 pt-2";
 
-function parseHexRgb(hex: string): [number, number, number] | null {
-  const h = hex.replace("#", "").trim();
-  if (h.length === 3) {
-    return [
-      parseInt(h[0] + h[0], 16),
-      parseInt(h[1] + h[1], 16),
-      parseInt(h[2] + h[2], 16),
-    ];
+interface WordVisualProps {
+  word: string;
+  imageQuery: string;
+  assetKey?: string;
+  imageMode: ImageMode;
+  categoryColor: string;
+  categoryId: string;
+  onClick?: () => void;
+  className?: string;
+  immersive?: boolean;
+  /** Numbers lesson: progress pill, swipe on hero, prev + quiz in footer */
+  digitLessonChrome?: {
+    current: number;
+    total: number;
+    onPrev: () => void;
+    onNext: () => void;
+    quizHref: string;
+  };
+}
+
+export function WordVisual({
+  word,
+  imageQuery,
+  assetKey,
+  imageMode,
+  categoryColor,
+  categoryId,
+  onClick,
+  className = "",
+  immersive = false,
+  digitLessonChrome,
+}: WordVisualProps) {
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(imageMode === "photo" || imageMode === "vector" || imageMode === "action");
+  const swipeStart = useRef<{ x: number; y: number; id: number } | null>(null);
+  const swipeSuppressClick = useRef(false);
+
+  useEffect(() => {
+    if (imageMode !== "photo" && imageMode !== "vector" && imageMode !== "action") return;
+    let mounted = true;
+    setLoading(true);
+    resolveWordImage(imageQuery, imageMode === "vector" ? "vector" : "photo").then((res) => {
+      if (!mounted) return;
+      setImageUrl(res.imageUrl);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [imageQuery, imageMode]);
+
+  const wrapperProps = onClick ? { onClick, role: "button", tabIndex: 0 } as const : {};
+
+  /* ── Digit mode (Numbers) — same flat fill as app page (--bg); numeral stays the focal point ── */
+  if (imageMode === "digit") {
+    const n = parseInt(word, 10);
+    const sz = digitHeroSize(word.length);
+    const wordLabel = isNaN(n) ? "" : numberToWord(n);
+    const chrome = digitLessonChrome;
+    const shell = `relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-3xl bg-[var(--bg)] shadow-[var(--shadow-sm)] ring-1 ring-[color:var(--border)] ${className}`;
+
+    const onSwipePointerDown = (e: React.PointerEvent) => {
+      if (!chrome || e.button !== 0) return;
+      swipeStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    };
+    const onSwipePointerUp = (e: React.PointerEvent) => {
+      if (!chrome || !swipeStart.current || e.pointerId !== swipeStart.current.id) return;
+      const dx = e.clientX - swipeStart.current.x;
+      const dy = e.clientY - swipeStart.current.y;
+      swipeStart.current = null;
+      const min = 56;
+      if (Math.abs(dx) < min || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+      swipeSuppressClick.current = true;
+      if (dx < 0) chrome.onNext();
+      else chrome.onPrev();
+    };
+    const onSwipePointerCancel = () => {
+      swipeStart.current = null;
+    };
+    const onHeroClick = () => {
+      if (swipeSuppressClick.current) {
+        swipeSuppressClick.current = false;
+        return;
+      }
+      onClick?.();
+    };
+
+    const digitHero = (
+      <span
+        className={`select-none font-black tabular-nums tracking-tighter leading-none ${sz}`}
+        style={{
+          color: "var(--ink)",
+          textShadow: "0 1px 0 rgba(255,255,255,.55), 0 10px 28px rgba(40,35,25,.08)",
+        }}
+      >
+        {word}
+      </span>
+    );
+
+    if (chrome) {
+      return (
+        <div className={shell}>
+          <div className="pointer-events-none absolute right-2 top-2 z-10 sm:right-3 sm:top-3" aria-hidden>
+            <span className="inline-flex items-baseline gap-px rounded-full border border-[color:var(--border)] bg-[var(--surface)] px-1.5 py-0.5 pl-2 shadow-[var(--shadow-xs)]">
+              <span className="text-[10px] font-semibold tabular-nums text-[var(--ink-secondary)]">{chrome.current}</span>
+              <span className="text-[9px] font-medium text-[var(--ink-tertiary)]">/</span>
+              <span className="text-[10px] font-semibold tabular-nums text-[var(--ink-secondary)]">{chrome.total}</span>
+            </span>
+          </div>
+
+          <div
+            className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-1 sm:px-3"
+            onPointerDown={onSwipePointerDown}
+            onPointerUp={onSwipePointerUp}
+            onPointerCancel={onSwipePointerCancel}
+            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+          >
+            <button
+              type="button"
+              onClick={onHeroClick}
+              className="flex min-h-0 w-full flex-1 flex-col items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+            >
+              {digitHero}
+            </button>
+          </div>
+
+          <div
+            className="relative z-10 flex shrink-0 items-end justify-between gap-2 border-t border-[color:var(--border)] bg-transparent px-2.5 pt-2.5 sm:px-3 sm:pt-3"
+            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
+          >
+            <button
+              type="button"
+              aria-label="Previous number"
+              onClick={(e) => { e.stopPropagation(); chrome.onPrev(); }}
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-[color:var(--border)] bg-[var(--surface)] text-[var(--ink-secondary)] shadow-[var(--shadow-xs)] transition-transform active:scale-95"
+            >
+              <IconBack size={20} />
+            </button>
+            <div className="min-w-0 flex-1 px-1 text-center">
+              {wordLabel ? (
+                <p className="mx-auto max-w-[min(100%,18rem)] text-[clamp(0.9rem,3.4vmin,1.2rem)] font-semibold leading-snug tracking-[0.03em] text-[var(--ink-secondary)]">
+                  {wordLabel}
+                </p>
+              ) : null}
+              <p className="mt-0.5 text-[11px] font-semibold text-[var(--ink-tertiary)]">Tap number · swipe for more</p>
+            </div>
+            <Link
+              href={chrome.quizHref}
+              className="flex h-11 min-w-[3.25rem] flex-shrink-0 items-center justify-center rounded-2xl border border-white/50 px-3 text-[12px] font-bold tracking-tight text-white shadow-md transition-transform active:scale-95"
+              style={{ background: categoryColor, boxShadow: `0 6px 16px ${categoryColor}35` }}
+            >
+              Quiz
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Wrapper {...wrapperProps} className={shell}>
+        <div className="relative flex min-h-0 flex-1 items-center justify-center px-1 sm:px-3">
+          {digitHero}
+        </div>
+
+        <div className="relative shrink-0 px-4 pb-5 pt-2 sm:pb-6">
+          {wordLabel ? (
+            <p className="mx-auto max-w-[min(100%,24rem)] text-center text-[clamp(1rem,4vmin,1.35rem)] font-semibold leading-snug tracking-[0.04em] text-[var(--ink-secondary)]">
+              {wordLabel}
+            </p>
+          ) : null}
+          <p className={`${CAPTION} mt-1 pb-0 text-[var(--ink-tertiary)]`}>Tap to hear</p>
+        </div>
+      </Wrapper>
+    );
   }
-  if (h.length === 6) return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  return null;
+
+  /* ── Color mode (Colors) ── */
+  if (imageMode === "color") {
+    const hex = COLOR_MAP[word] ?? categoryColor;
+    const dark = relativeLuminanceFromHex(hex) < 0.5;
+    const sz = colorHeroSize(word);
+    return (
+      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden rounded-3xl ${className}`}
+        style={{ background: hex, boxShadow: `0 12px 40px ${hex}50` }}
+      >
+        <p className={`max-w-full px-4 text-center font-black leading-[0.9] ${sz}`} style={{ color: dark ? "#ffffff" : "#1a1a2e", textShadow: dark ? "0 2px 10px rgba(0,0,0,0.2)" : "none" }}>
+          {word}
+        </p>
+      </Wrapper>
+    );
+  }
+
+  /* ── Shape mode (Shapes) ── */
+  if (imageMode === "shape") {
+    const sh = SHAPES[word] ?? SHAPES["Circle"];
+    const size = 220;
+    return (
+      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl ${className}`}
+        style={{ background: `linear-gradient(180deg, ${sh.bg[0]}25 0%, ${sh.bg[1]}15 100%)`, boxShadow: `0 8px 32px ${sh.bg[0]}30` }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="fade-in">
+            {sh.svg(size)}
+          </svg>
+        </div>
+        <p className={CAPTION} style={{ color: `${sh.bg[0]}cc` }}>{word}</p>
+      </Wrapper>
+    );
+  }
+
+  /* ── Static local SVG ── */
+  if (imageMode === "static") {
+    const key = assetKey ?? word.toLowerCase();
+    const localArt = getLocalIllustration(categoryId, key);
+    const src = `/images/${categoryId}/${key}.svg`;
+    const cardBackground = localArt?.background ?? `linear-gradient(180deg, ${categoryColor}1a 0%, #ffffff 100%)`;
+    const cardShadow = localArt?.shadow ?? `0 18px 40px ${categoryColor}18`;
+    const frameBackground = localArt?.frame ?? "rgba(255,255,255,0.78)";
+    return (
+      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
+        style={{ background: cardBackground, boxShadow: cardShadow }}
+      >
+        <div className="pointer-events-none absolute inset-x-6 top-5 h-20 rounded-full blur-3xl" style={{ background: `${categoryColor}16` }} />
+        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-2 py-2">
+          <div className="relative h-[min(88%,72vmin)] w-[min(98%,72vmin)] max-h-[520px] max-w-[520px] overflow-hidden rounded-[2rem] border border-white/60 p-2 sm:p-3" style={{ background: frameBackground }}>
+            {localArt ? <div className="h-full w-full">{localArt.art}</div> : <Image src={src} alt={word} fill className="object-contain p-2 sm:p-3" sizes="(max-width: 768px) 88vw, 520px" priority />}
+          </div>
+        </div>
+        <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>{word}</p>
+      </Wrapper>
+    );
+  }
+
+  /* ── Concept card ── */
+  if (imageMode === "card") {
+    const sz = colorHeroSize(word);
+    return (
+      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
+        style={{ background: `linear-gradient(160deg, ${categoryColor}18, ${categoryColor}0d)`, boxShadow: `0 8px 32px ${categoryColor}12` }}
+      >
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-3">
+          <p className={`max-w-full text-balance text-center font-black leading-[0.88] ${sz}`} style={{ color: categoryColor, textShadow: `0 4px 24px ${categoryColor}25` }}>{word}</p>
+        </div>
+        <p className={CAPTION} style={{ color: `${categoryColor}99` }}>Tap to hear</p>
+      </Wrapper>
+    );
+  }
+
+  /* ── Action / Photo / Vector modes ── */
+  const isVertical = immersive || imageMode === "action";
+  const isVector = imageMode === "vector";
+
+  if (loading) {
+    return (
+      <div className={`flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl ${className}`}
+        style={{ background: `linear-gradient(160deg, ${categoryColor}12, ${categoryColor}08)`, boxShadow: `0 8px 32px ${categoryColor}10` }}
+      >
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-3">
+          <div className="spinner" />
+          <p className="text-[13px] font-semibold text-[var(--ink-tertiary)]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!imageUrl) {
+    return <FallbackCard word={word} categoryColor={categoryColor} categoryId={categoryId} onClick={onClick} className={className} />;
+  }
+
+  /* ── Vertical Immersive Mode (Actions) ── */
+  if (isVertical) {
+    return (
+      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.98] ${className}`}
+        style={{ background: `linear-gradient(180deg, ${categoryColor}08 0%, ${categoryColor}15 100%)`, boxShadow: `0 12px 40px ${categoryColor}20` }}
+      >
+        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden p-3">
+          {/* Vertical portrait container - taller than wide */}
+          <div className="relative h-full w-auto aspect-[3/4] max-h-full max-w-[min(85%,380px)] overflow-hidden rounded-2xl shadow-2xl">
+            <Image 
+              src={imageUrl} 
+              alt={word} 
+              fill 
+              className="object-cover fade-in" 
+              sizes="(max-width: 768px) 85vw, 380px" 
+              priority 
+              style={{ objectPosition: 'center 30%' }}
+            />
+            {/* Gradient overlay for depth */}
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+          </div>
+        </div>
+        {/* Word label - floating style */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <p className="text-center text-[22px] font-black tracking-tight text-white drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+            {word}
+          </p>
+        </div>
+      </Wrapper>
+    );
+  }
+
+  /* ── Standard Photo/Vector Mode ── */
+  return (
+    <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
+      style={{ background: `linear-gradient(160deg, ${categoryColor}12, ${categoryColor}08)`, boxShadow: `0 8px 32px ${categoryColor}10` }}
+    >
+      <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-1 sm:px-2">
+        <div className="relative h-[min(88%,70vmin)] w-[min(98%,70vmin)] max-h-[520px] max-w-[520px]">
+          <Image src={imageUrl} alt={word} fill className="object-contain fade-in" sizes="(max-width: 768px) 100vw, 700px" priority />
+        </div>
+      </div>
+      <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>{word}</p>
+    </Wrapper>
+  );
 }
 
-/** WCAG-related luminance 0–1; higher = lighter. */
-function relativeLuminanceFromHex(hex: string): number {
-  const rgb = parseHexRgb(hex);
-  if (!rgb) return 0.5;
-  const lin = rgb.map((c) => {
-    const x = c / 255;
-    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+/* ── Helper Components ── */
+
+function Wrapper({ children, ...props }: React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
+  return <div {...props}>{children}</div>;
 }
 
-const ONES = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
-  "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+function FallbackCard({ word, categoryColor, categoryId, onClick, className }: { word: string; categoryColor: string; categoryId: string; onClick?: () => void; className?: string }) {
+  const CatIcon = CATEGORY_ICONS[categoryId];
+  return (
+    <div onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+      className={`flex h-full min-h-0 w-full flex-col items-center justify-center overflow-hidden rounded-3xl ${className}`}
+      style={{ background: `linear-gradient(160deg, ${categoryColor}15, ${categoryColor}08)`, boxShadow: `0 8px 32px ${categoryColor}10` }}
+    >
+      <div className="flex flex-col items-center gap-3 px-4">
+        {CatIcon && (
+          <span className="inline-flex" style={{ color: categoryColor, opacity: 0.8 }}>
+            <CatIcon size={48} />
+          </span>
+        )}
+        <p className="text-[18px] font-bold text-[var(--ink)]">{word}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Utility Functions ── */
+
+const ONES = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine", "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
 const TENS = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
 
 function numberToWord(n: number): string {
@@ -52,22 +363,10 @@ function numberToWord(n: number): string {
   return o === 0 ? TENS[t] : `${TENS[t]}-${ONES[o]}`;
 }
 
-const NUM_COLORS: [string, string][] = [
-  ["#64748b", "#475569"], ["#ef4444", "#dc2626"], ["#f97316", "#ea580c"],
-  ["#eab308", "#ca8a04"], ["#22c55e", "#16a34a"], ["#14b8a6", "#0d9488"],
-  ["#3b82f6", "#2563eb"], ["#8b5cf6", "#7c3aed"], ["#ec4899", "#db2777"],
-  ["#06b6d4", "#0891b2"], ["#6366f1", "#4f46e5"],
-];
-
-function numColor(n: number): [string, string] {
-  return NUM_COLORS[n % NUM_COLORS.length];
-}
-
-/** Hero type: fits inside rounded card (narrow digits vs wide color words). */
 function digitHeroSize(len: number): string {
-  if (len >= 3) return "text-[clamp(2.5rem,16vmin,6.5rem)]";
-  if (len === 2) return "text-[clamp(3rem,20vmin,8.5rem)]";
-  return "text-[clamp(3.25rem,22vmin,10rem)]";
+  if (len >= 3) return "text-[clamp(6.25rem,46vmin,16.5rem)]";
+  if (len === 2) return "text-[clamp(7rem,56vmin,20rem)]";
+  return "text-[clamp(7.75rem,66vmin,24rem)]";
 }
 
 function colorHeroSize(word: string): string {
@@ -78,6 +377,25 @@ function colorHeroSize(word: string): string {
   if (n > 2) return "text-[clamp(2.15rem,10vmin,5rem)]";
   if (n === 2) return "text-[clamp(2.35rem,11vmin,5.75rem)]";
   return "text-[clamp(2.5rem,12vmin,6.5rem)]";
+}
+
+function parseHexRgb(hex: string): [number, number, number] | null {
+  const h = hex.replace("#", "").trim();
+  if (h.length === 3) {
+    return [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)];
+  }
+  if (h.length === 6) return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  return null;
+}
+
+function relativeLuminanceFromHex(hex: string): number {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return 0.5;
+  const lin = rgb.map((c) => {
+    const x = c / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
 }
 
 /* ── Shape SVGs ── */
@@ -110,311 +428,35 @@ const SHAPES: Record<string, ShapeEntry> = {
     }).join(" ");
     return <polygon points={pts} />;
   }},
-  Sphere:    { bg: ["#a855f7", "#9333ea"], fill: "#d8b4fe", svg: (s) => <><circle cx={s/2} cy={s/2} r={s*0.42} /><ellipse cx={s/2} cy={s/2} rx={s*0.42} ry={s*0.15} fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={s*0.02} /><ellipse cx={s*0.38} cy={s*0.35} rx={s*0.08} ry={s*0.12} fill="rgba(255,255,255,0.2)" transform={`rotate(-30,${s*0.38},${s*0.35})`} /></> },
-  Cube:      { bg: ["#f43f5e", "#e11d48"], fill: "#fda4af", svg: (s) => <><polygon points={`${s*0.2},${s*0.35} ${s*0.5},${s*0.18} ${s*0.8},${s*0.35} ${s*0.5},${s*0.52}`} fill="rgba(255,255,255,0.9)" /><polygon points={`${s*0.2},${s*0.35} ${s*0.5},${s*0.52} ${s*0.5},${s*0.85} ${s*0.2},${s*0.68}`} fill="rgba(255,255,255,0.6)" /><polygon points={`${s*0.8},${s*0.35} ${s*0.5},${s*0.52} ${s*0.5},${s*0.85} ${s*0.8},${s*0.68}`} fill="rgba(255,255,255,0.75)" /></> },
-  Cylinder:  { bg: ["#10b981", "#059669"], fill: "#6ee7b7", svg: (s) => <><ellipse cx={s/2} cy={s*0.25} rx={s*0.35} ry={s*0.12} /><rect x={s*0.15} y={s*0.25} width={s*0.7} height={s*0.5} /><ellipse cx={s/2} cy={s*0.75} rx={s*0.35} ry={s*0.12} /><ellipse cx={s/2} cy={s*0.25} rx={s*0.35} ry={s*0.12} fill="rgba(255,255,255,0.3)" /></> },
-  Cone:      { bg: ["#f59e0b", "#d97706"], fill: "#fcd34d", svg: (s) => <><polygon points={`${s/2},${s*0.1} ${s*0.85},${s*0.78} ${s*0.15},${s*0.78}`} /><ellipse cx={s/2} cy={s*0.78} rx={s*0.35} ry={s*0.12} /></> },
-  Spiral:    { bg: ["#06b6d4", "#0891b2"], fill: "#67e8f9", svg: (s) => <path d={`M${s/2},${s/2} C${s*0.55},${s*0.45} ${s*0.6},${s*0.55} ${s*0.55},${s*0.6} C${s*0.48},${s*0.68} ${s*0.35},${s*0.62} ${s*0.35},${s*0.5} C${s*0.35},${s*0.35} ${s*0.5},${s*0.28} ${s*0.6},${s*0.3} C${s*0.72},${s*0.33} ${s*0.78},${s*0.5} ${s*0.72},${s*0.65} C${s*0.65},${s*0.82} ${s*0.4},${s*0.85} ${s*0.28},${s*0.72} C${s*0.15},${s*0.55} ${s*0.2},${s*0.28} ${s*0.42},${s*0.18} C${s*0.62},${s*0.1} ${s*0.85},${s*0.25} ${s*0.88},${s*0.5}`} fill="none" stroke="#67e8f9" strokeWidth={s*0.05} strokeLinecap="round" /> },
-  Cross:     { bg: ["#dc2626", "#b91c1c"], fill: "#fca5a5", svg: (s) => <path d={`M${s*0.35},${s*0.1} H${s*0.65} V${s*0.35} H${s*0.9} V${s*0.65} H${s*0.65} V${s*0.9} H${s*0.35} V${s*0.65} H${s*0.1} V${s*0.35} H${s*0.35}Z`} /> },
-  Pentagon:  { bg: ["#7c3aed", "#5b21b6"], fill: "#c4b5fd", svg: (s) => {
-    const cx = s/2, cy = s/2, r = s*0.44;
+  Sphere:    { bg: ["#a855f7", "#9333ea"], fill: "#d8b4fe", svg: (s) => <><circle cx={s/2} cy={s/2} r={s*0.42} /><ellipse cx={s/2} cy={s/2} rx={s*0.42} ry={s*0.15} fill="white" opacity="0.25" /></> },
+  Cube:      { bg: ["#ec4899", "#db2777"], fill: "#f9a8d4", svg: (s) => <><rect x={s*0.25} y={s*0.25} width={s*0.5} height={s*0.5} rx={s*0.02} /><rect x={s*0.15} y={s*0.15} width={s*0.5} height={s*0.5} rx={s*0.02} fillOpacity="0.7" /></> },
+  Cylinder:  { bg: ["#f59e0b", "#d97706"], fill: "#fde68a", svg: (s) => <><ellipse cx={s/2} cy={s*0.25} rx={s*0.3} ry={s*0.12} /><rect x={s*0.2} y={s*0.25} width={s*0.6} height={s*0.5} /><ellipse cx={s/2} cy={s*0.75} rx={s*0.3} ry={s*0.12} /></> },
+  Cone:      { bg: ["#10b981", "#059669"], fill: "#a7f3d0", svg: (s) => <><polygon points={`${s/2},${s*0.1} ${s*0.15},${s*0.85} ${s*0.85},${s*0.85}`} /><ellipse cx={s/2} cy={s*0.85} rx={s*0.35} ry={s*0.1} /></> },
+  Spiral:    { bg: ["#8b5cf6", "#7c3aed"], fill: "none", svg: (s) => <path d={`M${s/2},${s/2} m0,${-s*0.35} a${s*0.35},${s*0.35} 0 1,1 0,${s*0.7} a${s*0.25},${s*0.25} 0 1,0 0,${-s*0.5} a${s*0.15},${s*0.15} 0 1,1 0,${s*0.3}`} stroke="currentColor" strokeWidth={s*0.03} /> },
+  Cross:     { bg: ["#ef4444", "#dc2626"], fill: "#fca5a5", svg: (s) => <><rect x={s*0.4} y={s*0.15} width={s*0.2} height={s*0.7} rx={s*0.02} /><rect x={s*0.15} y={s*0.4} width={s*0.7} height={s*0.2} rx={s*0.02} /></> },
+  Pentagon:  { bg: ["#3b82f6", "#2563eb"], fill: "#93c5fd", svg: (s) => {
+    const cx = s/2, cy = s/2, r = s*0.42;
     const pts = Array.from({ length: 5 }, (_, i) => {
-      const a = (2 * Math.PI / 5) * i - Math.PI / 2;
+      const a = (Math.PI * 2 * i / 5) - Math.PI / 2;
       return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
     }).join(" ");
     return <polygon points={pts} />;
   }},
-  Octagon:   { bg: ["#0891b2", "#0e7490"], fill: "#67e8f9", svg: (s) => {
-    const cx = s/2, cy = s/2, r = s*0.44;
+  Octagon:   { bg: ["#10b981", "#059669"], fill: "#a7f3d0", svg: (s) => {
+    const cx = s/2, cy = s/2, r = s*0.42;
     const pts = Array.from({ length: 8 }, (_, i) => {
-      const a = (Math.PI / 4) * i - Math.PI / 8;
+      const a = (Math.PI * 2 * i / 8) - Math.PI / 8;
       return `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`;
     }).join(" ");
     return <polygon points={pts} />;
   }},
-  Pyramid:   { bg: ["#d97706", "#92400e"], fill: "#fcd34d", svg: (s) => <><polygon points={`${s/2},${s*0.1} ${s*0.85},${s*0.78} ${s*0.15},${s*0.78}`} /><polygon points={`${s/2},${s*0.1} ${s*0.85},${s*0.78} ${s*0.6},${s*0.85}`} fill="rgba(255,255,255,0.5)" /></> },
+  Pyramid:   { bg: ["#f59e0b", "#d97706"], fill: "#fde68a", svg: (s) => <><polygon points={`${s/2},${s*0.1} ${s*0.1},${s*0.8} ${s*0.9},${s*0.8}`} /><line x1={s/2} y1={s*0.1} x2={s/2} y2={s*0.8} stroke="rgba(0,0,0,0.1)" strokeWidth={s*0.02} /></> },
 };
 
-type Props = {
-  word: string;
-  imageQuery: string;
-  assetKey?: string;
-  imageMode: ImageMode;
-  categoryColor: string;
-  categoryId: string;
-  onClick?: () => void;
-  className?: string;
+const COLOR_MAP: Record<string, string> = {
+  Red: "#e74c3c", Blue: "#3498db", Green: "#2ecc71", Yellow: "#f1c40f",
+  Orange: "#e67e22", Purple: "#9b59b6", Pink: "#e84393", White: "#ffffff",
+  Black: "#1a1a2e", Brown: "#8B4513", Gold: "#daa520", Silver: "#C0C0C0",
+  Gray: "#95a5a6", Cyan: "#00bcd4", Magenta: "#e91e63", Indigo: "#3f51b5",
+  Turquoise: "#1abc9c", Maroon: "#800000", Navy: "#001f3f", Beige: "#f5f5dc",
 };
-
-const CAPTION = "shrink-0 px-3 pb-8 pt-0.5 text-center text-[clamp(1rem,3.8vw,1.75rem)] font-semibold tracking-tight";
-
-function FallbackCard({ word, categoryColor, categoryId, onClick, className = "" }: Omit<Props, "imageQuery" | "imageMode">) {
-  const CatIcon = CATEGORY_ICONS[categoryId];
-  const Wrapper = onClick ? "button" : "div";
-  const wrapperProps = onClick ? { type: "button" as const, onClick } : {};
-  return (
-    <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-      style={{
-        background: `linear-gradient(160deg, ${categoryColor}18, ${categoryColor}0d)`,
-        boxShadow: `0 8px 32px ${categoryColor}12`,
-      }}
-    >
-      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full opacity-40" style={{ background: `${categoryColor}14` }} />
-      <div className="pointer-events-none absolute -bottom-8 -left-8 h-28 w-28 rounded-full opacity-35" style={{ background: `${categoryColor}10` }} />
-      <div className="pointer-events-none absolute right-3 top-3 opacity-[.08]">{CatIcon && <CatIcon size={72} />}</div>
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-4 overflow-hidden px-3 sm:px-4">
-        <span className="relative flex h-[min(28vmin,120px)] w-[min(28vmin,120px)] shrink-0 items-center justify-center rounded-[1.75rem] text-[clamp(2.25rem,11vmin,4rem)] font-black text-white" style={{ background: categoryColor, boxShadow: `0 8px 28px ${categoryColor}38` }}>
-          {word.charAt(0)}
-        </span>
-      </div>
-      <p className="shrink-0 px-3 pb-1 pt-0.5 text-center text-[clamp(1rem,3.8vw,1.75rem)] font-semibold tracking-tight" style={{ color: `${categoryColor}dd` }}>{word}</p>
-      <p className="shrink-0 px-3 pb-8 text-center text-[11px] font-semibold text-[var(--ink-tertiary)]">Tap to hear</p>
-    </Wrapper>
-  );
-}
-
-export function WordVisual({ word, imageQuery, assetKey, imageMode, categoryColor, categoryId, onClick, className = "" }: Props) {
-  const fetchable = imageMode === "photo" || imageMode === "vector";
-  const [state, setState] = useState<{ url: string | null; loading: boolean }>({ url: null, loading: fetchable });
-
-  useEffect(() => {
-    if (!fetchable) { setState({ url: null, loading: false }); return; }
-    let ignore = false;
-    setState({ url: null, loading: true });
-    resolveWordImage(imageQuery, imageMode).then((r) => {
-      if (ignore) return;
-      const url = (r.imageUrl && r.source !== "none" && r.source !== "skip") ? r.imageUrl : null;
-      setState({ url, loading: false });
-    });
-    return () => { ignore = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imageQuery, imageMode]);
-
-  const imageUrl = state.url;
-  const loading = state.loading;
-
-  const Wrapper = onClick ? "button" : "div";
-  const wrapperProps = onClick ? { type: "button" as const, onClick } : {};
-
-  /* ── Colors — solid swatch background (source of truth: COLOR_MAP hex); contrast from luminance ── */
-  if (imageMode === "color") {
-    const raw = COLOR_MAP[word] ?? categoryColor;
-    const hex = raw.startsWith("#") ? raw : `#${raw}`;
-    const L = relativeLuminanceFromHex(hex);
-    const onLightBg = L > 0.58;
-    const sz = colorHeroSize(word);
-    const heroColor = onLightBg ? "#1a1a2e" : "#ffffff";
-    const heroShadow = onLightBg
-      ? "0 1px 2px rgba(0,0,0,.06)"
-      : "0 2px 16px rgba(0,0,0,.22)";
-    const subColor = onLightBg ? "rgba(26,26,46,0.5)" : "rgba(255,255,255,0.72)";
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{
-          backgroundColor: hex,
-          boxShadow: `0 10px 36px ${hex}55`,
-        }}
-      >
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-3 sm:px-4">
-          <p className={`max-w-full text-balance text-center font-black leading-[0.88] ${sz}`}
-            style={{ color: heroColor, textShadow: heroShadow }}
-          >
-            {word}
-          </p>
-        </div>
-        <p className={CAPTION} style={{ color: subColor }}>
-          {hex.toUpperCase()}
-        </p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Digit display — full immersive ── */
-  if (imageMode === "digit") {
-    const n = parseInt(word, 10);
-    const bg = numColor(isNaN(n) ? 0 : n);
-    const sz = digitHeroSize(word.length);
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{ background: `linear-gradient(160deg, ${bg[0]}18, ${bg[1]}10)`, boxShadow: `0 8px 32px ${bg[0]}12` }}
-      >
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-3 sm:px-4">
-          <p className={`max-w-full text-balance text-center font-black leading-[0.88] ${sz}`}
-            style={{ color: bg[0], textShadow: `0 4px 24px ${bg[0]}20` }}
-          >
-            {word}
-          </p>
-        </div>
-        <p className={CAPTION} style={{ color: `${bg[0]}99` }}>
-          {numberToWord(n)}
-        </p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Actions — warm paper field matches illustration mats; art uses full card; light category halo only ── */
-  if (imageMode === "action") {
-    const slug = word.toLowerCase().replace(/\s+/g, "-");
-    const src = `/images/actions/${slug}.png`;
-    const paper = "linear-gradient(168deg, #faf8f5 0%, #f4efe6 42%, #ede6dc 100%)";
-    const halo = `radial-gradient(ellipse 95% 70% at 90% 8%, ${categoryColor}12 0%, transparent 50%), radial-gradient(ellipse 85% 65% at 8% 92%, ${categoryColor}10 0%, transparent 48%)`;
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{
-          background: `${halo}, ${paper}`,
-          boxShadow: "0 10px 36px rgba(28,24,20,.08), inset 0 1px 0 rgba(255,255,255,.72)",
-        }}
-      >
-        <div className="relative min-h-0 flex-1 w-full">
-          <Image
-            src={src}
-            alt={word}
-            fill
-            className="object-contain object-center p-3 sm:p-5"
-            sizes="(max-width: 768px) 100vw, 720px"
-            priority
-          />
-        </div>
-        <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>
-          {word}
-        </p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Shape display — full immersive ── */
-  if (imageMode === "shape") {
-    const sh = SHAPES[word];
-    if (sh) {
-      const svgSize = 200;
-      return (
-        <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-          style={{ background: `linear-gradient(160deg, ${sh.bg[0]}18, ${sh.bg[1]}10)`, boxShadow: `0 8px 32px ${sh.bg[0]}12` }}
-        >
-          <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-2">
-            <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="aspect-square w-[min(88vw,58vmin,400px)] max-w-full shrink-0" fill={sh.bg[0]} style={{ filter: `drop-shadow(0 8px 24px ${sh.bg[0]}30)` }}>
-              {sh.svg(svgSize)}
-            </svg>
-          </div>
-          <p className={CAPTION} style={{ color: `${sh.bg[0]}cc` }}>
-            {word}
-          </p>
-        </Wrapper>
-      );
-    }
-    return <FallbackCard word={word} categoryColor={categoryColor} categoryId={categoryId} onClick={onClick} className={className} />;
-  }
-
-  /* ── Static local SVG — full immersive ── */
-  if (imageMode === "static") {
-    const key = assetKey ?? word.toLowerCase();
-    const localArt = getLocalIllustration(categoryId, key);
-    const src = `/images/${categoryId}/${key}.svg`;
-    const cardBackground = localArt?.background ?? `linear-gradient(180deg, ${categoryColor}1a 0%, #ffffff 100%)`;
-    const cardShadow = localArt?.shadow ?? `0 18px 40px ${categoryColor}18`;
-    const frameBackground = localArt?.frame ?? "rgba(255,255,255,0.78)";
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{ background: cardBackground, boxShadow: cardShadow }}
-      >
-        <div className="pointer-events-none absolute inset-x-6 top-5 h-20 rounded-full blur-3xl" style={{ background: `${categoryColor}16` }} />
-        <div className="pointer-events-none absolute -right-12 top-10 h-36 w-36 rounded-full blur-2xl" style={{ background: `${categoryColor}14` }} />
-        <div className="pointer-events-none absolute -left-10 bottom-12 h-28 w-28 rounded-full blur-2xl" style={{ background: `${categoryColor}12` }} />
-        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-3 py-4">
-          <div
-            className="relative h-[min(78%,60vmin)] w-[min(92%,60vmin)] max-h-[430px] max-w-[430px] overflow-hidden rounded-[2rem] border border-white/60 p-4"
-            style={{ background: frameBackground, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 32px rgba(15,23,42,0.08)" }}
-          >
-            {localArt ? (
-              <div className="h-full w-full">{localArt.art}</div>
-            ) : (
-              <Image src={src} alt={word} fill className="object-contain p-4" sizes="(max-width: 768px) 75vw, 500px" priority />
-            )}
-          </div>
-        </div>
-        <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>
-          {word}
-        </p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Concept card — same shell as Numbers (wash + hero + caption) ── */
-  if (imageMode === "card") {
-    const sz = colorHeroSize(word);
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{
-          background: `linear-gradient(160deg, ${categoryColor}18, ${categoryColor}0d)`,
-          boxShadow: `0 8px 32px ${categoryColor}12`,
-        }}
-      >
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-3 sm:px-4">
-          <p className={`max-w-full text-balance text-center font-black leading-[0.88] ${sz}`}
-            style={{ color: categoryColor, textShadow: `0 4px 24px ${categoryColor}25` }}
-          >
-            {word}
-          </p>
-        </div>
-        <p className={CAPTION} style={{ color: `${categoryColor}99` }}>Tap to hear</p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Photo / Vector modes ── */
-  const isVector = imageMode === "vector";
-
-  if (loading) {
-    return (
-      <div className={`flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl ${className}`}
-        style={{
-          background: `linear-gradient(160deg, ${categoryColor}12, ${categoryColor}08)`,
-          boxShadow: `0 8px 32px ${categoryColor}10`,
-        }}
-      >
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-3">
-          <div className="spinner" />
-          <p className="text-[13px] font-semibold text-[var(--ink-tertiary)]">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!imageUrl) {
-    return <FallbackCard word={word} categoryColor={categoryColor} categoryId={categoryId} onClick={onClick} className={className} />;
-  }
-
-  if (isVector) {
-    return (
-      <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-        style={{ background: `linear-gradient(160deg, ${categoryColor}12, ${categoryColor}08)`, boxShadow: `0 8px 32px ${categoryColor}10` }}
-      >
-        <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-2">
-          <div className="relative h-[min(78%,58vmin)] w-[min(92%,58vmin)] max-h-[420px] max-w-[420px]">
-            <Image src={imageUrl} alt={word} fill className="object-contain fade-in" sizes="(max-width: 768px) 80vw, 600px" priority />
-          </div>
-        </div>
-        <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>
-          {word}
-        </p>
-      </Wrapper>
-    );
-  }
-
-  /* ── Photo — same column layout as Numbers (wash + image + caption) ── */
-  return (
-    <Wrapper {...wrapperProps} className={`relative flex h-full min-h-0 w-full flex-col items-center overflow-hidden rounded-3xl transition-all active:scale-[.97] ${className}`}
-      style={{
-        background: `linear-gradient(160deg, ${categoryColor}12, ${categoryColor}08)`,
-        boxShadow: `0 8px 32px ${categoryColor}10`,
-      }}
-    >
-      <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-2 sm:px-3">
-        <div className="relative h-[min(78%,58vmin)] w-[min(92%,58vmin)] max-h-[420px] max-w-[420px]">
-          <Image src={imageUrl} alt={word} fill className="object-contain fade-in" sizes="(max-width: 768px) 100vw, 700px" priority />
-        </div>
-      </div>
-      <p className={CAPTION} style={{ color: `${categoryColor}cc` }}>{word}</p>
-    </Wrapper>
-  );
-}
