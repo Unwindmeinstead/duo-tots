@@ -1,5 +1,5 @@
 export type CategoryId =
-  | "actions" | "emotions" | "shapes" | "numbers" | "everyday" | "nature"
+  | "actions" | "emotions" | "shapes" | "alphabets" | "numbers" | "everyday" | "nature"
   | "animals" | "food" | "toys" | "colors" | "body" | "family" | "kid_general"
   | "us_presidents" | "modern_terms" | "world_basics" | "leadership"
   | "money" | "finance" | "space" | "universe" | "physics"
@@ -7,7 +7,7 @@ export type CategoryId =
 
 export type Stage = "foundation" | "world" | "advanced";
 
-export type ImageMode = "photo" | "vector" | "color" | "digit" | "shape" | "static" | "card" | "action";
+export type ImageMode = "photo" | "vector" | "color" | "digit" | "alphabet" | "shape" | "static" | "card";
 
 export type VocabItem = { id: string; word: string; imageQuery: string; assetKey?: string };
 
@@ -37,29 +37,6 @@ export const categories: VocabCategory[] = [
     items: Array.from({ length: 101 }, (_, i) => ({ id: `num-${i}`, word: String(i), imageQuery: String(i) })),
   },
   {
-    id: "actions", name: "Actions", color: "#ff9500", stage: "foundation", imageMode: "action",
-    description: "Verbs are how toddlers request and describe the world.",
-    items: m("act", [
-      { word: "Run" }, { word: "Jump" }, { word: "Eat" }, { word: "Sleep" },
-      { word: "Walk" }, { word: "Play" }, { word: "Dance" }, { word: "Sing" },
-      { word: "Clap" }, { word: "Wave" }, { word: "Cry" }, { word: "Laugh" },
-      { word: "Sit" }, { word: "Stand" }, { word: "Push" }, { word: "Pull" },
-      { word: "Throw" }, { word: "Catch" }, { word: "Hug" }, { word: "Kiss" },
-    ]),
-  },
-  {
-    id: "emotions", name: "Emotions", color: "#ff3b30", stage: "foundation", imageMode: "vector",
-    description: "Naming feelings builds emotional intelligence early.",
-    items: m("emo", [
-      { word: "Happy" }, { word: "Sad" }, { word: "Angry" }, { word: "Scared" },
-      { word: "Excited" }, { word: "Tired" }, { word: "Hungry" },
-      { word: "Surprised", q: "Surprise (emotion)" }, { word: "Proud" },
-      { word: "Shy" }, { word: "Brave" }, { word: "Calm" }, { word: "Silly" },
-      { word: "Curious" }, { word: "Gentle" }, { word: "Loud" },
-      { word: "Quiet" }, { word: "Strong" }, { word: "Kind" }, { word: "Love" },
-    ]),
-  },
-  {
     id: "shapes", name: "Shapes", color: "#af52de", stage: "foundation", imageMode: "shape",
     description: "Spatial reasoning starts with recognizing shapes.",
     items: m("shp", [
@@ -71,6 +48,36 @@ export const categories: VocabCategory[] = [
       { word: "Sphere" }, { word: "Cube" }, { word: "Cylinder" },
       { word: "Cone" }, { word: "Spiral" }, { word: "Cross", q: "Cross symbol" },
       { word: "Pentagon" }, { word: "Octagon" }, { word: "Pyramid", q: "Pyramid (geometry)" },
+    ]),
+  },
+  {
+    id: "alphabets", name: "Alphabets", color: "#5856d6", stage: "foundation", imageMode: "alphabet",
+    description: "Uppercase letters A–Z, same flow as Numbers: big type, swipe, and quiz on the card.",
+    items: Array.from({ length: 26 }, (_, i) => {
+      const L = String.fromCharCode(65 + i);
+      return { id: `abc-${L.toLowerCase()}`, word: L, imageQuery: `Letter ${L}` };
+    }),
+  },
+  {
+    id: "actions", name: "Actions", color: "#ff9500", stage: "foundation", imageMode: "static",
+    description: "Verbs: custom PNGs in public/images/actions — target 1170×2080 (9:16 portrait), borderless, full bleed.",
+    items: m("act", [
+      { word: "Run" }, { word: "Jump" }, { word: "Eat" }, { word: "Sleep" }, { word: "Walk" },
+      { word: "Play" }, { word: "Dance" }, { word: "Sing" }, { word: "Clap" }, { word: "Wave" },
+      { word: "Cry" }, { word: "Laugh" }, { word: "Sit" }, { word: "Stand" }, { word: "Push" },
+      { word: "Pull" }, { word: "Throw" }, { word: "Catch" }, { word: "Hug" }, { word: "Kiss" },
+    ]),
+  },
+  {
+    id: "emotions", name: "Emotions", color: "#ff3b30", stage: "foundation", imageMode: "static",
+    description: "Custom high-res emotion art in public/images/emotions (PNG, 1376×768).",
+    items: m("emo", [
+      { word: "Happy" }, { word: "Sad" }, { word: "Angry" }, { word: "Scared" },
+      { word: "Excited" }, { word: "Tired" }, { word: "Hungry" },
+      { word: "Surprised", q: "Surprise (emotion)" }, { word: "Proud" },
+      { word: "Shy" }, { word: "Brave" }, { word: "Calm" }, { word: "Silly" },
+      { word: "Curious" }, { word: "Gentle" }, { word: "Loud" },
+      { word: "Quiet" }, { word: "Strong" }, { word: "Kind" }, { word: "Love" },
     ]),
   },
   {
@@ -424,3 +431,8 @@ export const categoriesById = categories.reduce<Record<CategoryId, VocabCategory
   (acc, c) => { acc[c.id] = c; return acc; },
   {} as Record<CategoryId, VocabCategory>,
 );
+
+/** All topics use the same lesson shell as Numbers (swipe, in-card Prev/Quiz, no bottom Next bar). */
+export function categoryUsesImmersiveLesson(_category: VocabCategory): boolean {
+  return true;
+}

@@ -265,6 +265,16 @@ export function IconCatNumbers(p: P) {
   );
 }
 
+export function IconCatAlphabets(p: P) {
+  return (
+    <svg {...cat(p)}>
+      <rect x="4" y="5" width="7" height="14" rx="1.5" />
+      <rect x="13" y="5" width="7" height="14" rx="1.5" />
+      <path d="M6.5 9v5M15 9v5" />
+    </svg>
+  );
+}
+
 export function IconCatEveryday(p: P) {
   return (
     <svg {...cat(p)}>
@@ -309,6 +319,7 @@ export const CATEGORY_ICONS: Record<string, (p: P) => ReactElement> = {
   actions: IconCatActions,
   emotions: IconCatEmotions,
   shapes: IconCatShapes,
+  alphabets: IconCatAlphabets,
   numbers: IconCatNumbers,
   everyday: IconCatEveryday,
   nature: IconCatNature,

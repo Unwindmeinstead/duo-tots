@@ -8,7 +8,7 @@ import { OptionBtn, BtnPrimary, LinkBtn } from "@/components/ui";
 import { IconCheck, IconStar, IconX, IconArrowRight, CATEGORY_ICONS } from "@/components/icons";
 import { WordVisual } from "@/components/word-visual";
 import { loadProgress, recordPracticeAttempt, saveProgress, type ProgressState } from "@/lib/progress";
-import type { VocabCategory, VocabItem } from "@/lib/vocab";
+import { categoryUsesImmersiveLesson, type VocabCategory, type VocabItem } from "@/lib/vocab";
 
 const pickOptions = (items: VocabItem[], answer: VocabItem) => {
   const pool = items.filter((i) => i.id !== answer.id);
@@ -35,13 +35,18 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
 
   const immersive = true;
   const isNumbers = category.id === "numbers";
+  const isShapes = category.id === "shapes";
+  const isAlphabets = category.id === "alphabets";
+  const isActions = category.id === "actions";
+  const isImmersiveTopic = categoryUsesImmersiveLesson(category);
 
   useEffect(() => {
     if (category.imageMode !== "photo" && category.imageMode !== "vector") return;
     const nextIdx = (round + 1) % total;
     const ahead = [category.items[nextIdx], category.items[(nextIdx + 1) % total]];
-    prefetchWordImages(ahead.map((i) => i.imageQuery), category.imageMode);
-  }, [round, total, category.items, category.imageMode]);
+    const mode = category.imageMode === "vector" ? "vector" : "photo";
+    prefetchWordImages(ahead.map((i) => i.imageQuery), mode);
+  }, [round, total, category.items, category.imageMode, category.id]);
 
   const choose = (word: string) => {
     if (feedback) return;
@@ -159,14 +164,14 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
-      <div className={`px-4 ${isNumbers ? "pb-1" : "pb-2"}`}>
-        <div className={`surface-soft flex items-start justify-between gap-2.5 px-3.5 ${isNumbers ? "py-2" : "py-3"}`}>
+      <div className={`px-4 ${isImmersiveTopic ? "pb-1" : "pb-2"}`}>
+        <div className={`surface-soft flex items-start justify-between gap-2.5 px-3.5 ${isImmersiveTopic ? "py-2" : "py-3"}`}>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: category.color }}>
-              {isNumbers ? "Number check" : "Quick check"}
+              {isNumbers ? "Number check" : isShapes ? "Shape check" : isAlphabets ? "Letter check" : isActions ? "Action check" : "Quick check"}
             </p>
             <p className="mt-1 text-[1rem] font-black tracking-[-0.03em] text-[var(--ink)] sm:text-[1.1rem]">
-              {isNumbers ? "Which number is on the card?" : "Match the picture to the word."}
+              {isNumbers ? "Which number is on the card?" : isShapes ? "Which shape is on the card?" : isAlphabets ? "Which letter is on the card?" : isActions ? "Which action is in the picture?" : "Match the picture to the word."}
             </p>
             <p className="mt-1 text-[12px] font-medium text-[var(--ink-tertiary)]">
               {feedback ? `Answer locked in. ${round + 1 >= total ? "Results next." : "Review and continue."}` : `Running accuracy ${accuracy}%`}
@@ -186,11 +191,11 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
 
       {/* Question */}
       <p className={`px-4 text-center font-semibold uppercase tracking-[0.1em] ${immersive ? "py-0.5 text-[10px]" : "text-[11px]"}`} style={{ color: category.color }}>
-        {isNumbers ? "Pick the matching number" : "What is this?"}
+        {isNumbers ? "Pick the matching number" : isShapes ? "Pick the matching shape" : isAlphabets ? "Pick the matching letter" : isActions ? "Pick the matching action" : "What is this?"}
       </p>
 
       {/* Visual card with feedback overlay */}
-      <div className={`relative flex-1 overflow-hidden rounded-3xl transition-all ${isNumbers ? "min-h-[44vh]" : "min-h-[32vh]"} ${immersive ? "mx-2 mt-1" : "mx-4 mt-2"} ${
+      <div className={`relative flex-1 overflow-hidden rounded-3xl transition-all ${isImmersiveTopic ? "min-h-[44vh]" : "min-h-[32vh]"} ${immersive ? "mx-2 mt-1" : "mx-4 mt-2"} ${
         feedback === "correct" ? "ring-4 ring-[#1b4332]" : feedback === "wrong" ? "ring-4 ring-[#e76f51]" : ""
       }`}>
         <WordVisual

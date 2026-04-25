@@ -4,6 +4,8 @@ import withPWA, { runtimeCaching } from "@ducanh2912/next-pwa";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "en.wikipedia.org" },
@@ -12,6 +14,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "static.vecteezy.com" },
       { protocol: "https", hostname: "images.vecteezy.com" },
       { protocol: "https", hostname: "www.vecteezy.com" },
+      { protocol: "https", hostname: "api.openverse.org" },
+      { protocol: "https", hostname: "images.rawpixel.com" },
+      { protocol: "https", hostname: "svgsilh.com" },
+      { protocol: "https", hostname: "live.staticflickr.com" },
+      { protocol: "https", hostname: "*.staticflickr.com" },
     ],
   },
 };
@@ -23,7 +30,7 @@ export default withPWA({
     runtimeCaching: [
       ...runtimeCaching,
       {
-        urlPattern: /^https:\/\/(upload\.wikimedia\.org|pixabay\.com|cdn\.pixabay\.com|static\.vecteezy\.com|images\.vecteezy\.com|www\.vecteezy\.com)\/.*/i,
+        urlPattern: /^https:\/\/(upload\.wikimedia\.org|pixabay\.com|cdn\.pixabay\.com|static\.vecteezy\.com|images\.vecteezy\.com|www\.vecteezy\.com|api\.openverse\.org|images\.rawpixel\.com|svgsilh\.com|[^/]+\.staticflickr\.com)\/.*/i,
         handler: "CacheFirst",
         options: {
           cacheName: "duotots-images",

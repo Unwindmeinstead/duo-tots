@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AppShell, Section, LinkBtn, PageIntro, StageBadge, TopicRowCard, TopBar, SpotlightCard, MiniStat } from "@/components/ui";
+import { AppShell, Section, LinkBtn, PageIntro, StageBadge, TopicRowCard, TopBar, MiniStat } from "@/components/ui";
 import { IconArrowRight, CATEGORY_ICONS } from "@/components/icons";
 import { categories, STAGES } from "@/lib/vocab";
 import { loadProgress, getNextLesson, getCategoryMastery } from "@/lib/progress";
@@ -25,55 +25,61 @@ export default function Home() {
   const foundationCount = categories.filter((cat) => cat.stage === "foundation").length;
   const RecIcon = CATEGORY_ICONS[rec.category.id];
   const dailyPct = progress.dailyGoal > 0 ? Math.min(100, Math.round((progress.dailyDone / progress.dailyGoal) * 100)) : 0;
+  const goalMet = progress.dailyDone >= progress.dailyGoal;
+  const recMastery = getCategoryMastery(progress, rec.category.id);
+  const lessonLine = goalMet
+    ? "Daily goal met — tap for a quick session or browse topics."
+    : `${rec.category.items.length} words · ${recMastery > 0 ? `${recMastery}% progress` : "New"} · ${progress.dailyGoal - progress.dailyDone} answers to goal`;
 
   return (
     <AppShell>
       <TopBar streak={progress.streak} xp={progress.stars} level={progress.level} dailyDone={progress.dailyDone} dailyGoal={progress.dailyGoal} wordsLearned={progress.practicedWords} totalWords={totalWords} />
       <PageIntro eyebrow="Daily learning" title="Keep the momentum" subtitle={`${categories.length} topics · ${totalWords} words · ${dailyPct >= 100 ? "goal complete" : `${progress.dailyGoal - progress.dailyDone} to go today`}`} />
 
-      <Section className="pt-2">
-        <SpotlightCard
-          eyebrow={progress.dailyDone >= progress.dailyGoal ? "Daily goal complete" : "Today's focus"}
-          title={progress.dailyDone >= progress.dailyGoal ? "You’ve already hit today’s target." : `Build a quick win with ${rec.category.name}.`}
-          description={progress.dailyDone >= progress.dailyGoal
-            ? "Keep browsing, reinforce a weak topic, or jump into a short quiz while the streak is alive."
-            : `You’ve opened ${openedTopics} topics so far. One short session keeps the streak healthy and moves your next lesson forward.`}
-          accent="#1b4332"
-        >
-          <div className="mt-4 grid grid-cols-3 gap-2.5">
-            <MiniStat label="Opened" value={`${openedTopics}/${categories.length}`} tone="dark" />
-            <MiniStat label="Goal" value={`${progress.dailyDone}/${progress.dailyGoal}`} tone="dark" />
-            <MiniStat label="Best" value={strongestCategory ? `${strongestCategory.cat.name} ${strongestCategory.mastery}%` : "Start"} tone="dark" />
-          </div>
-        </SpotlightCard>
-      </Section>
+      {/* One compact card: next lesson + optional stats (details) */}
+      <div className="px-5 pt-2 pb-1">
+        <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[var(--surface)] shadow-[var(--shadow-xs)]">
+          <Link
+            href={`/lesson/${rec.category.id}`}
+            className="group flex items-center gap-3 p-3.5 transition-colors hover:bg-[var(--surface-secondary)] active:bg-[var(--surface-secondary)]"
+          >
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+              style={{ background: `${rec.category.color}18`, color: rec.category.color }}
+            >
+              {RecIcon ? <RecIcon size={22} /> : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">{goalMet ? "Daily goal" : "Next up"} · {rec.reason}</p>
+              <h2 className="mt-0.5 truncate text-[1.05rem] font-extrabold leading-tight tracking-tight text-[var(--ink)]">{rec.category.name}</h2>
+              <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-[var(--ink-secondary)]">{lessonLine}</p>
+            </div>
+            <span className="flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--border)] bg-[var(--bg)] px-3 py-2 text-[12px] font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition-transform group-hover:translate-x-0.5 group-active:scale-95">
+              Start <IconArrowRight size={15} className="text-[var(--ink-secondary)]" />
+            </span>
+          </Link>
 
-      {/* ── Guided lesson hero ── */}
-      <div className="px-4 pt-4 pb-1">
-        <Link href={`/lesson/${rec.category.id}`}
-          className="group relative flex overflow-hidden rounded-[var(--radius-2xl)] border border-white/10 p-5 text-white transition-all hover:scale-[1.01] active:scale-[.98]"
-          style={{ background: "linear-gradient(145deg, #1b4332 0%, #143328 100%)", boxShadow: "0 12px 40px rgba(27,67,50,.28)" }}
-        >
-          <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-white/5" />
-          <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-white/5" />
-          <div className="relative flex-1">
-            <p className="inline-block rounded-full bg-[var(--coral)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em]">{rec.reason}</p>
-            <h2 className="mt-2 text-[1.25rem] font-extrabold leading-tight tracking-tight">{rec.category.name}</h2>
-            <p className="mt-1.5 text-[13px] font-medium leading-relaxed text-white/72">{rec.category.description}</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold text-white/70">
-              <span className="rounded-full bg-white/10 px-2.5 py-1">{rec.category.items.length} words</span>
-              <span className="rounded-full bg-white/10 px-2.5 py-1">
-                {getCategoryMastery(progress, rec.category.id) > 0 ? `${getCategoryMastery(progress, rec.category.id)}% mastery` : "Fresh topic"}
-              </span>
+          <details className="group border-t border-[color:var(--border)] bg-[var(--bg)]">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3.5 py-2.5 text-[11px] font-semibold text-[var(--ink-secondary)] transition-colors hover:text-[var(--ink)] [&::-webkit-details-marker]:hidden">
+              <span>Today and library</span>
+              <IconArrowRight size={14} className="shrink-0 text-[var(--ink-tertiary)] transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="border-t border-[color:var(--border)] px-3 pb-3 pt-2">
+              <p className="mb-2.5 text-[12px] leading-relaxed text-[var(--ink-secondary)]">
+                {goalMet
+                  ? "Nice work on today’s goal. Peek at stats or run another topic while your streak is hot."
+                  : `You’ve opened ${openedTopics} of ${categories.length} topics. One short lesson keeps momentum and chips away at the daily goal.`}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <MiniStat label="Opened" value={`${openedTopics}/${categories.length}`} tone="light" />
+                <MiniStat label="Today" value={`${progress.dailyDone}/${progress.dailyGoal}`} tone="light" />
+                <div title={strongestCategory ? strongestCategory.cat.name : undefined}>
+                  <MiniStat label="Top topic" value={strongestCategory ? `${strongestCategory.mastery}%` : "—"} tone="light" />
+                </div>
+              </div>
             </div>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-white/14 px-4 py-2.5 text-[13px] font-semibold backdrop-blur-md transition-all group-hover:bg-white/22">
-              Continue <IconArrowRight size={16} />
-            </div>
-          </div>
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 opacity-[.06]">
-            {RecIcon && <RecIcon size={120} />}
-          </span>
-        </Link>
+          </details>
+        </div>
       </div>
 
       {/* ── Categories by stage ── */}

@@ -37,50 +37,40 @@ export function TabBar() {
   );
 }
 
-/* ─── Floating Metric Pills ─── */
-
-function MetricRing({ pct, color, size = 38, children }: { pct: number; color: string; size?: number; children: React.ReactNode }) {
-  const r = (size - 6) / 2;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="absolute" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`${color}22`} strokeWidth="3" />
-        {pct > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth="3.5" strokeDasharray={`${(pct / 100) * c} ${c}`} strokeLinecap="round" className="transition-all duration-700" />}
-      </svg>
-      <span className="relative">{children}</span>
-    </div>
-  );
-}
+/* ─── Top stats strip (home / shell) — one calm row, tap opens Progress ─── */
 
 export function TopBar({ streak, xp, level, dailyDone, dailyGoal, wordsLearned, totalWords }: {
   streak?: number; xp?: number; level?: number; dailyDone?: number; dailyGoal?: number; wordsLearned?: number; totalWords?: number;
 }) {
-  const dailyPct = dailyGoal && dailyGoal > 0 ? Math.min(100, Math.round(((dailyDone ?? 0) / dailyGoal) * 100)) : 0;
-  const levelPct = level ? Math.round(((xp ?? 0) % 50) / 50 * 100) : 0;
-  const wordsPct = totalWords && totalWords > 0 ? Math.min(100, Math.round(((wordsLearned ?? 0) / totalWords) * 100)) : 0;
-
   const pills = [
-    { pct: Math.min(100, (streak ?? 0) * 15), color: "#e76f51", icon: <IconFire size={16} />, value: `${streak ?? 0}`, sub: "streak" },
-    { pct: dailyPct, color: "#00b894", icon: <IconCheck size={14} />, value: `${dailyDone ?? 0}/${dailyGoal ?? 5}`, sub: "today" },
-    { pct: levelPct, color: "#6c5ce7", icon: <IconStar size={15} />, value: `Lv ${level ?? 1}`, sub: `${xp ?? 0} xp` },
-    { pct: wordsPct, color: "#daa520", icon: <IconTrophy size={14} />, value: `${wordsLearned ?? 0}`, sub: "words" },
+    { color: "#e76f51", icon: <IconFire size={15} />, value: `${streak ?? 0}`, sub: "Streak", aria: `Streak ${streak ?? 0} days` },
+    { color: "#00b894", icon: <IconCheck size={14} />, value: `${dailyDone ?? 0}/${dailyGoal ?? 5}`, sub: "Today", aria: `Today ${dailyDone ?? 0} of ${dailyGoal ?? 5} goal` },
+    { color: "#6c5ce7", icon: <IconStar size={14} />, value: `Lv ${level ?? 1}`, sub: `${xp ?? 0} XP`, aria: `Level ${level ?? 1}, ${xp ?? 0} experience` },
+    { color: "#aa8a2e", icon: <IconTrophy size={14} />, value: `${wordsLearned ?? 0}`, sub: "Words", aria: `${wordsLearned ?? 0} words practiced` },
   ];
 
   return (
-    <div className="px-4 pt-3 pb-1">
-      <div className="mx-auto grid max-w-2xl grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="px-4 pb-1 pt-2.5">
+      <div
+        className="mx-auto flex max-w-2xl divide-x divide-[color:var(--border)] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[var(--surface)] shadow-[var(--shadow-xs)]"
+        role="group"
+        aria-label="Quick stats"
+      >
         {pills.map((p, i) => (
-          <Link key={i} href="/progress"
-            className="surface-soft flex items-center gap-2 px-3 py-2.5 transition-all hover:scale-[1.02] active:scale-[.98]"
+          <Link
+            key={i}
+            href="/progress"
+            aria-label={p.aria}
+            className="flex min-w-0 flex-1 flex-col items-center gap-1 px-1.5 py-2.5 text-center transition-colors hover:bg-[var(--surface-secondary)] active:bg-[var(--surface-warm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] sm:px-2 sm:py-3"
           >
-            <MetricRing pct={p.pct} color={p.color}>
-              <span style={{ color: p.color }}>{p.icon}</span>
-            </MetricRing>
-            <div className="pr-0.5">
-              <p className="text-[13px] font-semibold leading-none tracking-tight text-[var(--ink)]">{p.value}</p>
-              <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">{p.sub}</p>
-            </div>
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+              style={{ background: `${p.color}18`, color: p.color }}
+            >
+              {p.icon}
+            </span>
+            <p className="w-full truncate text-[13px] font-bold tabular-nums leading-none tracking-tight text-[var(--ink)] sm:text-[14px]">{p.value}</p>
+            <p className="w-full truncate text-[8px] font-semibold uppercase leading-none tracking-[0.12em] text-[var(--ink-tertiary)] sm:text-[9px]">{p.sub}</p>
           </Link>
         ))}
       </div>

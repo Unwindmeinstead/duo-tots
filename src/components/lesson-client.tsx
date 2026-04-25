@@ -7,7 +7,7 @@ import { prefetchWordImages } from "@/lib/media";
 import { IconVolume, IconBack, IconArrowRight, IconX, CATEGORY_ICONS } from "@/components/icons";
 import { WordVisual } from "@/components/word-visual";
 import { loadProgress, recordCategoryView, saveProgress } from "@/lib/progress";
-import type { VocabCategory } from "@/lib/vocab";
+import { categoryUsesImmersiveLesson, type VocabCategory } from "@/lib/vocab";
 
 export function LessonClient({ category }: { category: VocabCategory }) {
   const [index, setIndex] = useState(0);
@@ -24,13 +24,16 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const CatIcon = CATEGORY_ICONS[category.id];
   const pct = Math.round(((index + 1) / total) * 100);
   const remaining = total - index - 1;
-  const isNumbers = category.id === "numbers";
+  const isImmersiveLesson = categoryUsesImmersiveLesson(category);
 
   useEffect(() => {
     if (category.imageMode !== "photo" && category.imageMode !== "vector") return;
     const ahead = category.items.slice(index + 1, index + 4);
-    if (ahead.length > 0) prefetchWordImages(ahead.map((i) => i.imageQuery), category.imageMode);
-  }, [index, category.items, category.imageMode]);
+    if (ahead.length > 0) {
+      const mode = category.imageMode === "vector" ? "vector" : "photo";
+      prefetchWordImages(ahead.map((i) => i.imageQuery), mode);
+    }
+  }, [index, category.items, category.imageMode, category.id]);
 
   const speak = async () => {
     setAudioState("playing");
@@ -59,7 +62,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
           </div>
           <div className="surface-soft flex items-center gap-1.5 px-3 py-1.5">
             <span className="text-[12px] font-semibold tabular-nums" style={{ color: category.color }}>{pct}%</span>
-            {!isNumbers ? (
+            {!isImmersiveLesson ? (
               <span className="text-[10px] font-medium tabular-nums text-[var(--ink-tertiary)]">{index + 1}/{total}</span>
             ) : null}
           </div>
@@ -73,7 +76,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
-      {!isNumbers ? (
+      {!isImmersiveLesson ? (
         <div className="px-4 pb-2">
           <div className="surface-soft flex items-start justify-between gap-2.5 px-3.5 py-2.5">
             <div className="min-w-0">
@@ -110,8 +113,8 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
       )}
 
-      {/* Visual area — extra height for Numbers baseline stage */}
-      <div className={`flex-1 ${isNumbers ? "min-h-[56vh]" : "min-h-[42vh]"} ${immersive ? "mx-2 mb-1 pt-1" : "mx-4"}`}>
+      {/* Visual area — extra height for immersive foundation lessons */}
+      <div className={`flex-1 ${isImmersiveLesson ? "min-h-[56vh]" : "min-h-[42vh]"} ${immersive ? "mx-2 mb-1 pt-1" : "mx-4"}`}>
         <WordVisual
           key={current.id}
           word={current.word}
@@ -122,7 +125,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
           categoryId={category.id}
           onClick={speak}
           immersive={immersive}
-          digitLessonChrome={isNumbers
+          immersiveLessonChrome={isImmersiveLesson
             ? {
                 current: index + 1,
                 total,
@@ -134,8 +137,8 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         />
       </div>
 
-      {/* Bottom controls — Numbers uses swipe + in-card Quiz; other topics keep bar */}
-      {!isNumbers ? (
+      {/* Bottom controls — immersive topics use swipe + in-card Quiz; other topics keep bar */}
+      {!isImmersiveLesson ? (
         <div className={`flex flex-shrink-0 items-center gap-3 px-4 ${immersive ? "pt-2" : "pt-3"}`} style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 8px), 12px)" }}>
           <button type="button" onClick={() => go(-1)}
             className={`surface-soft flex ${immersive ? "h-12 w-12" : "h-14 w-14"} flex-shrink-0 items-center justify-center text-[var(--ink-secondary)] transition-all hover:bg-[var(--surface-secondary)] active:scale-90`}

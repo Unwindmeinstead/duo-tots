@@ -24,7 +24,7 @@ export function ProgressClient() {
   const clearMediaCache = () => {
     if (typeof window === "undefined") return;
     Object.keys(window.localStorage)
-      .filter((k) => k.startsWith("duotots-img4:") || k.startsWith("duotots-audio:"))
+      .filter((k) => k.startsWith("duotots-img") || k.startsWith("duotots-audio:"))
       .forEach((k) => window.localStorage.removeItem(k));
   };
 
