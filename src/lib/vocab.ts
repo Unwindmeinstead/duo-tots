@@ -3,7 +3,7 @@ export type CategoryId =
   | "animals" | "food" | "toys" | "colors" | "body" | "family" | "kid_general"
   | "us_presidents" | "modern_terms" | "world_basics" | "leadership"
   | "money" | "finance" | "space" | "universe" | "physics"
-  | "top_people" | "inventions" | "landmarks";
+  | "top_people" | "inventions" | "landmarks" | "power_words";
 
 export type Stage = "foundation" | "world" | "advanced";
 
@@ -216,6 +216,62 @@ export const categories: VocabCategory[] = [
       { word: "Octopus" }, { word: "Seahorse" }, { word: "Parrot" }, { word: "Koala" }, { word: "Sloth" },
       { word: "Raccoon" }, { word: "Bat", q: "Bat mammal" }, { word: "Hedgehog" }, { word: "Seal", q: "Seal animal" }, { word: "Walrus" },
       { word: "Peacock" }, { word: "Flamingo" }, { word: "Kangaroo" }, { word: "Rhinoceros" }, { word: "Hippopotamus" },
+    ]),
+  },
+  {
+    id: "power_words", name: "Power Words", color: "#e63946", stage: "foundation", imageMode: "card",
+    description: "100 elite vocabulary words a brilliant child knows — across science, business, mindset, health, culture, and beyond.",
+    items: m("pw", [
+      /* Mindset & Character */
+      { word: "Ambition" }, { word: "Resilience" }, { word: "Discipline" },
+      { word: "Integrity" }, { word: "Vision" }, { word: "Wisdom" },
+      { word: "Empathy" }, { word: "Gratitude" }, { word: "Perseverance" },
+      { word: "Mindset" },
+      /* Science & Discovery */
+      { word: "Hypothesis" }, { word: "Genome" }, { word: "Quantum" },
+      { word: "Catalyst" }, { word: "Neuron" }, { word: "Molecule" },
+      { word: "Fossil" }, { word: "Spectrum" }, { word: "Nucleus" },
+      { word: "Carbon" },
+      /* Technology & Innovation */
+      { word: "Algorithm" }, { word: "Data" }, { word: "Blockchain" },
+      { word: "Prototype" }, { word: "Startup" }, { word: "Platform" },
+      { word: "Pixel" }, { word: "Cosmos" }, { word: "Syntax" },
+      { word: "Binary" },
+      /* Business & Wealth */
+      { word: "Revenue" }, { word: "Equity" }, { word: "Capital" },
+      { word: "Asset" }, { word: "Leverage" }, { word: "Margin" },
+      { word: "Portfolio" }, { word: "Venture" }, { word: "Monopoly" },
+      { word: "Valuation" },
+      /* Communication & Influence */
+      { word: "Rhetoric" }, { word: "Narrative" }, { word: "Persuade" },
+      { word: "Articulate" }, { word: "Eloquent" }, { word: "Debate" },
+      { word: "Negotiate" }, { word: "Advocate" }, { word: "Charisma" },
+      { word: "Influence" },
+      /* Health & Wellness */
+      { word: "Immune" }, { word: "Protein" }, { word: "Stamina" },
+      { word: "Vitamin" }, { word: "Oxygen" }, { word: "Hydrate" },
+      { word: "Posture" }, { word: "Reflex" }, { word: "Adrenaline" },
+      { word: "Metabolism" },
+      /* Culture & Arts */
+      { word: "Renaissance" }, { word: "Symphony" }, { word: "Canvas" },
+      { word: "Sculpture" }, { word: "Heritage" }, { word: "Masterpiece" },
+      { word: "Memoir" }, { word: "Legacy" }, { word: "Epic" },
+      { word: "Genre" },
+      /* Strategy & Logic */
+      { word: "Strategy" }, { word: "Tactic" }, { word: "Analyze" },
+      { word: "Optimize" }, { word: "Benchmark" }, { word: "Matrix" },
+      { word: "Variable" }, { word: "Pattern" }, { word: "Logic" },
+      { word: "Calibrate" },
+      /* Law & Society */
+      { word: "Justice" }, { word: "Liberty" }, { word: "Constitution" },
+      { word: "Democracy" }, { word: "Treaty" }, { word: "Verdict" },
+      { word: "Sovereign" }, { word: "Amendment" }, { word: "Republic" },
+      { word: "Citizen" },
+      /* Philosophy & Big Ideas */
+      { word: "Ethics" }, { word: "Paradox" }, { word: "Concept" },
+      { word: "Principle" }, { word: "Abstract" }, { word: "Infinite" },
+      { word: "Axiom" }, { word: "Virtue" }, { word: "Essence" },
+      { word: "Epiphany" },
     ]),
   },
 

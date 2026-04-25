@@ -313,6 +313,16 @@ export function IconCatLandmarks(p: P) {
   );
 }
 
+export function IconCatPowerWords(p: P) {
+  return (
+    <svg {...cat(p)}>
+      <path d="M12 3C7.5 3 4 6 4 10c0 3 2 5.5 5 6.5V19a1 1 0 001 1h4a1 1 0 001-1v-2.5c3-1 5-3.5 5-6.5 0-4-3.5-7-8-7z" />
+      <path d="M10 22h4" />
+      <path d="M12 7v4M10 9h4" />
+    </svg>
+  );
+}
+
 /* ─── Map category id → icon component ─── */
 
 export const CATEGORY_ICONS: Record<string, (p: P) => ReactElement> = {
@@ -342,4 +352,5 @@ export const CATEGORY_ICONS: Record<string, (p: P) => ReactElement> = {
   top_people: IconCatPeople,
   inventions: IconCatInventions,
   landmarks: IconCatLandmarks,
+  power_words: IconCatPowerWords,
 };

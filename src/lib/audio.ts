@@ -42,7 +42,11 @@ export async function speakWord(word: string): Promise<{ source: string }> {
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(word);
+  /* Single uppercase letters (e.g. "A") cause many TTS engines to say
+     "Capital A" — normalise to lowercase so it simply says the letter. */
+  const text = /^[A-Z]$/.test(word) ? word.toLowerCase() : word;
+
+  const utterance = new SpeechSynthesisUtterance(text);
   const voice = getVoice();
   if (voice) {
     utterance.voice = voice;
