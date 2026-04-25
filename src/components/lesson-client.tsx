@@ -49,7 +49,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const immersive = true;
 
   return (
-    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-[var(--bg)]">
+    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-[var(--bg)]" style={{ overscrollBehaviorX: "none", touchAction: "pan-y" }}>
       {/* Top bar — compact for immersive modes */}
       <div className={`grid flex-shrink-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 px-4 ${immersive ? "pt-2 pb-1" : "pt-3 pb-2"}`}>
         <Link href="/" className="surface-soft flex h-9 w-9 items-center justify-center text-[var(--ink-secondary)] transition-all active:scale-90">

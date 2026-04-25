@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { resolveWordImage } from "@/lib/media";
 import { CATEGORY_ICONS, IconBack } from "./icons";
 import { getLocalIllustration } from "./local-illustrations";
@@ -52,8 +52,12 @@ export function WordVisual({
 }: WordVisualProps) {
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(imageMode === "photo" || imageMode === "vector");
-  const swipeStart = useRef<{ x: number; y: number; id: number } | null>(null);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  /** Once we commit to a horizontal swipe we lock direction so touchmove can preventDefault. */
+  const swipeLocked = useRef(false);
   const swipeSuppressClick = useRef(false);
+  /** All swipe-zone divs share one ref-callback so we can attach a *non-passive* touchmove listener. */
+  const swipeNodeRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (imageMode !== "photo" && imageMode !== "vector") return;
@@ -71,24 +75,101 @@ export function WordVisual({
   const wrapperProps = onClick ? { onClick, role: "button", tabIndex: 0 } as const : {};
 
   const ichrome = immersiveLessonChrome;
-  const onImmersivePointerDown = (e: React.PointerEvent) => {
-    if (!ichrome || e.button !== 0) return;
-    swipeStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+
+  /* ── Touch-based swipe (replaces PointerEvent so we can preventDefault on touchmove) ── */
+  const onSwipeTouchStart = (e: React.TouchEvent) => {
+    if (!ichrome || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+    swipeLocked.current = false;
   };
-  const onImmersivePointerUp = (e: React.PointerEvent) => {
-    if (!ichrome || !swipeStart.current || e.pointerId !== swipeStart.current.id) return;
+
+  const onSwipeTouchEnd = (e: React.TouchEvent) => {
+    if (!ichrome || !swipeStart.current) return;
+    const t = e.changedTouches[0];
+    if (!t) { swipeStart.current = null; swipeLocked.current = false; return; }
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    swipeStart.current = null;
+    swipeLocked.current = false;
+    const min = 44; // slightly smaller threshold for touch
+    if (Math.abs(dx) < min || Math.abs(dx) < Math.abs(dy) * 1.15) return;
+    swipeSuppressClick.current = true;
+    if (dx < 0) ichrome.onNext();
+    else ichrome.onPrev();
+  };
+
+  const onSwipeTouchCancel = () => {
+    swipeStart.current = null;
+    swipeLocked.current = false;
+  };
+
+  /**
+   * Native touchmove handler — must be added with { passive: false } so we
+   * can call preventDefault() when the user is swiping horizontally. This
+   * stops the browser from scrolling the page or triggering back/forward navigation.
+   */
+  const handleNativeTouchMove = useCallback((e: TouchEvent) => {
+    if (!swipeStart.current || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - swipeStart.current.x);
+    const dy = Math.abs(t.clientY - swipeStart.current.y);
+
+    // Once locked, always prevent default for this gesture
+    if (swipeLocked.current) { e.preventDefault(); return; }
+
+    // Need a small movement before we decide direction
+    if (dx < 8 && dy < 8) return;
+
+    // Horizontal swipe → lock + prevent default
+    if (dx > dy * 0.8) {
+      swipeLocked.current = true;
+      e.preventDefault();
+    }
+    // Otherwise it's a vertical scroll — let the browser handle it
+  }, []);
+
+  /** Ref-callback: attach / detach the non-passive native touchmove listener. */
+  const swipeRef = useCallback((node: HTMLDivElement | null) => {
+    // Detach from previous node
+    if (swipeNodeRef.current) {
+      swipeNodeRef.current.removeEventListener("touchmove", handleNativeTouchMove);
+    }
+    swipeNodeRef.current = node;
+    if (node) {
+      node.addEventListener("touchmove", handleNativeTouchMove, { passive: false });
+    }
+  }, [handleNativeTouchMove]);
+
+  /* Also support mouse drag for desktop preview */
+  const onSwipeMouseDown = (e: React.MouseEvent) => {
+    if (!ichrome || e.button !== 0) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+    swipeLocked.current = false;
+  };
+  const onSwipeMouseUp = (e: React.MouseEvent) => {
+    if (!ichrome || !swipeStart.current) return;
     const dx = e.clientX - swipeStart.current.x;
     const dy = e.clientY - swipeStart.current.y;
     swipeStart.current = null;
+    swipeLocked.current = false;
     const min = 56;
     if (Math.abs(dx) < min || Math.abs(dx) < Math.abs(dy) * 1.15) return;
     swipeSuppressClick.current = true;
     if (dx < 0) ichrome.onNext();
     else ichrome.onPrev();
   };
-  const onImmersivePointerCancel = () => {
-    swipeStart.current = null;
-  };
+
+  /** Common props for every swipe-zone div */
+  const swipeZoneProps = {
+    ref: swipeRef,
+    onTouchStart: onSwipeTouchStart,
+    onTouchEnd: onSwipeTouchEnd,
+    onTouchCancel: onSwipeTouchCancel,
+    onMouseDown: onSwipeMouseDown,
+    onMouseUp: onSwipeMouseUp,
+  } as const;
+
   const onImmersiveHeroClick = () => {
     if (swipeSuppressClick.current) {
       swipeSuppressClick.current = false;
@@ -129,10 +210,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-1 sm:px-3"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -224,10 +302,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-1 sm:px-3"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -313,10 +388,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-2 py-2 sm:px-4"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -392,10 +464,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-2 sm:px-4"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -471,10 +540,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-2 sm:px-4"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -528,10 +594,7 @@ export function WordVisual({
 
         <div
           className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-2 py-2 sm:px-4"
-          onPointerDown={onImmersivePointerDown}
-          onPointerUp={onImmersivePointerUp}
-          onPointerCancel={onImmersivePointerCancel}
-          onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+          {...swipeZoneProps}
         >
           <button
             type="button"
@@ -646,10 +709,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation flex-col items-center justify-center"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
@@ -726,10 +786,7 @@ export function WordVisual({
 
           <div
             className="relative flex min-h-0 flex-1 touch-manipulation items-center justify-center px-2 py-2 sm:px-4"
-            onPointerDown={onImmersivePointerDown}
-            onPointerUp={onImmersivePointerUp}
-            onPointerCancel={onImmersivePointerCancel}
-            onPointerLeave={(e) => { if (e.buttons === 0) swipeStart.current = null; }}
+            {...swipeZoneProps}
           >
             <button
               type="button"
