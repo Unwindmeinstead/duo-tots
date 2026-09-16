@@ -11,7 +11,7 @@ import type { ImageMode } from "@/lib/vocab";
 const CAPTION = "text-center text-[13px] font-semibold tracking-tight pb-3 pt-2";
 
 /** Bust PWA / browser caches for curated PNGs (precache + static-image-assets use URL-only keys). Bump when assets change. */
-const CURATED_STATIC_BITMAP_VER = "20260416-portrait-v2";
+const CURATED_STATIC_BITMAP_VER = "20260916-actions-full-bleed-v3";
 
 function mediaLessonTapHint(categoryId: string): string {
   if (categoryId === "actions") return "Tap action · swipe for more";
@@ -654,13 +654,16 @@ export function WordVisual({
     const localArt = getLocalIllustration(categoryId, key);
     const ext = categoryId === "actions" || categoryId === "emotions" ? "png" : "svg";
     const isCuratedPng = categoryId === "actions" || categoryId === "emotions";
+    const isActionArt = categoryId === "actions";
     const src =
       `/images/${categoryId}/${key}.${ext}`
       + (isCuratedPng ? `?v=${encodeURIComponent(CURATED_STATIC_BITMAP_VER)}` : "");
     const cardBackground = localArt?.background ?? `linear-gradient(180deg, ${categoryColor}1a 0%, #ffffff 100%)`;
     const cardShadow = localArt?.shadow ?? `0 18px 40px ${categoryColor}18`;
     const frameBackground = localArt?.frame ?? "rgba(255,255,255,0.78)";
-    /* Curated PNGs: portrait 9:16 box with explicit h/w (next/image fill + w-auto in flex caused half-black). Native img + object-contain centers subject; --bg fills any gutter. */
+    /* Curated PNGs: portrait 9:16 box with explicit h/w (next/image fill + w-auto in flex caused half-black).
+       Action art is intentionally full-bleed: `cover` removes the letterboxed card around the older landscape
+       illustrations so every action has the same immersive presentation as the newer portrait scenes. */
     const staticArtInner = (
       <>
         <div className="pointer-events-none absolute inset-x-6 top-5 h-20 rounded-full blur-3xl" style={{ background: `${categoryColor}16` }} />
@@ -679,7 +682,7 @@ export function WordVisual({
                 alt={word}
                 decoding="async"
                 fetchPriority="high"
-                className="block h-full w-full object-contain object-center fade-in"
+                className={`block h-full w-full object-center fade-in ${isActionArt ? "object-cover" : "object-contain"}`}
               />
             </div>
           ) : (
