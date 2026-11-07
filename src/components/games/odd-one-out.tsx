@@ -14,7 +14,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeOddRounds } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#17BEBB";
 const TOTAL = 5;
@@ -79,7 +79,9 @@ export function OddOneOut({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Odd one out" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">Tap the one that&apos;s different!</p>
+        <PromptRow speakText="Tap the one that's different!" accent={ACCENT}>
+          Tap the one that&apos;s different!
+        </PromptRow>
 
         {/* The grid — five twins and one odd tile */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

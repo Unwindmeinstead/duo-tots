@@ -9,10 +9,11 @@
 
 import { useCallback, useState, type ReactNode } from "react";
 import { PillButton, Pips, RoundButton } from "@/components/kit";
-import { GlyphChevronL } from "@/components/glyphs";
+import { GlyphChevronL, GlyphSpeaker } from "@/components/glyphs";
 import { CelebrationScreen } from "@/components/celebration";
-import { playCelebration, playPop, playStarChime } from "@/lib/audio";
+import { playCelebration, playPop, playStarChime, speakWord } from "@/lib/audio";
 import { completeActivity, loadProgress, saveProgress } from "@/lib/progress";
+import { deepen } from "@/lib/theme";
 import type { GameId } from "@/lib/games-data";
 
 /* ─── Blue-zone game header ─── */
@@ -48,6 +49,67 @@ export function GameHeader({
         ) : null}
       </div>
     </header>
+  );
+}
+
+/* ─── Speakable prompt — ONE shared speaker button for every game ───
+   Grey's speak-first rule (2026-11-07): the kids can't read yet, so
+   every game's prompt sits in the top area beside this button, and
+   tapping it speaks the prompt out loud through the app's read-back
+   voice (speakWord — the clear American voice). Each game passes
+   its CURRENT prompt string, so after a reshuffle or a new round
+   the button always speaks the NEW prompt, never a stale one. The
+   prompt words themselves are tappable too — same action. */
+
+export function SpeakerButton({
+  text,
+  accent,
+}: {
+  text: string;
+  accent: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={`Hear it: ${text}`}
+      onClick={() => {
+        playPop();
+        void speakWord(text);
+      }}
+      className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95"
+      style={{ background: accent, boxShadow: `0 4px 0 ${deepen(accent)}` }}
+    >
+      <GlyphSpeaker size={26} />
+    </button>
+  );
+}
+
+/** The top-area prompt row every game renders directly under the
+    header: the prompt words + the shared SpeakerButton. */
+export function PromptRow({
+  speakText,
+  accent,
+  large = false,
+  children,
+}: {
+  /** The exact on-screen prompt — this string is what gets spoken. */
+  speakText: string;
+  accent: string;
+  large?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-3 px-1 pt-4">
+      <p
+        className={`text-center font-black leading-snug text-ink ${
+          large ? "text-[22px]" : "text-[20px]"
+        }`}
+        onClick={() => void speakWord(speakText)}
+      >
+        {children}
+      </p>
+      <SpeakerButton text={speakText} accent={accent} />
+    </div>
   );
 }
 

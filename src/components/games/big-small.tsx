@@ -14,7 +14,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeBigSmallRounds, tileKey } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#FF7A59";
 const TOTAL = 5;
@@ -85,9 +85,9 @@ export function BigSmall({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Big and small" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[22px] font-black text-ink">
+        <PromptRow speakText={`Tap the ${askBig ? "BIG" : "SMALL"} one!`} accent={ACCENT} large>
           Tap the <span style={{ color: ACCENT }}>{askBig ? "BIG" : "SMALL"}</span> one!
-        </p>
+        </PromptRow>
 
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <p className="h-6 text-[17px] font-black" style={{ color: found ? GREEN_DEEP : "transparent" }}>

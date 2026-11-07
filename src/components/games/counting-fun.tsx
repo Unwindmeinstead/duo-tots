@@ -13,7 +13,7 @@ import { playCorrect, playGentle, speakWord } from "@/lib/audio";
 import { NUMBER_WORDS, makeCountRounds } from "@/lib/games-data";
 import { GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#FF6FA5";
 const TOTAL = 5;
@@ -79,9 +79,9 @@ export function CountingFun({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Counting fun" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">
+        <PromptRow speakText={`How many ${current.tile.shape}s do you see?`} accent={ACCENT}>
           How many {current.tile.shape}s do you see?
-        </p>
+        </PromptRow>
 
         {/* The scatter — count the shapes */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

@@ -13,7 +13,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { SHAPE_DEFS, makeShadowRounds, tileKey, type ShapeTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#8163D6";
 const SHADOW = "#2A3350";
@@ -80,7 +80,9 @@ export function ShadowMatch({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Shadow match" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">Which one makes this shadow?</p>
+        <PromptRow speakText="Which one makes this shadow?" accent={ACCENT}>
+          Which one makes this shadow?
+        </PromptRow>
 
         {/* The silhouette — in full colour once matched */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

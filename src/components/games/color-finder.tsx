@@ -9,11 +9,11 @@
    answer is never in the same place twice in a row. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GlyphCheck, GlyphSpeaker } from "@/components/glyphs";
+import { GlyphCheck } from "@/components/glyphs";
 import { playCorrect, playGentle, speakWord } from "@/lib/audio";
 import { makeColorRounds, type GameColor } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP, deepen } from "@/lib/theme";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#D64FD6";
 const TOTAL = 5;
@@ -89,25 +89,16 @@ export function ColorFinder({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Color finder" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        {/* The call-out: hear it, read it, then find it */}
-        <div className="flex items-center justify-center gap-3 pt-4">
-          <p className="text-center text-[22px] font-black text-ink">
-            Find{" "}
-            <span style={{ color: target.name === "White" ? "#7587AB" : target.hex }}>
-              {target.name.toLowerCase()}
-            </span>
-            !
-          </p>
-          <button
-            type="button"
-            aria-label={`Hear the colour ${target.name}`}
-            onClick={() => void speakWord(`Find ${target.name.toLowerCase()}!`)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95"
-            style={{ background: ACCENT, boxShadow: `0 3px 0 ${deepen(ACCENT)}` }}
-          >
-            <GlyphSpeaker size={22} />
-          </button>
-        </div>
+        {/* The call-out: hear it, read it, then find it — the shared
+            speaker button speaks the exact same string the round
+            auto-speaks, and tracks the freshly dealt colour. */}
+        <PromptRow speakText={`Find ${target.name.toLowerCase()}!`} accent={ACCENT} large>
+          Find{" "}
+          <span style={{ color: target.name === "White" ? "#7587AB" : target.hex }}>
+            {target.name.toLowerCase()}
+          </span>
+          !
+        </PromptRow>
 
         {/* The mystery blob — fills with the found colour */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

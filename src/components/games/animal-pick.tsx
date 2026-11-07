@@ -10,13 +10,13 @@
    ding; no fail state. */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GlyphCheck, GlyphSpeaker } from "@/components/glyphs";
+import { GlyphCheck } from "@/components/glyphs";
 import { playCorrect, playGentle, speakWord } from "@/lib/audio";
 import { sample, shuffle } from "@/lib/games-data";
 import { getLocalImage } from "@/lib/local-images";
 import { categories } from "@/lib/vocab";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#34C759";
 const TOTAL = 5;
@@ -118,20 +118,11 @@ export function AnimalPick({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Animal pick" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <p className="text-center text-[22px] font-black text-ink">
-            Find the {target.word.toLowerCase()}!
-          </p>
-          <button
-            type="button"
-            aria-label={`Hear it again: ${target.word}`}
-            onClick={() => void speakWord(`Find the ${target.word.toLowerCase()}!`)}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95"
-            style={{ background: ACCENT }}
-          >
-            <GlyphSpeaker size={20} />
-          </button>
-        </div>
+        {/* The shared speaker button speaks the exact same string
+            the round auto-speaks, tracking the freshly dealt animal. */}
+        <PromptRow speakText={`Find the ${target.word.toLowerCase()}!`} accent={ACCENT} large>
+          Find the {target.word.toLowerCase()}!
+        </PromptRow>
 
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <p className="h-6 text-[17px] font-black" style={{ color: found ? GREEN_DEEP : "transparent" }}>

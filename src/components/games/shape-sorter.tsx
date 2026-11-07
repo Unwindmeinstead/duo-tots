@@ -16,7 +16,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeSorterRounds, tileKey, type ShapeTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#FF9F2E";
 const TOTAL = 5;
@@ -36,6 +36,10 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
     [session],
   );
   const { target, choices } = rounds[round];
+  /* The exact on-screen prompt — the speaker button speaks THIS
+     string, so it tracks the freshly dealt target every round. */
+  const shapeWord = target.shape === "block" ? "block" : target.shape;
+  const promptText = `Find the ${target.colorName.toLowerCase()} ${shapeWord}!`;
 
   const pick = (tile: ShapeTile) => {
     if (filled) return;
@@ -84,10 +88,9 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Shape sorter" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">
-          Find the {target.colorName.toLowerCase()}{" "}
-          {target.shape === "block" ? "block" : target.shape}!
-        </p>
+        <PromptRow speakText={promptText} accent={ACCENT}>
+          Find the {target.colorName.toLowerCase()} {shapeWord}!
+        </PromptRow>
 
         {/* The hole — dashed ghost until the right shape fills it */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

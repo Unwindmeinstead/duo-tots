@@ -17,7 +17,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { SHAPE_DEFS, makePatternRounds, tileKey, type PatternTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#34C759";
 const TOTAL = 5;
@@ -83,7 +83,9 @@ export function FinishPattern({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Finish the pattern" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">What comes next?</p>
+        <PromptRow speakText="What comes next?" accent={ACCENT}>
+          What comes next?
+        </PromptRow>
 
         {/* The pattern row — 4 shown + the missing 5th */}
         <div className="flex flex-1 flex-col items-center justify-center py-6">

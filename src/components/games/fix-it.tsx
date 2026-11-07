@@ -17,7 +17,7 @@ import { GlyphCheck } from "@/components/glyphs";
 import { playCorrect, playGentle } from "@/lib/audio";
 import { FIX_SCENES, PART_DEFS, fixChoices, shuffle, type PartId } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#2B7FFF";
 const TOTAL = FIX_SCENES.length;
@@ -320,7 +320,12 @@ export function FixIt({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Fix it" onBack={onBack} step={sceneIdx} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">{scene.prompt}</p>
+        {/* The scene's own line ("The boat is missing its sail.") is
+            the instruction — the speaker button speaks exactly it,
+            changing with every dealt scene. */}
+        <PromptRow speakText={scene.prompt} accent={ACCENT}>
+          {scene.prompt}
+        </PromptRow>
 
         {/* Scene */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">

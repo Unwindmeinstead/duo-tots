@@ -14,7 +14,7 @@ import { useMemo, useState } from "react";
 import { playCorrect, playGentle } from "@/lib/audio";
 import { makeTower, shuffle, type StackBlock } from "@/lib/games-data";
 import { ShapeSvg } from "./shapes";
-import { GameCelebration, GameHeader, GameSheet, useGameCompletion } from "./shared";
+import { GameCelebration, GameHeader, GameSheet, PromptRow, useGameCompletion } from "./shared";
 
 const ACCENT = "#8B5CF6";
 const TOTAL = 6;
@@ -80,15 +80,16 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Stacking blocks" onBack={onBack} step={placed} total={TOTAL} />
       <GameSheet>
-        <p className="pt-4 text-center text-[20px] font-black text-ink">
-          {needed ? (
-            <>
-              Tap the <span style={{ color: needed.color }}>{needed.label}</span>!
-            </>
-          ) : (
-            "You did it!"
-          )}
-        </p>
+        {needed ? (
+          /* The instruction line names the NEXT block to stack; the
+             speaker button speaks exactly this line, and it changes
+             with every block placed. */
+          <PromptRow speakText={`Tap the ${needed.label}!`} accent={ACCENT}>
+            Tap the <span style={{ color: needed.color }}>{needed.label}</span>!
+          </PromptRow>
+        ) : (
+          <p className="pt-4 text-center text-[20px] font-black text-ink">You did it!</p>
+        )}
 
         {/* Tower — ghosts below, placed blocks pop in over them */}
         <div className="flex min-h-0 flex-1 flex-col items-center justify-end pb-2 pt-4">
