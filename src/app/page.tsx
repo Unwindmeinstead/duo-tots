@@ -193,7 +193,7 @@ export default function Home() {
             </Link>
 
             {/* ── Learning path by stage (+ World after Foundation) ── */}
-            {pathGroups.map((group) => {
+            {pathGroups.map((group, groupIndex) => {
               if (group.cats.length === 0) return null;
               return (
                 <Fragment key={group.stage.id}>
@@ -213,10 +213,17 @@ export default function Home() {
                           done={getCategoryStars(progress, cat.id) >= 3}
                         />
                       ))}
-                      <StageLandmark
-                        label={group.stage.label}
-                        color={categories.find((c) => c.stage === group.stage.id)?.color ?? group.cats[0].color}
-                      />
+                      {/* Stage-end landmark only BETWEEN groups: after the
+                          final group it sits at the very bottom of the page
+                          as a wide filled banner that reads as a button but
+                          does nothing — removed there on Grey's order
+                          (Nov 7: the "Advanced button" that did nothing). */}
+                      {groupIndex < pathGroups.length - 1 && (
+                        <StageLandmark
+                          label={group.stage.label}
+                          color={categories.find((c) => c.stage === group.stage.id)?.color ?? group.cats[0].color}
+                        />
+                      )}
                     </div>
                   </section>
 
