@@ -1,10 +1,10 @@
 "use client";
 
 /* ─── Home ───
-   The Kidtopia front door: royal-blue hero with Pip center stage,
-   then the white sheet (wave edge) holding the daily goal, the
-   next-up card, the Play Zone card and the learning path as chunky
-   topic cards grouped by stage. */
+   The Kidtopia front door: the slim BlueHeader (Pip medallion +
+   wordmark, streak/star pills), then the white sheet (wave edge)
+   holding the daily goal, the next-up card, the Play Zone card and
+   the learning path as chunky topic cards grouped by stage. */
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
@@ -17,7 +17,6 @@ import {
   TopicCard,
   WaveSheet,
 } from "@/components/kit";
-import { Mascot } from "@/components/mascot";
 import { GlyphChevronR, GlyphPlay, GlyphPuzzle } from "@/components/glyphs";
 import { CelebrationScreen } from "@/components/celebration";
 import { categories, STAGES } from "@/lib/vocab";
@@ -59,12 +58,6 @@ export default function Home() {
   const [progress, setProgress] = useState(() => loadProgress());
   const [showLevelUp, setShowLevelUp] = useState<LevelInfo | null>(null);
   const levelCheckedRef = useRef(false);
-  const [pipDanceKey, setPipDanceKey] = useState(0);
-
-  const tapPip = () => {
-    playPop();
-    setPipDanceKey((k) => k + 1);
-  };
 
   const xp = progress.xp ?? 0;
   const dailyState = getDailyGoalState(progress);
@@ -125,31 +118,6 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-royal">
       <BlueHeader streak={progress.streak} xp={xp} />
-
-      {/* ── Compact hero: Pip's medallion + one-line greeting.
-             Tap Pip and he dances. ── */}
-      <div className="blue-rings relative flex items-center gap-4 px-5 pb-3 pt-1">
-        <button
-          type="button"
-          onClick={tapPip}
-          aria-label="Say hi to Pip"
-          className="shrink-0 rounded-full transition-transform active:scale-95"
-        >
-          <span className="kt-bob block">
-            <span key={pipDanceKey} className={pipDanceKey ? "kt-dance block" : "block"}>
-              <Mascot pose="hero" size={72} ring />
-            </span>
-          </span>
-        </button>
-        <div className="min-w-0">
-          <h1 className="text-[25px] font-black leading-[1.12] tracking-tight text-white">
-            Let&apos;s learn and play!
-          </h1>
-          <p className="mt-1 text-[14px] font-bold text-white/70">
-            Pick a card and let&apos;s go
-          </p>
-        </div>
-      </div>
 
       <div className="relative z-10">
         <WaveSheet className="px-4 pb-[var(--tab-float-space)] pt-5 min-[402px]:px-5">

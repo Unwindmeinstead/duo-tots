@@ -149,17 +149,6 @@ html[data-game-active="true"] .kt-tabbar {
 }
 .kt-bob { animation: kt-bob 2600ms ease-in-out infinite; }
 
-/* Pip's tap dance: two happy hops with a wiggle, transform-only. */
-@keyframes kt-dance {
-  0% { transform: translateY(0) rotate(0deg) scale(1, 1); }
-  20% { transform: translateY(-10px) rotate(-6deg) scale(0.96, 1.05); }
-  40% { transform: translateY(0) rotate(6deg) scale(1.05, 0.94); }
-  60% { transform: translateY(-12px) rotate(-5deg) scale(0.96, 1.05); }
-  80% { transform: translateY(0) rotate(4deg) scale(1.03, 0.97); }
-  100% { transform: translateY(0) rotate(0deg) scale(1, 1); }
-}
-.kt-dance { animation: kt-dance 800ms ease-in-out; }
-
 @keyframes kt-fly-in {
   0% { transform: translateY(46px) scale(0.7); opacity: 0.3; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
