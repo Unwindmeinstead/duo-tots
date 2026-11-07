@@ -2,19 +2,19 @@
 
 /* ─── Play hub (/play) ───
    Ten big game cards on the white sheet, in the reference card
-   anatomy: saturated art tile, bold name, soft label, star row,
+   anatomy: each game carries its own matte-clay thumbnail (the
+   game's idea at a glance), bold name, soft label, star row,
    play pill. Tapping one swaps the view to that game (single
    route, state-selected); the game's back disc returns here, and
    the mirror (header + stars) refreshes on return. While a game
    is in play the floating tab bar steps aside. */
 
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { BlueHeader, PillButton, StarRow, WaveSheet } from "@/components/kit";
-import { GlyphGear, GlyphPuzzle } from "@/components/glyphs";
 import { playPop } from "@/lib/audio";
 import { getCategoryStars, loadProgress, type ProgressState } from "@/lib/progress";
+import { useScrollLock } from "@/lib/scroll-lock";
 import type { GameId } from "@/lib/games-data";
-import { ShapeSvg } from "./shapes";
 import { ShapeSorter } from "./shape-sorter";
 import { StackingBlocks } from "./stacking-blocks";
 import { FinishPattern } from "./finish-pattern";
@@ -31,7 +31,7 @@ type GameDef = {
   name: string;
   label: string;
   color: string;
-  icon: ReactNode;
+  thumb: string;
   Component: ComponentType<{ onBack: () => void }>;
 };
 
@@ -41,7 +41,7 @@ const GAMES: GameDef[] = [
     name: "Shape sorter",
     label: "Find the shape that fits",
     color: "#FF9F2E",
-    icon: <ShapeSvg shape="star" color="#FFFFFF" size={44} />,
+    thumb: "/images/play/shape-sorter.webp",
     Component: ShapeSorter,
   },
   {
@@ -49,13 +49,7 @@ const GAMES: GameDef[] = [
     name: "Stacking blocks",
     label: "Stack the tower up high",
     color: "#8B5CF6",
-    icon: (
-      <svg width={46} height={46} viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden>
-        <rect x="7" y="3.5" width="10" height="4.6" rx="1.8" />
-        <rect x="5" y="9.7" width="14" height="4.6" rx="1.8" />
-        <rect x="3" y="15.9" width="18" height="4.6" rx="1.8" />
-      </svg>
-    ),
+    thumb: "/images/play/stacking-blocks.webp",
     Component: StackingBlocks,
   },
   {
@@ -63,7 +57,7 @@ const GAMES: GameDef[] = [
     name: "Finish the pattern",
     label: "Complete the pattern",
     color: "#34C759",
-    icon: <GlyphPuzzle size={40} />,
+    thumb: "/images/play/finish-pattern.webp",
     Component: FinishPattern,
   },
   {
@@ -71,7 +65,7 @@ const GAMES: GameDef[] = [
     name: "Fix it",
     label: "Find the missing part",
     color: "#2B7FFF",
-    icon: <GlyphGear size={40} />,
+    thumb: "/images/play/fix-it.webp",
     Component: FixIt,
   },
   {
@@ -79,13 +73,7 @@ const GAMES: GameDef[] = [
     name: "Color finder",
     label: "Hear the color, tap it",
     color: "#D64FD6",
-    icon: (
-      <svg width={46} height={46} viewBox="0 0 24 24" aria-hidden>
-        <circle cx="9" cy="9" r="5.5" fill="#FFFFFF" opacity="0.95" />
-        <circle cx="15.5" cy="9" r="5.5" fill="#FFFFFF" opacity="0.6" />
-        <circle cx="12.2" cy="15" r="5.5" fill="#FFFFFF" opacity="0.8" />
-      </svg>
-    ),
+    thumb: "/images/play/color-finder.webp",
     Component: ColorFinder,
   },
   {
@@ -93,14 +81,7 @@ const GAMES: GameDef[] = [
     name: "Odd one out",
     label: "Spot the different one",
     color: "#17BEBB",
-    icon: (
-      <svg width={46} height={46} viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden>
-        <circle cx="7" cy="7" r="3" />
-        <circle cx="17" cy="7" r="3" />
-        <circle cx="7" cy="17" r="3" />
-        <polygon points="17,13.8 18.2,16.3 20.9,16.6 18.9,18.5 19.4,21.2 17,19.8 14.6,21.2 15.1,18.5 13.1,16.6 15.8,16.3" />
-      </svg>
-    ),
+    thumb: "/images/play/odd-one-out.webp",
     Component: OddOneOut,
   },
   {
@@ -108,7 +89,7 @@ const GAMES: GameDef[] = [
     name: "Counting fun",
     label: "Count them, tap the number",
     color: "#FF6FA5",
-    icon: <span className="text-[25px] font-black tracking-tight text-white">123</span>,
+    thumb: "/images/play/counting-fun.webp",
     Component: CountingFun,
   },
   {
@@ -116,7 +97,7 @@ const GAMES: GameDef[] = [
     name: "Shadow match",
     label: "Who makes this shadow?",
     color: "#8163D6",
-    icon: <ShapeSvg shape="star" color="#2A3350" size={44} />,
+    thumb: "/images/play/shadow-match.webp",
     Component: ShadowMatch,
   },
   {
@@ -124,12 +105,7 @@ const GAMES: GameDef[] = [
     name: "Big and small",
     label: "Tap the big one, tap the small",
     color: "#FF7A59",
-    icon: (
-      <span className="flex items-end gap-1.5">
-        <ShapeSvg shape="square" color="#FFFFFF" size={40} />
-        <ShapeSvg shape="square" color="#FFFFFF" size={22} />
-      </span>
-    ),
+    thumb: "/images/play/big-small.webp",
     Component: BigSmall,
   },
   {
@@ -137,15 +113,7 @@ const GAMES: GameDef[] = [
     name: "Animal pick",
     label: "Hear the animal, tap its photo",
     color: "#34C759",
-    icon: (
-      <svg width={46} height={46} viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden>
-        <circle cx="6.2" cy="8.6" r="2.1" />
-        <circle cx="10.4" cy="5.4" r="2.3" />
-        <circle cx="15" cy="5.4" r="2.3" />
-        <circle cx="19" cy="8.8" r="2.1" />
-        <path d="M12.6 11.4c3.2 0 5.9 2.5 5.9 5.2 0 1.9-1.5 3.1-3.4 3.1-1.1 0-1.7-.4-2.5-.4s-1.4.4-2.5.4c-1.9 0-3.4-1.2-3.4-3.1 0-2.7 2.7-5.2 5.9-5.2Z" />
-      </svg>
-    ),
+    thumb: "/images/play/animal-pick.webp",
     Component: AnimalPick,
   },
 ];
@@ -153,6 +121,13 @@ const GAMES: GameDef[] = [
 export function PlayHub() {
   const [selected, setSelected] = useState<GameId | null>(null);
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
+
+  /* A game in play is a one-screen stage: lock the document so
+     the page can't scroll or rubber-band under the game. The hub
+     list itself is long and keeps normal scrolling — the lock
+     engages only while a game is selected, and releasing it
+     restores the list's scroll position. */
+  useScrollLock(selected !== null);
 
   /* While a game is in play the shell tab bar hides (the flag on
      <html> drives the rule in globals.css), giving the game the
@@ -191,7 +166,7 @@ export function PlayHub() {
 
       <WaveSheet className="px-4 pb-[var(--tab-float-space)] pt-5 min-[402px]:px-5">
         <div className="mx-auto flex w-full max-w-md flex-col gap-4">
-          {GAMES.map(({ id, name, label, color, icon }) => {
+          {GAMES.map(({ id, name, label, color, thumb }) => {
             const stars = getCategoryStars(progress, id);
             return (
               <button
@@ -205,14 +180,22 @@ export function PlayHub() {
                 className="kt-card flex items-center gap-3.5 p-3.5 text-left"
               >
                 <span
-                  className="grid h-[84px] w-[84px] shrink-0 place-items-center text-white"
+                  className="block h-[84px] w-[84px] shrink-0 overflow-hidden"
                   style={{
                     borderRadius: 24,
                     background: color,
                     boxShadow: "inset 0 -6px 0 rgba(0,0,0,0.12)",
                   }}
                 >
-                  {icon}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={thumb}
+                    alt=""
+                    width={84}
+                    height={84}
+                    draggable={false}
+                    className="h-full w-full object-cover"
+                  />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[19px] font-black leading-tight text-ink">
