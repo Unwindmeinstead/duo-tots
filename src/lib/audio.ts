@@ -10,31 +10,35 @@ function getVoice(): SpeechSynthesisVoice | null {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
 
   const voices = window.speechSynthesis.getVoices();
+  /* AMERICAN ONLY (Grey's order, 2026-11-07): the read-back must be a
+     clear American voice a kid can understand — no British/Australian/
+     Irish accents. US voices are searched first; other English voices
+     are only a last resort when the device has no en-US voice at all. */
+  const usEnglish = voices.filter((v) => /^en[-_]US/i.test(v.lang));
   const english = voices.filter((v) => /^en[-_]/i.test(v.lang));
 
   const ranked = [
-    /Ava/i,
-    /Zoe/i,
+    /Google US English/i,
     /Microsoft Aria/i,
     /Microsoft Jenny/i,
-    /Google UK English Female/i,
-    /Karen/i,
-    /Moira/i,
+    /Ava/i,
+    /Samantha/i,
+    /Microsoft Zira/i,
     /Natural/i,
     /Neural/i,
     /Premium/i,
     /Enhanced/i,
-    /Samantha/i,
-    /Google US English/i,
-    /Microsoft Zira/i,
   ];
 
-  for (const re of ranked) {
-    const match = english.find((v) => re.test(v.name));
-    if (match) { lockedVoice = match; return match; }
+  for (const pool of [usEnglish, english]) {
+    for (const re of ranked) {
+      const match = pool.find((v) => re.test(v.name));
+      if (match) { lockedVoice = match; return match; }
+    }
+    if (pool.length > 0) { lockedVoice = pool[0]; return lockedVoice; }
   }
 
-  lockedVoice = english[0] ?? voices[0] ?? null;
+  lockedVoice = voices[0] ?? null;
   return lockedVoice;
 }
 
