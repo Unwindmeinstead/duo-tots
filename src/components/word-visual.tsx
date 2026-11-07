@@ -346,6 +346,20 @@ export function WordVisual({
   /* ── Digit hero: the numeral on a saturated tile, dots to count ── */
   if (imageMode === "digit") {
     const n = parseInt(word, 10);
+    /* Counting dots for EVERY number 1–100 (Grey's rule, 2026-11-07;
+       the old deck stopped dealing them after 20). The dots shrink
+       in bands as the count grows so even 100 fits the same card in
+       a few tidy rows; the pop-in cascade keeps a constant total
+       duration instead of stretching to seconds. Zero honestly
+       shows no dots — there is nothing to count. */
+    const dotBand =
+      n <= 20
+        ? { size: 16, gap: 8, step: 70 }
+        : n <= 40
+          ? { size: 11, gap: 6, step: 35 }
+          : n <= 70
+            ? { size: 9, gap: 5, step: 20 }
+            : { size: 7, gap: 4, step: 14 };
     const sz =
       word.length >= 3
         ? "text-[clamp(4.5rem,30vmin,11rem)]"
@@ -363,13 +377,23 @@ export function WordVisual({
               </span>
               {/* No spelled-out name under the numeral — the digit is
                   plainly visible and tapping speaks it (Grey, 2026-11-07). */}
-              {!isNaN(n) && n >= 1 && n <= 20 && (
-                <span key={`dots-${stepKey ?? 0}`} className="mt-5 flex max-w-[min(78vw,24rem)] flex-wrap items-center justify-center gap-2" aria-hidden>
+              {!isNaN(n) && n >= 1 && n <= 100 && (
+                <span
+                  key={`dots-${stepKey ?? 0}`}
+                  className="mt-5 flex max-w-[min(78vw,24rem)] flex-wrap items-center justify-center"
+                  style={{ gap: dotBand.gap }}
+                  aria-hidden
+                >
                   {Array.from({ length: n }, (_, i) => (
                     <span
                       key={i}
-                      className="kt-pop-in h-4 w-4 rounded-full bg-white"
-                      style={{ animationDelay: `${i * 70}ms`, animationFillMode: "backwards" }}
+                      className="kt-pop-in rounded-full bg-white"
+                      style={{
+                        width: dotBand.size,
+                        height: dotBand.size,
+                        animationDelay: `${i * dotBand.step}ms`,
+                        animationFillMode: "backwards",
+                      }}
                     />
                   ))}
                 </span>
