@@ -47,6 +47,7 @@ export function WorldLessonClient({
   const [sayBurst, setSayBurst] = useState(0);
   const [sayBounce, setSayBounce] = useState(0);
   const [seeBurst, setSeeBurst] = useState(0);
+  const [seeSquash, setSeeSquash] = useState(0);
 
   const color = lesson.color;
   const isLast = step === TOTAL_STEPS - 1;
@@ -66,12 +67,11 @@ export function WorldLessonClient({
     void speak(lesson.sayIt);
   };
 
-  /* See-it photo tap: pop + sparkles + the say-it phrase spoken.
-     No squash on the photo — photo cards never bounce on tap
-     (Grey's no-bounce rule, 2026-11-07; same as the word decks). */
+  /* See-it photo tap: pop + squash + sparkles + the say-it phrase spoken. */
   const onSeeTap = () => {
     playPop();
     setSeeBurst((b) => b + 1);
+    setSeeSquash((b) => b + 1);
     void speak(lesson.sayIt);
   };
 
@@ -193,7 +193,7 @@ export function WorldLessonClient({
                 below-stage Next pill hides on this step; the band's
                 pill is the same goNext. Root is a div so the pill's
                 real button never nests inside another button. */}
-            <span className="relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)]">
+            <span key={seeSquash} className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${seeSquash > 0 ? "kt-squash" : ""}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={lesson.image}

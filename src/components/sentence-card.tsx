@@ -6,9 +6,6 @@
    sentence is spoken once, with the standard reaction (pop, squash,
    sparkles). The photo is never cropped — it renders at its own
    aspect ratio, as large as the stage allows.
-   No-bounce rule (Grey, 2026-11-07): when the deck is a photo deck
-   the caller passes noBounce — pop + sparkles + speech stay, the
-   photo never squashes. See deckKeepsTapMotion in word-visual.
    Variant A (Grey's pick, 2026-11-07): the lesson controls ride
    INSIDE the photo's bottom band, stacked under the sentence — the
    sentence keeps its own lines, the control row sits below it, and
@@ -27,8 +24,6 @@ export interface SentenceCardProps {
   /** Resolved local photo for the word (may be null → colour backdrop). */
   imageSrc?: string | null;
   onSpeak?: () => void;
-  /** Photo decks: tap keeps pop + sparkles + speech, no card motion. */
-  noBounce?: boolean;
   /** Lesson controls (prev · Practice · Next) for the in-photo band. */
   footer?: ReactNode;
 }
@@ -39,7 +34,6 @@ export function SentenceCard({
   categoryColor,
   imageSrc,
   onSpeak,
-  noBounce = false,
   footer,
 }: SentenceCardProps) {
   const [burstKey, setBurstKey] = useState(0);
@@ -56,14 +50,12 @@ export function SentenceCard({
   const handleTap = () => {
     playPop();
     setBurstKey((k) => k + 1);
-    if (!noBounce) {
-      if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
-      setReacting(false);
-      requestAnimationFrame(() => {
-        setReacting(true);
-        reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
-      });
-    }
+    if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
+    setReacting(false);
+    requestAnimationFrame(() => {
+      setReacting(true);
+      reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
+    });
     onSpeak?.();
   };
 

@@ -15,7 +15,7 @@ import { playCelebration, playStarChime, speakWord } from "@/lib/audio";
 import { prefetchWordImages, prefetchLocalImages } from "@/lib/media";
 import { getLocalImage } from "@/lib/local-images";
 import { getSentence } from "@/lib/sentences";
-import { WordVisual, deckKeepsTapMotion } from "@/components/word-visual";
+import { WordVisual } from "@/components/word-visual";
 import { CelebrationScreen } from "@/components/celebration";
 import { SentenceCard } from "@/components/sentence-card";
 import { SessionEnd } from "@/components/session-end";
@@ -450,7 +450,6 @@ export function LessonClient({ category }: { category: VocabCategory }) {
               categoryColor={category.color}
               imageSrc={getLocalImage(category.id, slugOf(current)) ?? null}
               onSpeak={speak}
-              noBounce={!deckKeepsTapMotion(category.imageMode)}
               footer={cardControls}
             />
           ) : (
