@@ -22,8 +22,8 @@ import { CelebrationScreen } from "@/components/celebration";
 import { categories, STAGES } from "@/lib/vocab";
 import { WORLD_LESSONS, worldNodeId } from "@/lib/world-book";
 import {
-  loadProgress,
   saveProgress,
+  useProgress,
   getNextLesson,
   getCategoryMastery,
   getLevelInfo,
@@ -55,9 +55,14 @@ function StageLandmark({ label, color }: { label: string; color: string }) {
 }
 
 export default function Home() {
-  const [progress, setProgress] = useState(() => loadProgress());
-  const [showLevelUp, setShowLevelUp] = useState<LevelInfo | null>(null);
-  const levelCheckedRef = useRef(false);
+  /* Progress comes from the external store (useProgress): the first
+     render matches the server HTML, then the stored state swaps in
+     — no localStorage read in an initializer, no hydration error
+     (audit failure #5). Writes go through saveProgress, which
+     notifies the store. */
+  const progress = useProgress();
+  const [levelUpDismissed, setLevelUpDismissed] = useState(false);
+  const levelSoundRef = useRef(0);
 
   const xp = progress.xp ?? 0;
   const dailyState = getDailyGoalState(progress);
@@ -91,28 +96,30 @@ export default function Home() {
     ? undefined
     : WORLD_LESSONS.find((l) => getCategoryStars(progress, worldNodeId(l.id)) === 0)?.id;
 
-  /* Level-up celebration: fires once on mount when the saved
-     levelCelebrated marker is behind the level the XP already earns. */
+  /* Level-up celebration, derived — not effect-fired: whenever the
+     stored level runs ahead of the levelCelebrated marker, the
+     celebration is simply what Home renders (the store swap after
+     hydration is what "triggers" it). The effect below only plays
+     the fanfare sounds, once per level — an external system update,
+     no setState. Collecting saves the marker, which itself retires
+     the derivation; the dismissed flag covers the same tap. */
+  const levelInfo = getLevelInfo(progress.xp ?? 0);
+  const pendingLevelUp: LevelInfo | null =
+    !levelUpDismissed && levelInfo.level > (progress.levelCelebrated ?? 1) ? levelInfo : null;
   useEffect(() => {
-    if (levelCheckedRef.current) return;
-    levelCheckedRef.current = true;
-    const info = getLevelInfo(progress.xp ?? 0);
-    if (info.level > (progress.levelCelebrated ?? 1)) {
-      setShowLevelUp(info);
+    if (pendingLevelUp && levelSoundRef.current !== pendingLevelUp.level) {
+      levelSoundRef.current = pendingLevelUp.level;
       playCelebration();
       playStarChime();
     }
-    // Mount-only check against the initially loaded progress snapshot.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pendingLevelUp]);
 
   const collectLevelUp = () => {
-    if (!showLevelUp) return;
+    if (!pendingLevelUp) return;
     playPop();
-    const next = { ...progress, levelCelebrated: showLevelUp.level };
+    const next = { ...progress, levelCelebrated: pendingLevelUp.level };
     saveProgress(next);
-    setProgress(next);
-    setShowLevelUp(null);
+    setLevelUpDismissed(true);
   };
 
   return (
@@ -321,11 +328,11 @@ export default function Home() {
       </div>
 
       {/* ── Level-up celebration ── */}
-      {showLevelUp && (
+      {pendingLevelUp && (
         <CelebrationScreen
           stars={3}
-          title={`Level ${showLevelUp.level}`}
-          subtitle={`You're ${/^[aeiou]/i.test(showLevelUp.name) ? "an" : "a"} ${showLevelUp.name} now`}
+          title={`Level ${pendingLevelUp.level}`}
+          subtitle={`You're ${/^[aeiou]/i.test(pendingLevelUp.name) ? "an" : "a"} ${pendingLevelUp.name} now`}
           xpEarned={xp}
           onKeepGoing={collectLevelUp}
           keepGoingLabel="Collect"

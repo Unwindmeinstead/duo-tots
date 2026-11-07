@@ -6,32 +6,41 @@
    the sounds switch, cache clear and reset — same storage keys,
    same handlers, moved not copied. Progress keeps progress only. */
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { VOICE_MODE_KEY, playPop, setSoundEnabled, type VoiceMode } from "@/lib/audio";
 import { BlueHeader, WaveSheet } from "@/components/kit";
 import { GREEN } from "@/lib/theme";
-import {
-  initialProgress,
-  loadProgress,
-  saveProgress,
-  type ProgressState,
-} from "@/lib/progress";
+import { initialProgress, saveProgress, useProgress } from "@/lib/progress";
+
+/* Voice mode rides the same external-store pattern as progress
+   (useProgress in progress.ts): server render uses the default,
+   the stored value swaps in after hydration, writes notify —
+   no initializer read, no hydration error (audit failure #5). */
+const VOICE_MODE_EVENT = "duotots-voice-mode-changed";
+const subscribeVoiceMode = (onChange: () => void): (() => void) => {
+  window.addEventListener(VOICE_MODE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(VOICE_MODE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+};
+const getVoiceModeSnapshot = (): VoiceMode =>
+  (window.localStorage.getItem(VOICE_MODE_KEY) as VoiceMode | null) ?? "auto";
+const getServerVoiceMode = (): VoiceMode => "auto";
 
 export function SettingsClient() {
-  const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
-  const [voiceMode, setVoiceMode] = useState<VoiceMode>(() => {
-    if (typeof window === "undefined") return "auto";
-    return (window.localStorage.getItem(VOICE_MODE_KEY) as VoiceMode | null) ?? "auto";
-  });
+  const progress = useProgress();
+  const voiceMode = useSyncExternalStore(subscribeVoiceMode, getVoiceModeSnapshot, getServerVoiceMode);
 
   const reset = () => {
     if (typeof window !== "undefined" && !window.confirm("Reset all progress? This clears XP, stars, badges, streaks, and practice history for every topic. This cannot be undone.")) return;
     saveProgress(initialProgress);
-    setProgress(initialProgress);
   };
   const setMode = (mode: VoiceMode) => {
-    if (typeof window !== "undefined") window.localStorage.setItem(VOICE_MODE_KEY, mode);
-    setVoiceMode(mode);
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(VOICE_MODE_KEY, mode);
+    window.dispatchEvent(new Event(VOICE_MODE_EVENT));
   };
   const clearMediaCache = () => {
     if (typeof window === "undefined") return;
@@ -48,7 +57,7 @@ export function SettingsClient() {
   const toggleSound = () => {
     const next = !soundOn;
     setSoundEnabled(next);
-    setProgress((prev) => ({ ...prev, soundEnabled: next }));
+    saveProgress({ ...progress, soundEnabled: next });
     if (next) playPop();
   };
 

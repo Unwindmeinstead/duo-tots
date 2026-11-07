@@ -8,7 +8,7 @@
    page since Nov 7. Every figure derives from the same store
    fields as before. */
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   ArtTile,
   BlueHeader,
@@ -28,14 +28,13 @@ import {
 } from "@/components/glyphs";
 import { GREEN } from "@/lib/theme";
 import {
-  loadProgress,
+  useProgress,
   getLevelInfo,
   getCategoryStars,
   totalCategoryStars,
   getDailyGoalState,
   BADGE_DEFS,
   computeBadges,
-  type ProgressState,
 } from "@/lib/progress";
 import { categories, categoriesById } from "@/lib/vocab";
 
@@ -119,7 +118,11 @@ function WordPanel({
 }
 
 export function ProgressClient() {
-  const [progress] = useState<ProgressState>(() => loadProgress());
+  /* Progress comes from the external store (useProgress): the first
+     render matches the server HTML, then the stored state swaps in
+     — no localStorage read in an initializer, no hydration error
+     (audit failure #5). */
+  const progress = useProgress();
 
   /* Every level figure derives from getLevelInfo(progress.xp): the
      hero number is TOTAL xp; the bar and caption are in-level. */

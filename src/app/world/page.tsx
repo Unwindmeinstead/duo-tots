@@ -6,16 +6,19 @@
    the say-it line, and a Start / Play-again pill. */
 
 import Link from "next/link";
-import { useState } from "react";
 import { BlueHeader, PillButton, SectionHead, WaveSheet } from "@/components/kit";
 import { GlyphStar } from "@/components/glyphs";
-import { getCategoryStars, loadProgress } from "@/lib/progress";
+import { getCategoryStars, useProgress } from "@/lib/progress";
 import { WORLD_LESSONS, worldNodeId } from "@/lib/world-book";
 import { playPop } from "@/lib/audio";
 import { GOLD } from "@/lib/theme";
 
 export default function WorldPage() {
-  const [progress] = useState(() => loadProgress());
+  /* Progress comes from the external store (useProgress): the first
+     render matches the server HTML, then the stored state swaps in
+     — no localStorage read in an initializer, no hydration error
+     (audit failure #5). */
+  const progress = useProgress();
   const doneCount = WORLD_LESSONS.filter(
     (l) => getCategoryStars(progress, worldNodeId(l.id)) > 0,
   ).length;

@@ -9,10 +9,11 @@
    the mirror (header + stars) refreshes on return. While a game
    is in play the floating tab bar steps aside. */
 
-import { useEffect, useState, type ComponentType } from "react";
-import { BlueHeader, PillButton, StarRow, WaveSheet } from "@/components/kit";
+import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
+import { BlueHeader, StarRow, WaveSheet } from "@/components/kit";
 import { playPop } from "@/lib/audio";
-import { getCategoryStars, loadProgress, type ProgressState } from "@/lib/progress";
+import { getCategoryStars, useProgress } from "@/lib/progress";
+import { deepen } from "@/lib/theme";
 import { useScrollLock } from "@/lib/scroll-lock";
 import type { GameId } from "@/lib/games-data";
 import { ShapeSorter } from "./shape-sorter";
@@ -120,7 +121,12 @@ const GAMES: GameDef[] = [
 
 export function PlayHub() {
   const [selected, setSelected] = useState<GameId | null>(null);
-  const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
+  /* Progress comes from the external store (useProgress): the first
+     render matches the server HTML, then the stored state swaps in
+     — no localStorage read in an initializer, no hydration error
+     (audit failure #5). Games save through saveProgress, which
+     notifies the store, so the mirror below is always current. */
+  const progress = useProgress();
 
   /* A game in play is a one-screen stage: lock the document so
      the page can't scroll or rubber-band under the game. The hub
@@ -139,10 +145,9 @@ export function PlayHub() {
     };
   }, [selected]);
 
-  /* Coming back to the list refreshes the mirror — a game may have
-     just been completed. */
+  /* Coming back to the list needs no manual refresh — the game's
+     own saveProgress already notified the store. */
   const goBackToList = () => {
-    setProgress(loadProgress());
     setSelected(null);
   };
 
@@ -206,9 +211,26 @@ export function PlayHub() {
                     <StarRow value={stars} />
                   </span>
                 </span>
-                <PillButton small color={color} className="pointer-events-none shrink-0 self-end">
+                {/* A span wearing the pill's clothes, NOT a PillButton:
+                    this whole row is a <button>, and a real <button>
+                    inside it is invalid nesting — the HTML parser
+                    re-parents it in the server HTML and hydration
+                    fails (React #418, audit failure #5). The pill is
+                    decorative (pointer-events-none); the row is the
+                    one and only button. */}
+                <span
+                  aria-hidden
+                  className="btn-led pointer-events-none inline-flex min-h-12 shrink-0 items-center justify-center gap-2 self-end rounded-full px-5 text-[16px] font-black"
+                  style={
+                    {
+                      "--btn": color,
+                      "--btn-deep": deepen(color),
+                      "--btn-ink": "#FFFFFF",
+                    } as CSSProperties
+                  }
+                >
                   Play
-                </PillButton>
+                </span>
               </button>
             );
           })}

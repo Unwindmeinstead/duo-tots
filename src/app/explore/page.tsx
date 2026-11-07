@@ -7,7 +7,6 @@
    daily goal) — all derived from the same store fields Home and
    Progress read. */
 
-import { useState } from "react";
 import {
   BlueHeader,
   PillButton,
@@ -17,7 +16,7 @@ import {
 } from "@/components/kit";
 import { categories, STAGES } from "@/lib/vocab";
 import {
-  loadProgress,
+  useProgress,
   getCategoryMastery,
   getCategoryStars,
   getNextLesson,
@@ -25,7 +24,11 @@ import {
 } from "@/lib/progress";
 
 export default function ExplorePage() {
-  const [progress] = useState(() => loadProgress());
+  /* Progress comes from the external store (useProgress): the first
+     render matches the server HTML, then the stored state swaps in
+     — no localStorage read in an initializer, no hydration error
+     (audit failure #5). */
+  const progress = useProgress();
   const totalWords = categories.reduce((n, c) => n + c.items.length, 0);
   const nextLesson = getNextLesson(progress);
 

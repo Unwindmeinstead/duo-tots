@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { categories, categoriesById, type CategoryId, type VocabCategory } from "@/lib/vocab";
 
 const STORAGE_KEY = "duotots-progress-v2";
@@ -310,7 +311,45 @@ export const saveProgress = (next: ProgressState) => {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch { /* storage full/blocked — progress is best-effort, never crash a tap */ }
+  window.dispatchEvent(new Event(PROGRESS_CHANGED_EVENT));
 };
+
+/* ── External-store binding (useProgress) ─────────────────────────
+   Browsing surfaces render progress values as text, so their first
+   client render must match the server HTML exactly. Reading
+   localStorage in a useState initializer breaks that — the server
+   can only render initialProgress (React #418, audit failure #5) —
+   and adopting the stored value via setState-in-effect trips the
+   React Compiler lint rule. useSyncExternalStore is the sanctioned
+   bridge: the server snapshot is initialProgress; right after
+   hydration React swaps in the client snapshot (the stored state,
+   cached by raw string so its reference is stable between reads);
+   saveProgress notifies subscribers, so writers never need a local
+   setState mirror. */
+const PROGRESS_CHANGED_EVENT = "duotots-progress-changed";
+let progressSnapshotCache: { raw: string | null; state: ProgressState } | null = null;
+
+const subscribeProgress = (onChange: () => void): (() => void) => {
+  window.addEventListener(PROGRESS_CHANGED_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(PROGRESS_CHANGED_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+};
+
+const getProgressSnapshot = (): ProgressState => {
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (progressSnapshotCache && progressSnapshotCache.raw === raw) return progressSnapshotCache.state;
+  const state = loadProgress();
+  progressSnapshotCache = { raw, state };
+  return state;
+};
+
+const getServerProgressSnapshot = (): ProgressState => initialProgress;
+
+export const useProgress = (): ProgressState =>
+  useSyncExternalStore(subscribeProgress, getProgressSnapshot, getServerProgressSnapshot);
 
 export const recordCategoryView = (current: ProgressState, categoryId: CategoryId): ProgressState => {
   const touched = touchActivity(current);
