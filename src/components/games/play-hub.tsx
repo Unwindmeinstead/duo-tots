@@ -125,8 +125,7 @@ export function PlayHub() {
   /* A game in play is a one-screen stage: lock the document so
      the page can't scroll or rubber-band under the game. The hub
      list itself is long and keeps normal scrolling — the lock
-     engages only while a game is selected, and releasing it
-     restores the list's scroll position. */
+     engages only while a game is selected. */
   useScrollLock(selected !== null);
 
   /* While a game is in play the shell tab bar hides (the flag on

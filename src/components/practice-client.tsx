@@ -18,6 +18,7 @@ import { CATEGORY_GLYPHS, GlyphCheck, GlyphSpeaker, GlyphStar } from "@/componen
 import { COLOR_MAP, ShapeArt } from "@/components/word-visual";
 import { CelebrationScreen } from "@/components/celebration";
 import { loadProgress, recordPracticeAttempt, saveProgress, type ProgressState } from "@/lib/progress";
+import { useScrollLock } from "@/lib/scroll-lock";
 import { GREEN, GREEN_DEEP, tint } from "@/lib/theme";
 import { type VocabCategory, type VocabItem } from "@/lib/vocab";
 
@@ -148,6 +149,10 @@ function OptionPicture({ item, category }: { item: VocabItem; category: VocabCat
 }
 
 export function PracticeClient({ category }: { category: VocabCategory }) {
+  /* One-screen stage: prompt, choices and the feedback slot are
+     laid out to fit the viewport exactly — lock the document so
+     the page can't slide around under little fingers. */
+  useScrollLock();
   const [round, setRound] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
@@ -271,7 +276,10 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
   }
 
   return (
-    <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
+    <div
+      className="kt-fade-in flex h-dvh flex-col overflow-hidden bg-royal"
+      style={{ overscrollBehavior: "none", touchAction: "none" }}
+    >
       {/* ── Blue zone: category, title, pips, the prompt hero ── */}
       <div className="blue-rings px-4 pb-5 pt-[max(0.9rem,env(safe-area-inset-top))] min-[402px]:px-5">
         <header className="mx-auto flex w-full max-w-md items-center gap-3.5">
@@ -323,9 +331,9 @@ export function PracticeClient({ category }: { category: VocabCategory }) {
       </div>
 
       {/* ── White sheet: choices + feedback ── */}
-      <div className="flex flex-1 flex-col rounded-t-[32px] bg-white px-4 pt-5 min-[402px]:px-5" style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 14px), 18px)" }}>
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-          <div className="flex flex-1 flex-col justify-center">
+      <div className="flex min-h-0 flex-1 flex-col rounded-t-[32px] bg-white px-4 pt-5 min-[402px]:px-5" style={{ paddingBottom: "max(calc(env(safe-area-inset-bottom, 0px) + 14px), 18px)" }}>
+        <div className="mx-auto flex min-h-0 w-full max-w-md flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col justify-center">
           <div className="grid grid-cols-3 gap-3" key={`${round}-${answer.id}`}>
             {options.map((option) => {
               const isAnswerTile = option.word === answer.word;

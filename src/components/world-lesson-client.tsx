@@ -21,6 +21,7 @@ import {
   type ProgressState,
 } from "@/lib/progress";
 import { worldNodeId, type WorldLesson } from "@/lib/world-book";
+import { useScrollLock } from "@/lib/scroll-lock";
 
 const STEP_LABELS = ["Big idea", "Say it", "See it", "Do it", "One question"] as const;
 const TOTAL_STEPS = 5;
@@ -35,6 +36,9 @@ export function WorldLessonClient({
   lessonNumber: number;
 }) {
   const router = useRouter();
+  /* One-screen stage: all five beats fit the viewport, so the
+     document locks — no scrolling under the tap animations. */
+  useScrollLock();
   const [step, setStep] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const [done, setDone] = useState<ProgressState | null>(null);
@@ -109,7 +113,10 @@ export function WorldLessonClient({
   const stageCard = "kt-card flex h-full flex-col items-center justify-center px-6 py-8 text-center";
 
   return (
-    <div className="blue-rings flex h-dvh flex-col overflow-hidden bg-royal">
+    <div
+      className="blue-rings flex h-dvh flex-col overflow-hidden bg-royal"
+      style={{ overscrollBehavior: "none", touchAction: "none" }}
+    >
       {/* Header — back disc, title, step pips */}
       <header className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-[max(0.8rem,env(safe-area-inset-top))] min-[402px]:px-5">
         <RoundButton href="/world" label="Back to all world lessons">
