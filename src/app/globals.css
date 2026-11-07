@@ -70,9 +70,18 @@ body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  /* No double-tap zoom either: on iOS the double-tap is one
+     gesture — it zooms AND word-selects. Activity stages set
+     their own stricter touch-action and are unaffected. */
+  touch-action: manipulation;
 }
 body *:not(input):not(textarea):not([contenteditable]) {
   -webkit-touch-callout: none;
+  /* Selection stays dead per-element too, not just by body
+     propagation — a plain tap or double-tap on a word label,
+     hint, counter or button must select nothing (Grey, 2026-11-07). */
+  -webkit-user-select: none;
+  user-select: none;
 }
 img {
   -webkit-user-drag: none;
