@@ -39,26 +39,29 @@ export function AvatarPill() {
   );
 }
 
-/* ─── Count pills (streak / stars) — display only, never currency ─── */
+/* ─── Count pills (streak / stars) — never currency. With an href
+   they render as real links (header pills take you to Progress,
+   Grey, Nov 7); the art is identical either way, the link only
+   adds the wiring plus a small press squash. ─── */
 
 export function CountPill({
   tone,
   children,
   label,
+  href,
 }: {
   tone: "streak" | "stars";
   children: ReactNode;
   label: string;
+  href?: string;
 }) {
-  return (
-    <span
-      aria-label={label}
-      className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[17px] font-black ${
-        tone === "stars"
-          ? "bg-white text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]"
-          : "bg-white/15 text-white"
-      }`}
-    >
+  const className = `flex h-11 items-center gap-1.5 rounded-full px-3.5 text-[17px] font-black ${
+    tone === "stars"
+      ? "bg-white text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]"
+      : "bg-white/15 text-white"
+  }`;
+  const inner = (
+    <>
       {tone === "stars" ? (
         <span className="grid h-6 w-6 place-items-center rounded-full bg-gold text-white">
           <GlyphStar size={15} />
@@ -69,6 +72,22 @@ export function CountPill({
         </span>
       )}
       {children}
+    </>
+  );
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={label}
+        className={`${className} transition-transform duration-150 active:scale-95`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <span aria-label={label} className={className}>
+      {inner}
     </span>
   );
 }
@@ -86,10 +105,10 @@ export function BlueHeader({
     <header className="blue-rings flex items-center justify-between gap-2 px-4 pb-2 pt-[max(0.9rem,env(safe-area-inset-top))]">
       <AvatarPill />
       <div className="flex items-center gap-2">
-        <CountPill tone="streak" label={`${streak} day streak`}>
+        <CountPill tone="streak" label={`${streak} day streak`} href="/progress#day-streak">
           {streak}
         </CountPill>
-        <CountPill tone="stars" label={`${xp} stars earned`}>
+        <CountPill tone="stars" label={`${xp} stars earned`} href="/progress">
           {xp}
         </CountPill>
       </div>

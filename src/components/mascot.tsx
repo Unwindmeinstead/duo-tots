@@ -80,7 +80,7 @@ export function Mascot({
     <span
       className={`block overflow-hidden ${
         ring
-          ? "rounded-[46%_54%_56%_44%/52%_46%_54%_48%] bg-royal shadow-[0_18px_44px_rgba(14,42,99,0.22)] ring-[6px] ring-white"
+          ? "rounded-full bg-royal shadow-[0_8px_20px_rgba(14,42,99,0.18)] ring-4 ring-white"
           : "rounded-full"
       } ${className}`}
       style={{ width: size, height: size }}

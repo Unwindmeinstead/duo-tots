@@ -3,7 +3,7 @@
 /* ─── Floating tab bar ───
    The reference's signature chrome: a royal-blue pill floating above
    the bottom edge with side margins.
-   MOTION (motion system, src/styles/motion.css): the four tabs are
+   MOTION (motion system, src/styles/motion.css): the five tabs are
    equal slots that NEVER change layout. The white active pill is a
    separate layer behind the active tab that GLIDES between slots on
    transform alone; glyph + label ride in a stack that cross-fades
@@ -14,13 +14,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GlyphApps, GlyphChart, GlyphHome, GlyphPlay } from "./glyphs";
+import { GlyphApps, GlyphChart, GlyphGear, GlyphHome, GlyphPlay } from "./glyphs";
 
 const TABS = [
   { href: "/", label: "Learn", Glyph: GlyphHome },
   { href: "/explore", label: "Explore", Glyph: GlyphApps },
   { href: "/play", label: "Play", Glyph: GlyphPlay },
   { href: "/progress", label: "Progress", Glyph: GlyphChart },
+  { href: "/settings", label: "Settings", Glyph: GlyphGear },
 ] as const;
 
 export function TabBar() {
@@ -40,7 +41,7 @@ export function TabBar() {
           aria-hidden
           className="kt-tab-glide absolute bottom-2 left-2 top-2 rounded-full bg-white shadow"
           style={{
-            width: "calc((100% - 16px) / 4)",
+            width: "calc((100% - 16px) / 5)",
             transform:
               activeIndex >= 0
                 ? `translateX(${activeIndex * 100}%)`
