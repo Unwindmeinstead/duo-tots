@@ -78,7 +78,16 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
+    /* h-dvh, not min-h-dvh (audit failure #4): the play area below
+       scrolls internally, and an internal overflow region only
+       engages when every ancestor has a DEFINITE height. With a
+       min-height root the column simply grew past the screen, the
+       scroll region grew with it, and the tray's bottom row hung
+       off-screen under the locked page — unreachable. A fixed
+       viewport height makes the flex chain constrain: header and
+       prompt stay pinned, tower + tray scroll inside when a short
+       screen can't hold them, and nothing scrolls when it fits. */
+    <div className="kt-fade-in flex h-dvh flex-col bg-royal">
       <GameHeader title="Stacking blocks" onBack={onBack} step={placed} total={TOTAL} />
       <GameSheet>
         {needed ? (

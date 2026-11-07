@@ -139,7 +139,7 @@ export function PromptRow({
 export function GameSheet({ children }: { children: ReactNode }) {
   return (
     <div
-      className="flex flex-1 flex-col rounded-t-[32px] bg-white px-4 min-[402px]:px-5"
+      className="flex min-h-0 flex-1 flex-col rounded-t-[32px] bg-white px-4 min-[402px]:px-5"
       style={{ paddingBottom: "max(1.4rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))" }}
     >
       {children}
