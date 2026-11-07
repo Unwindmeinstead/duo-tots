@@ -124,6 +124,13 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const progressRef = useRef(progress);
   const xpAtMount = useRef(progress.xp);
   const celebratedRef = useRef(false);
+  /* Completion is ARMED here, never fired: the record effect below
+     runs on the last unseen word's first step — firing the
+     celebration there would replace that word's card in the same
+     commit it mounts, so the final card could never be seen.
+     Instead the celebration fires from go(1) when the learner
+     advances past the deck's last step. */
+  const pendingCelebrateRef = useRef(false);
   const mountedCategoryRef = useRef(category.id);
   /* recordWordSeen fires once per item — on its first word step only. */
   const recordedRef = useRef<Set<string>>(new Set());
@@ -141,6 +148,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
     if (mountedCategoryRef.current !== category.id) {
       mountedCategoryRef.current = category.id;
       celebratedRef.current = false;
+      pendingCelebrateRef.current = false;
       recordedRef.current = new Set();
       xpAtMount.current = progressRef.current.xp;
       setDeck(buildDeck(category, progressRef.current));
@@ -164,8 +172,9 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const pct = deck.length > 0 ? Math.round(((stepIndex + 1) / deck.length) * 100) : 100;
 
   /* Record every word shown — on its first word step only, including
-     the first card on mount — and celebrate the moment the last
-     unseen word completes the category. */
+     the first card on mount — and arm the completion celebration the
+     moment the last unseen word completes the category (it fires
+     when the learner advances past the final card; see go). */
   useEffect(() => {
     if (!step || !current || step.kind !== "word") return;
     if (recordedRef.current.has(current.id)) return;
@@ -189,10 +198,10 @@ export function LessonClient({ category }: { category: VocabCategory }) {
       setSessionNew((prev) => (prev.includes(current.word) ? prev : [...prev, current.word]));
     }
     if (transitioned && allWordsSeen(next, category) && !celebratedRef.current) {
-      celebratedRef.current = true;
-      playCelebration();
-      playStarChime();
-      setPhase("celebrate");
+      /* Arm only — go(1) fires the celebration once the learner
+         steps past the final card, so the card that completed the
+         category stays on screen like every other card. */
+      pendingCelebrateRef.current = true;
     }
   }, [stepIndex, step, current, category]);
 
@@ -215,11 +224,20 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   };
 
   /* Prev/Next walk deck steps. Advancing past the last step ends the
-     session with the goodbye ritual (when no completion celebration
-     fired first); going back from the first step wraps. */
+     session: with the completion celebration if it was armed by the
+     record effect (the star was earned during this walk), otherwise
+     with the goodbye ritual; going back from the first step wraps. */
   const go = (dir: -1 | 1) => {
     if (deck.length === 0) return;
     if (dir === 1 && stepIndex >= deck.length - 1) {
+      if (pendingCelebrateRef.current && !celebratedRef.current) {
+        celebratedRef.current = true;
+        pendingCelebrateRef.current = false;
+        playCelebration();
+        playStarChime();
+        setPhase("celebrate");
+        return;
+      }
       setPhase("goodbye");
       return;
     }
