@@ -6,7 +6,10 @@
    its parent with one mode's artwork — photo (whole picture always
    visible over a blurred copy of itself), digit hero, letter hero,
    colour swatch, shape art, static art or a concept card — and
-   answers a tap with a pop, a squash and a burst of sparkles. */
+   answers a tap with a pop, a squash and a burst of sparkles.
+   EXCEPTION — Nature (Grey, 2026-11-07): a tap there speaks the
+   word ONLY. No pop, no squash/bounce, no sparkles. Scoped by
+   categoryId below; every other category keeps the full reaction. */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { resolveWordImage } from "@/lib/media";
@@ -311,7 +314,16 @@ export function WordVisual({
     };
   }, [imageQuery, imageMode, wantsRemote]);
 
+  /* Nature deck: tap = speak only, no reaction animation or pop
+     (Grey, 2026-11-07). Keyed on the category this card already
+     knows it belongs to, so no other lesson's behaviour changes. */
+  const speakOnly = categoryId === "nature";
+
   const triggerReaction = () => {
+    if (speakOnly) {
+      onTap?.();
+      return;
+    }
     playPop();
     setBurstKey((k) => k + 1);
     if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
