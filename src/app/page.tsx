@@ -323,6 +323,7 @@ export default function Home() {
           xpEarned={xp}
           onKeepGoing={collectLevelUp}
           keepGoingLabel="Collect"
+          onHome={collectLevelUp}
         />
       )}
     </main>

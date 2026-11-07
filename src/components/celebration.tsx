@@ -22,6 +22,7 @@ export function CelebrationScreen({
   onKeepGoing,
   onFinish,
   homeHref,
+  onHome,
   exitLabel = "Home",
   accent,
 }: {
@@ -35,6 +36,10 @@ export function CelebrationScreen({
      primary action (the lesson flow uses it for the goodbye ritual). */
   onFinish?: () => void;
   homeHref?: string;
+  /* When the celebration is already ON the home page (the level-up
+     overlay), the exit must run an action — acknowledge/dismiss —
+     instead of linking to the page it is already on. */
+  onHome?: () => void;
   /* Label for the exit link — names its destination: "Home" only for
      `/`; world passes "All lessons", games pass "All games". */
   exitLabel?: string;
@@ -103,12 +108,22 @@ export function CelebrationScreen({
               Wrap up
             </PillButton>
           ) : null}
-          <Link
-            href={homeHref ?? "/"}
-            className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-white/15 px-6 text-[16px] font-black text-white"
-          >
-            {exitLabel}
-          </Link>
+          {onHome ? (
+            <button
+              type="button"
+              onClick={onHome}
+              className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-white/15 px-6 text-[16px] font-black text-white"
+            >
+              {exitLabel}
+            </button>
+          ) : (
+            <Link
+              href={homeHref ?? "/"}
+              className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-white/15 px-6 text-[16px] font-black text-white"
+            >
+              {exitLabel}
+            </Link>
+          )}
         </div>
       </div>
     </div>
