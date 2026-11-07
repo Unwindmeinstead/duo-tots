@@ -8,7 +8,7 @@
    colour swatch, shape art, static art or a concept card — and
    answers a tap with a pop, a squash and a burst of sparkles. */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { resolveWordImage } from "@/lib/media";
 import { getLocalImage } from "@/lib/local-images";
 import { playPop } from "@/lib/audio";
@@ -230,6 +230,26 @@ export interface WordVisualProps {
   /** Deck-step index — changing it restarts the tap reaction. */
   stepKey?: number;
   onTap?: () => void;
+  /** Lesson controls (prev · Practice · Next) rendered INSIDE the
+      card's bottom band — variant A layout (Grey's pick, 2026-11-07).
+      The band stops click propagation so the controls never trigger
+      the card's tap-to-speak. Tile modes pin it to the frame's bottom
+      edge; photo modes stack it under the word inside the scrim. */
+  footer?: ReactNode;
+}
+
+/* Footer pinned to a full-frame tile's bottom edge (digit / letter /
+   colour / concept / fallback modes — the frame IS the whole stage). */
+function BandFooter({ children }: { children?: ReactNode }) {
+  if (!children) return null;
+  return (
+    <div
+      className="absolute inset-x-0 bottom-0 px-4 pb-4"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function WordVisual({
@@ -241,6 +261,7 @@ export function WordVisual({
   categoryId,
   stepKey,
   onTap,
+  footer,
 }: WordVisualProps) {
   /* A QC-passed local photo wins over every other source. */
   const slug = (assetKey ?? word.toLowerCase()).replace(/\s+/g, "-");
@@ -315,7 +336,7 @@ export function WordVisual({
           : "text-[clamp(6rem,44vmin,16rem)]";
     const label = isNaN(n) ? "" : numberToWord(n);
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${label || word}`} className={`${frameCls} block`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${label || word}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
         <span className={`flex h-full flex-col items-center justify-center px-4 ${reacting ? "kt-squash" : ""}`}>
           <span key={burstKey} className={`flex flex-col items-center ${burstKey > 0 ? "kt-bounce" : ""}`}>
             <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
@@ -336,8 +357,9 @@ export function WordVisual({
             )}
           </span>
         </span>
+        <BandFooter>{footer}</BandFooter>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
@@ -345,7 +367,7 @@ export function WordVisual({
   if (imageMode === "alphabet") {
     const letter = (word.trim().slice(0, 1) || word).toUpperCase();
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear letter ${letter}`} className={`${frameCls} block`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear letter ${letter}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
         <span className={`flex h-full flex-col items-center justify-center ${reacting ? "kt-squash" : ""}`}>
           <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
             <span className="select-none text-[clamp(7rem,58vmin,20rem)] font-black uppercase leading-none tracking-tight text-white">
@@ -355,8 +377,9 @@ export function WordVisual({
           {/* No "Letter X" caption — the letter is plainly visible and
               tapping speaks it (Grey, 2026-11-07). */}
         </span>
+        <BandFooter>{footer}</BandFooter>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
@@ -370,7 +393,7 @@ export function WordVisual({
       : len > 5 ? "text-[clamp(2.6rem,12vmin,5rem)]"
       : "text-[clamp(3rem,14vmin,6rem)]";
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block`} style={{ background: hex }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: hex }}>
         <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
           <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
             <span
@@ -381,28 +404,36 @@ export function WordVisual({
             </span>
           </span>
         </span>
+        <BandFooter>{footer}</BandFooter>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
   /* ── Shape art on a clean white stage ── */
   if (imageMode === "shape") {
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block bg-white`}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer bg-white`}>
         <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
           <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
             <ShapeArt word={word} size={Math.min(300, 220)} />
           </span>
         </span>
         {/* The shape carries no text of its own, so the word sits inside
-            the tile's empty bottom band (ink on white — no scrim needed).
+            the tile's bottom band (ink on white — no scrim needed), on
+            its own line ABOVE the in-card controls (variant A stacking
+            rule: the word never shares its row with the buttons).
             No "Tap to hear" wording anywhere (Grey, 2026-11-07): a tiny
             speaker badge in the top corner says "tap = sound" instead. */}
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 text-center">
-          <span className="block text-[26px] font-black leading-tight tracking-tight text-ink">
+        <span className="absolute inset-x-0 bottom-0 block px-4 pb-4">
+          <span className="block text-center text-[26px] font-black leading-tight tracking-tight text-ink">
             {word}
           </span>
+          {footer ? (
+            <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+              {footer}
+            </div>
+          ) : null}
         </span>
         <span
           className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-white shadow-[0_6px_16px_rgba(14,42,99,0.22)]"
@@ -412,7 +443,7 @@ export function WordVisual({
           <GlyphSpeaker size={20} />
         </span>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
@@ -424,7 +455,7 @@ export function WordVisual({
     const src = `/images/${categoryId}/${key}.${ext}${isCuratedPng ? `?v=${encodeURIComponent(CURATED_STATIC_BITMAP_VER)}` : ""}`;
     const isActionArt = categoryId === "actions";
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block`} style={{ background: tint(categoryColor, 0.9) }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.9) }}>
         <span className={`block h-full w-full ${reacting ? "kt-squash" : ""}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -434,16 +465,22 @@ export function WordVisual({
             draggable={false}
           />
         </span>
-        {/* Same in-card word band as the photo cards: full-bleed art
-            gets the dark gradient scrim, padded art reads it as a
-            caption over the tint. */}
-        <span className={`pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
+        {/* Same in-card band as the photo cards: word on its own line,
+            controls stacked under it (variant A). Full-bleed art gets
+            the dark gradient scrim, padded art reads it as a caption
+            over the tint. */}
+        <span className={`absolute inset-x-0 bottom-0 block px-4 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
           <span className={`block text-[26px] font-black leading-tight tracking-tight ${isActionArt ? "text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]" : "text-ink"}`}>
             {word}
           </span>
+          {footer ? (
+            <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+              {footer}
+            </div>
+          ) : null}
         </span>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
@@ -455,7 +492,7 @@ export function WordVisual({
       : len > 6 ? "text-[clamp(2.4rem,11vmin,4.4rem)]"
       : "text-[clamp(2.8rem,13vmin,5.4rem)]";
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block`} style={{ background: tint(categoryColor, 0.88) }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.88) }}>
         <span className={`flex h-full items-center justify-center px-5 ${reacting ? "kt-squash" : ""}`}>
           <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
             <span className={`block select-none text-balance text-center font-black leading-[0.95] ${sz}`} style={{ color: categoryColor }}>
@@ -463,8 +500,9 @@ export function WordVisual({
             </span>
           </span>
         </span>
+        <BandFooter>{footer}</BandFooter>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
@@ -480,27 +518,33 @@ export function WordVisual({
   if (!imageUrl) {
     const Glyph = CATEGORY_GLYPHS[categoryId] ?? CATEGORY_GLYPHS.kid_general;
     return (
-      <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block`} style={{ background: tint(categoryColor, 0.88) }}>
+      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.88) }}>
         <span className={`flex h-full flex-col items-center justify-center gap-3 ${reacting ? "kt-squash" : ""}`}>
           <span style={{ color: categoryColor }}>
             <Glyph size={72} />
           </span>
           <span className="text-[24px] font-black text-ink">{word}</span>
         </span>
+        <BandFooter>{footer}</BandFooter>
         <Sparkles burstKey={burstKey} />
-      </button>
+      </div>
     );
   }
 
   return (
-    <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className="relative flex h-full w-full items-center justify-center">
+    <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className="relative flex h-full w-full cursor-pointer items-center justify-center">
       {/* The card IS the photo: it renders at its own aspect ratio, as
           large as the stage allows — the whole picture, edge to edge,
           never cropped and no filler bands (Grey's rule, 2026-11-07).
-          The word lives INSIDE the photo now, on a soft dark gradient
-          band at its bottom edge (Grey's rule, 2026-11-07) — the
-          subject sits centre-frame, the band covers background. No
-          "Tap to hear" hint text (Grey, 2026-11-07). */}
+          Variant A (Grey's pick, 2026-11-07): the word AND the lesson
+          controls live INSIDE the photo, stacked in its bottom band
+          over the soft dark gradient — word on its own line first,
+          the control row under it. Stacking is the law, not an
+          exception: the word never shares a row with the buttons, so
+          it can never truncate, even on wide photos with long words
+          (Colosseum). No "Tap to hear" hint text (Grey, 2026-11-07).
+          The root is a div, not a <button>, so the band's real buttons
+          never nest inside another button. */}
       <span className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -509,13 +553,18 @@ export function WordVisual({
           className="kt-fade-in block max-h-full max-w-full"
           draggable={false}
         />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 via-black/45 to-transparent px-5 pb-4 pt-16 text-left">
+        <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 via-black/45 to-transparent px-4 pb-4 pt-14 text-left">
           <span className="block text-[26px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
             {word}
           </span>
+          {footer ? (
+            <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+              {footer}
+            </div>
+          ) : null}
         </span>
       </span>
       <Sparkles burstKey={burstKey} />
-    </button>
+    </div>
   );
 }

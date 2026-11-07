@@ -179,13 +179,20 @@ export function WorldLessonClient({
         )}
 
         {step === 2 && (
-          <button
-            type="button"
+          <div
+            role="button"
             onClick={onSeeTap}
             aria-label={`See it: ${lesson.title}. Tap to hear: ${lesson.sayIt}`}
-            className="kt-pop-in relative flex h-full w-full items-center justify-center text-left"
+            className="kt-pop-in relative flex h-full w-full cursor-pointer items-center justify-center text-left"
           >
-            {/* The card IS the photo — whole picture, never cropped. */}
+            {/* The card IS the photo — whole picture, never cropped.
+                Variant A (Grey's pick, 2026-11-07): the title and this
+                step's controls ride INSIDE the photo's bottom band,
+                stacked — title on its own line (never truncated), the
+                speaker pill and the Next pill on the row under it. The
+                below-stage Next pill hides on this step; the band's
+                pill is the same goNext. Root is a div so the pill's
+                real button never nests inside another button. */}
             <span key={seeSquash} className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${seeSquash > 0 ? "kt-squash" : ""}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -194,12 +201,25 @@ export function WorldLessonClient({
                 className="block max-h-full max-w-full"
                 draggable={false}
               />
-              <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center whitespace-nowrap rounded-full bg-white px-3.5 py-2.5 text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
-                <GlyphSpeaker size={18} />
+              <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-4 pt-14">
+                <span className="block text-[24px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
+                  {lesson.title}
+                </span>
+                <span className="mt-3 flex items-center gap-2.5">
+                  <span className="inline-flex items-center rounded-full bg-white px-3.5 py-2.5 text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]" aria-hidden>
+                    <GlyphSpeaker size={18} />
+                  </span>
+                  <span className="flex-1" />
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <PillButton small color="#FFFFFF" ink="#1748AC" onClick={goNext}>
+                      Next <GlyphChevronR size={18} />
+                    </PillButton>
+                  </span>
+                </span>
               </span>
             </span>
             <Sparkles burstKey={seeBurst} />
-          </button>
+          </div>
         )}
 
         {step === 3 && (
@@ -229,16 +249,20 @@ export function WorldLessonClient({
         )}
       </div>
 
-      {/* One way forward — child-paced, it waits. */}
-      <div
-        className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-2 min-[402px]:px-5"
-        style={{ paddingBottom: "max(0.9rem, env(safe-area-inset-bottom, 0px))" }}
-      >
-        <PillButton color="#FFFFFF" ink="#1748AC" onClick={goNext} className="min-h-[64px] w-full text-[20px]">
-          {isLast ? "Finish" : "Next"}
-          {!isLast && <GlyphChevronR size={20} />}
-        </PillButton>
-      </div>
+      {/* One way forward — child-paced, it waits. On the see-it step
+          the pill rides inside the photo's band instead (variant A),
+          so this below-stage pill hides and the stage keeps the room. */}
+      {step !== 2 && (
+        <div
+          className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-2 min-[402px]:px-5"
+          style={{ paddingBottom: "max(0.9rem, env(safe-area-inset-bottom, 0px))" }}
+        >
+          <PillButton color="#FFFFFF" ink="#1748AC" onClick={goNext} className="min-h-[64px] w-full text-[20px]">
+            {isLast ? "Finish" : "Next"}
+            {!isLast && <GlyphChevronR size={20} />}
+          </PillButton>
+        </div>
+      )}
     </div>
   );
 }

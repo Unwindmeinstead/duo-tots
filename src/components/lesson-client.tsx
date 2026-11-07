@@ -3,10 +3,11 @@
 /* ─── Lesson ───
    One category as a deck of full-stage cards. Chrome is the
    Kidtopia lesson band: a chunky gold progress bar in the blue
-   zone, the word visual as a big rounded card, and a bottom band
-   of pill actions (Previous · Practice · Next). The deck logic —
-   blocked bursts for new words, record-once semantics, the
-   completion celebration — is unchanged from the original flow. */
+   zone, and the word visual as a big rounded card whose own bottom
+   band carries the word and the pill actions (Previous · Practice ·
+   Next) INSIDE the photo — variant A (Grey's pick, 2026-11-07).
+   The deck logic — blocked bursts for new words, record-once
+   semantics, the completion celebration — is unchanged. */
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -223,6 +224,31 @@ export function LessonClient({ category }: { category: VocabCategory }) {
     await speakWord(step?.kind === "sentence" && step.sentence ? step.sentence : current.word);
   };
 
+  /* The lesson controls, rendered by the card itself inside the
+     photo's bottom band (variant A, Grey's pick 2026-11-07). Prev is
+     a dark glass disc so it reads on any photo; Practice stays the
+     white pill, Next the gold pill. The card wraps this node in a
+     click-shield so pressing a control never speaks the word. */
+  const cardControls = (
+    <div className="flex items-center gap-2.5">
+      <button
+        type="button"
+        aria-label="Previous card"
+        onClick={() => go(-1)}
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/35 text-white ring-1 ring-white/45 backdrop-blur-[2px] transition-transform active:scale-95"
+      >
+        <GlyphChevronL size={22} />
+      </button>
+      <div className="flex-1" />
+      <PillButton small color="#FFFFFF" ink="#1748AC" href={`/practice?category=${category.id}`} className="shrink-0">
+        Practice
+      </PillButton>
+      <PillButton small color={GOLD} ink="#182642" onClick={() => go(1)} className="shrink-0">
+        Next <GlyphChevronR size={19} />
+      </PillButton>
+    </div>
+  );
+
   /* Prev/Next walk deck steps. Advancing past the last step ends the
      session: with the completion celebration if it was armed by the
      record effect (the star was earned during this walk), otherwise
@@ -383,8 +409,15 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
-      {/* ── Stage ── */}
-      <div className="relative mx-auto min-h-0 w-full max-w-2xl flex-1 px-3">
+      {/* ── Stage ──
+          No below-card band anymore: the controls live inside the
+          card (variant A), so the stage runs to the screen's bottom
+          edge (safe-area padded) and the photo grows into the space
+          the old band used. */}
+      <div
+        className="relative mx-auto min-h-0 w-full max-w-2xl flex-1 px-3"
+        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
+      >
         {step.sayIt ? (
           <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center">
             <span className="kt-pulse-soft inline-flex items-center rounded-full bg-gold px-4 py-2 text-[15px] font-black text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
@@ -417,6 +450,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
               categoryColor={category.color}
               imageSrc={getLocalImage(category.id, slugOf(current)) ?? null}
               onSpeak={speak}
+              footer={cardControls}
             />
           ) : (
             <WordVisual
@@ -429,39 +463,9 @@ export function LessonClient({ category }: { category: VocabCategory }) {
               categoryId={category.id}
               stepKey={stepIndex}
               onTap={speak}
+              footer={cardControls}
             />
           )}
-        </div>
-      </div>
-
-      {/* ── Bottom band: prev · practice · next ──
-          The word + "Tap to hear · swipe for more" used to live here,
-          under the picture; they now ride INSIDE the card itself, on
-          the photo's bottom band (Grey's rule, 2026-11-07) — word
-          visuals and sentence cards both carry their own in-card text,
-          so this band is buttons only and the stage keeps the height. */}
-      <div
-        className="shrink-0 px-4 pt-3"
-        style={{ paddingBottom: "max(0.9rem, env(safe-area-inset-bottom, 0px))" }}
-      >
-        <div className="mx-auto w-full max-w-2xl">
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              aria-label="Previous card"
-              onClick={() => go(-1)}
-              className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white/15 text-white transition-transform active:scale-95"
-            >
-              <GlyphChevronL size={24} />
-            </button>
-            <div className="flex-1" />
-            <PillButton small color="#FFFFFF" ink="#1748AC" href={`/practice?category=${category.id}`} className="shrink-0">
-              Practice
-            </PillButton>
-            <PillButton small color={GOLD} ink="#182642" onClick={() => go(1)} className="shrink-0">
-              Next <GlyphChevronR size={19} />
-            </PillButton>
-          </div>
         </div>
       </div>
     </div>
