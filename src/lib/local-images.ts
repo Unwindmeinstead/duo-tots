@@ -451,6 +451,7 @@ export const LOCAL_IMAGES: Record<string, string> = {
   "power_words:venture": "/images/power_words/venture.webp",
   "power_words:vision": "/images/power_words/vision.webp",
   "power_words:wisdom": "/images/power_words/wisdom.webp",
+  "shapes:circle": "/images/shapes/circle.webp",
   "space:asteroid": "/images/space/asteroid.webp",
   "space:astronaut": "/images/space/astronaut.webp",
   "space:comet": "/images/space/comet.webp",
