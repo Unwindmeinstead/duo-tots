@@ -42,6 +42,18 @@ export async function resolveWordImage(
 
 const prefetchInFlight = new Set<string>();
 
+/** Warm same-origin rebuilt photos so lesson/practice cards render instantly. */
+export function prefetchLocalImages(srcs: (string | undefined)[]) {
+  if (typeof window === "undefined") return;
+  for (const src of srcs) {
+    if (!src || prefetchInFlight.has(src)) continue;
+    prefetchInFlight.add(src);
+    const img = new window.Image();
+    img.onload = img.onerror = () => prefetchInFlight.delete(src);
+    img.src = src;
+  }
+}
+
 export function prefetchWordImages(queries: string[], mode: ImageMode = "photo", matches?: string[]) {
   if (mode !== "photo" && mode !== "vector") return;
   for (let i = 0; i < queries.length; i++) {

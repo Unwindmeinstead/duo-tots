@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
 const HEADERS = { "Cache-Control": "public, max-age=2592000, s-maxage=2592000" };
+/* Empty lookups must never be long-cached: a transient outage or an
+   as-yet-unconfigured API key would otherwise poison the CDN entry for a month. */
+const EMPTY_HEADERS = { "Cache-Control": "no-store" };
 const PIXABAY_KEY = process.env.PIXABAY_API_KEY ?? "";
 
 /** Same query → same index into result lists (legacy photo variety). */
@@ -158,7 +161,7 @@ export async function GET(request: Request) {
       (process.env.VECTEEZY_BEARER_TOKEN ?? process.env.VECTEEZY_API_KEY ?? "").length > 0
       && Number.parseInt(process.env.VECTEEZY_ACCOUNT_ID ?? "", 10) > 0;
 
-    const vectOnly = /^1|true|yes$/i.test(process.env.VECTEEZY_ONLY ?? "");
+    const vectOnly = /^(1|true|yes)$/i.test(process.env.VECTEEZY_ONLY ?? "");
 
     if (vectConfigured) {
       if (mode === "vector") {
@@ -171,7 +174,7 @@ export async function GET(request: Request) {
         const vz = await fetchVecteezyPreview(query, "photo", matchLemma);
         if (vz) return NextResponse.json({ imageUrl: vz, source: "vecteezy" }, { headers: HEADERS });
       }
-      if (vectOnly) return NextResponse.json({ imageUrl: "", source: "none" }, { headers: HEADERS });
+      if (vectOnly) return NextResponse.json({ imageUrl: "", source: "none" }, { headers: EMPTY_HEADERS });
     }
 
     if (PIXABAY_KEY) {
@@ -193,9 +196,9 @@ export async function GET(request: Request) {
       if (wikiUrl) return NextResponse.json({ imageUrl: wikiUrl, source: "wikipedia" }, { headers: HEADERS });
     }
 
-    return NextResponse.json({ imageUrl: "", source: "none" }, { headers: HEADERS });
+    return NextResponse.json({ imageUrl: "", source: "none" }, { headers: EMPTY_HEADERS });
   } catch {
-    return NextResponse.json({ imageUrl: "", source: "none" }, { headers: HEADERS });
+    return NextResponse.json({ imageUrl: "", source: "none" }, { headers: EMPTY_HEADERS });
   }
 }
 

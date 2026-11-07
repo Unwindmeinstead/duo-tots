@@ -7,9 +7,25 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Visual vocabulary learning app for toddlers.",
     start_url: "/",
     display: "standalone",
-    background_color: "#ede4d3",
-    theme_color: "#ede4d3",
+    background_color: "#1D5CD6",
+    theme_color: "#1D5CD6",
     icons: [
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+      {
+        src: "/icon-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
       {
         src: "/icon-192.svg",
         sizes: "192x192",
@@ -19,12 +35,6 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icon-512.svg",
         sizes: "512x512",
         type: "image/svg+xml",
-      },
-      {
-        src: "/icon-maskable.svg",
-        sizes: "512x512",
-        type: "image/svg+xml",
-        purpose: "maskable",
       },
     ],
   };

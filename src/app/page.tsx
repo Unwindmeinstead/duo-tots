@@ -1,127 +1,330 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
-import { AppShell, Section, LinkBtn, PageIntro, StageBadge, TopicRowCard, TopBar, MiniStat } from "@/components/ui";
-import { IconArrowRight, CATEGORY_ICONS } from "@/components/icons";
-import { categories, STAGES } from "@/lib/vocab";
-import { loadProgress, getNextLesson, getCategoryMastery } from "@/lib/progress";
+/* ─── Home ───
+   The Kidtopia front door: royal-blue hero with Pip center stage,
+   then the white sheet (wave edge) holding the daily goal, the
+   next-up card, the Play Zone card and the learning path as chunky
+   topic cards grouped by stage. */
 
-const STAGE_BADGE: Record<string, { bg: string; text: string }> = {
-  foundation: { bg: "#1b4332", text: "#fff" },
-  world: { bg: "#e76f51", text: "#fff" },
-  advanced: { bg: "#6c5ce7", text: "#fff" },
-};
+import Link from "next/link";
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  ArtTile,
+  BlueHeader,
+  GoalRing,
+  PillButton,
+  SectionHead,
+  TopicCard,
+  WaveSheet,
+} from "@/components/kit";
+import { Mascot } from "@/components/mascot";
+import { GlyphChevronR, GlyphPlay, GlyphPuzzle } from "@/components/glyphs";
+import { CelebrationScreen } from "@/components/celebration";
+import { categories, STAGES } from "@/lib/vocab";
+import { WORLD_LESSONS, worldNodeId } from "@/lib/world-book";
+import {
+  loadProgress,
+  saveProgress,
+  getNextLesson,
+  getCategoryMastery,
+  getLevelInfo,
+  getCategoryStars,
+  getDailyGoalState,
+} from "@/lib/progress";
+import { playCelebration, playPop, playStarChime } from "@/lib/audio";
+import { tint } from "@/lib/theme";
+
+type LevelInfo = ReturnType<typeof getLevelInfo>;
+
+/* Stage-end landmark: a quiet wide marker that closes each stage
+   group — pale wash of the stage colour, flag medallion, label. */
+function StageLandmark({ label, color }: { label: string; color: string }) {
+  return (
+    <div
+      aria-hidden
+      className="flex items-center justify-center gap-3 rounded-[24px] px-4 py-3.5"
+      style={{ background: tint(color, 0.9) }}
+    >
+      <svg width="26" height="26" viewBox="0 0 24 24" fill={color} aria-hidden>
+        <path d="M6.5 3.2a1 1 0 0 1 2 .3c1.4-.6 2.6.2 4 .2 1.2 0 2.4-.5 3.5-.2.5.1.9.6.9 1.1v5.2c0 .6-.5 1-1 .9-1.3-.4-2.5.2-3.9.2-1.5 0-2.7-.8-4-.2v9.6a1.2 1.2 0 0 1-2.4 0V3.9c0-.4.4-.7.9-.7Z" />
+      </svg>
+      <span className="text-[14px] font-black uppercase tracking-wide text-ink">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 export default function Home() {
-  const [progress] = useState(() => loadProgress());
+  const [progress, setProgress] = useState(() => loadProgress());
+  const [showLevelUp, setShowLevelUp] = useState<LevelInfo | null>(null);
+  const levelCheckedRef = useRef(false);
+
+  const xp = progress.xp ?? 0;
+  const dailyState = getDailyGoalState(progress);
+  const goalMet = dailyState.met;
+
   const rec = getNextLesson(progress);
-  const totalWords = categories.reduce((n, c) => n + c.items.length, 0);
-  const openedTopics = progress.completedCategories.length;
-  const strongestCategory = categories
-    .map((cat) => ({ cat, mastery: getCategoryMastery(progress, cat.id) }))
-    .filter((entry) => entry.mastery > 0)
-    .sort((a, b) => b.mastery - a.mastery)[0];
-  const foundationCount = categories.filter((cat) => cat.stage === "foundation").length;
-  const RecIcon = CATEGORY_ICONS[rec.category.id];
-  const dailyPct = progress.dailyGoal > 0 ? Math.min(100, Math.round((progress.dailyDone / progress.dailyGoal) * 100)) : 0;
-  const goalMet = progress.dailyDone >= progress.dailyGoal;
   const recMastery = getCategoryMastery(progress, rec.category.id);
+  const remainingWords = Math.max(dailyState.goal - dailyState.done, 0);
   const lessonLine = goalMet
-    ? "Daily goal met — tap for a quick session or browse topics."
-    : `${rec.category.items.length} words · ${recMastery > 0 ? `${recMastery}% progress` : "New"} · ${progress.dailyGoal - progress.dailyDone} answers to goal`;
+    ? `${rec.category.items.length} words${recMastery > 0 ? ` · ${recMastery}% mastered` : ""} · Goal done`
+    : `${rec.category.items.length} words${recMastery > 0 ? ` · ${recMastery}% mastered` : ""} · ${remainingWords} more for today's goal`;
+
+  /* Path nodes derive from the catalog in stage order. When the
+     next-up hero IS the path's first topic, the path does not repeat
+     it underneath — the hero card is that topic's entry point.
+     currentId is computed on the unfiltered list, so the excluded
+     tile never renders a START bubble; the hero carries the call. */
+  const orderedCats = STAGES.flatMap((s) => categories.filter((c) => c.stage === s.id));
+  const heroDupId = rec.category.id === orderedCats[0]?.id ? rec.category.id : null;
+  const pathGroups = STAGES.map((s) => ({
+    stage: s,
+    cats: categories.filter((c) => c.stage === s.id && c.id !== heroDupId),
+    count: categories.filter((c) => c.stage === s.id).length,
+  }));
+  const currentId = orderedCats.find((c) => getCategoryStars(progress, c.id) === 0)?.id;
+
+  /* Exactly one current stop on the whole screen: the first
+     unstarred category; world lessons become current only when
+     every category already has a star. */
+  const worldCurrentId = currentId
+    ? undefined
+    : WORLD_LESSONS.find((l) => getCategoryStars(progress, worldNodeId(l.id)) === 0)?.id;
+
+  /* Level-up celebration: fires once on mount when the saved
+     levelCelebrated marker is behind the level the XP already earns. */
+  useEffect(() => {
+    if (levelCheckedRef.current) return;
+    levelCheckedRef.current = true;
+    const info = getLevelInfo(progress.xp ?? 0);
+    if (info.level > (progress.levelCelebrated ?? 1)) {
+      setShowLevelUp(info);
+      playCelebration();
+      playStarChime();
+    }
+    // Mount-only check against the initially loaded progress snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const collectLevelUp = () => {
+    if (!showLevelUp) return;
+    playPop();
+    const next = { ...progress, levelCelebrated: showLevelUp.level };
+    saveProgress(next);
+    setProgress(next);
+    setShowLevelUp(null);
+  };
 
   return (
-    <AppShell>
-      <TopBar streak={progress.streak} xp={progress.stars} level={progress.level} dailyDone={progress.dailyDone} dailyGoal={progress.dailyGoal} wordsLearned={progress.practicedWords} totalWords={totalWords} />
-      <PageIntro eyebrow="Daily learning" title="Keep the momentum" subtitle={`${categories.length} topics · ${totalWords} words · ${dailyPct >= 100 ? "goal complete" : `${progress.dailyGoal - progress.dailyDone} to go today`}`} />
+    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-royal">
+      <BlueHeader streak={progress.streak} xp={xp} />
 
-      {/* One compact card: next lesson + optional stats (details) */}
-      <div className="px-5 pt-2 pb-1">
-        <div className="overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border)] bg-[var(--surface)] shadow-[var(--shadow-xs)]">
-          <Link
-            href={`/lesson/${rec.category.id}`}
-            className="group flex items-center gap-3 p-3.5 transition-colors hover:bg-[var(--surface-secondary)] active:bg-[var(--surface-secondary)]"
-          >
-            <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: `${rec.category.color}18`, color: rec.category.color }}
-            >
-              {RecIcon ? <RecIcon size={22} /> : null}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--ink-tertiary)]">{goalMet ? "Daily goal" : "Next up"} · {rec.reason}</p>
-              <h2 className="mt-0.5 truncate text-[1.05rem] font-extrabold leading-tight tracking-tight text-[var(--ink)]">{rec.category.name}</h2>
-              <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-[var(--ink-secondary)]">{lessonLine}</p>
-            </div>
-            <span className="flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--border)] bg-[var(--bg)] px-3 py-2 text-[12px] font-semibold text-[var(--ink)] shadow-[var(--shadow-xs)] transition-transform group-hover:translate-x-0.5 group-active:scale-95">
-              Start <IconArrowRight size={15} className="text-[var(--ink-secondary)]" />
-            </span>
-          </Link>
-
-          <details className="group border-t border-[color:var(--border)] bg-[var(--bg)]">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3.5 py-2.5 text-[11px] font-semibold text-[var(--ink-secondary)] transition-colors hover:text-[var(--ink)] [&::-webkit-details-marker]:hidden">
-              <span>Today and library</span>
-              <IconArrowRight size={14} className="shrink-0 text-[var(--ink-tertiary)] transition-transform group-open:rotate-90" />
-            </summary>
-            <div className="border-t border-[color:var(--border)] px-3 pb-3 pt-2">
-              <p className="mb-2.5 text-[12px] leading-relaxed text-[var(--ink-secondary)]">
-                {goalMet
-                  ? "Nice work on today’s goal. Peek at stats or run another topic while your streak is hot."
-                  : `You’ve opened ${openedTopics} of ${categories.length} topics. One short lesson keeps momentum and chips away at the daily goal.`}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <MiniStat label="Opened" value={`${openedTopics}/${categories.length}`} tone="light" />
-                <MiniStat label="Today" value={`${progress.dailyDone}/${progress.dailyGoal}`} tone="light" />
-                <div title={strongestCategory ? strongestCategory.cat.name : undefined}>
-                  <MiniStat label="Top topic" value={strongestCategory ? `${strongestCategory.mastery}%` : "—"} tone="light" />
-                </div>
-              </div>
-            </div>
-          </details>
+      {/* ── Hero: headline + Pip center stage, melting into the blue ── */}
+      <div className="blue-rings relative px-5 pb-0 pt-1">
+        <h1 className="text-[32px] font-black leading-[1.08] tracking-tight text-white">
+          Let&apos;s learn
+          <br />
+          and play!
+        </h1>
+        <p className="mt-1.5 text-[15px] font-bold text-white/70">
+          Pick a card and let&apos;s go
+        </p>
+        <div className="pointer-events-none relative z-0 mx-auto -mb-16 mt-1 w-[min(320px,84vw)]">
+          <Mascot
+            pose="hero"
+            size={320}
+            className="[mask-image:radial-gradient(ellipse_72%_72%_at_50%_46%,black_58%,transparent_76%)]"
+          />
         </div>
       </div>
 
-      {/* ── Categories by stage ── */}
-      {STAGES.map(({ id: stageId, label }) => {
-        const stageCats = categories.filter((c) => c.stage === stageId);
-        if (stageCats.length === 0) return null;
-        const badge = STAGE_BADGE[stageId] ?? STAGE_BADGE.foundation;
-        return (
-          <Section key={stageId}>
-            <StageBadge label={label} color={badge.bg} meta={`${stageCats.length} topics`} />
-            {stageId === "foundation" && (
-              <div className="mb-3 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-[13px] font-medium text-[var(--ink-secondary)]" style={{ boxShadow: "var(--shadow-xs)" }}>
-                Start with the foundation path. It covers {foundationCount} essential toddler-first topics before the world and advanced tracks open up.
+      <div className="relative z-10">
+        <WaveSheet className="px-4 pb-[var(--tab-float-space)] pt-5 min-[402px]:px-5">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-7">
+            {/* ── Daily goal ── */}
+            <div className="kt-card flex items-center gap-4 p-4">
+              <GoalRing done={dailyState.done} goal={dailyState.goal} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[19px] font-black text-ink">
+                  {goalMet ? "Daily goal done" : "Daily goal"}
+                </p>
+                <p className="mt-0.5 text-[14.5px] font-bold text-soft">
+                  {dailyState.done} of {dailyState.goal} words today
+                </p>
               </div>
-            )}
-            <div className="grid gap-2.5">
-              {stageCats.map((cat) => {
-                const CatIcon = CATEGORY_ICONS[cat.id];
-                const mastery = getCategoryMastery(progress, cat.id);
-                return (
-                  <TopicRowCard
-                    key={cat.id}
-                    href={`/lesson/${cat.id}`}
-                    color={cat.color}
-                    label={cat.name}
-                    meta={`${cat.items.length} words${mastery > 0 ? ` · ${mastery}% mastered` : ""}`}
-                    icon={CatIcon ? <CatIcon size={24} /> : null}
-                    mastery={mastery}
-                  />
-                );
-              })}
+              {goalMet && (
+                <span className="rounded-full bg-cream px-3 py-1.5 text-[13px] font-black text-gold-deep">
+                  Great job!
+                </span>
+              )}
             </div>
-          </Section>
-        );
-      })}
 
-      <Section className="pb-8">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <LinkBtn href="/explore" className="w-full text-center">Browse All Topics</LinkBtn>
-          <LinkBtn href="/progress" className="w-full text-center" color="#e76f51">View All Stats</LinkBtn>
-        </div>
-      </Section>
-    </AppShell>
+            {/* ── Next up ── */}
+            <section aria-label="Next lesson">
+              <SectionHead title="Next up" sub={rec.reason} />
+              <Link
+                href={`/lesson/${rec.category.id}`}
+                onClick={() => playPop()}
+                className="kt-card mt-3 flex items-center gap-3.5 p-3.5"
+              >
+                <ArtTile category={rec.category} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[19px] font-black leading-tight text-ink">
+                    {rec.category.name}
+                  </span>
+                  <span className="mt-0.5 block text-[13.5px] font-bold leading-snug text-soft">
+                    {lessonLine}
+                  </span>
+                </span>
+                <PillButton small color={rec.category.color} className="pointer-events-none shrink-0 self-end">
+                  Start
+                </PillButton>
+              </Link>
+            </section>
+
+            {/* ── Play Zone ── */}
+            <Link
+              href="/play"
+              onClick={() => playPop()}
+              className="flex items-center gap-4 rounded-[28px] bg-royal-deep p-4 text-white shadow-[0_12px_32px_rgba(14,42,99,0.14)]"
+              aria-label="Play games"
+            >
+              <span className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[22px] bg-white/15">
+                <GlyphPuzzle size={36} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[20px] font-black leading-tight">
+                  Play Zone
+                </span>
+                <span className="mt-0.5 block text-[13.5px] font-bold text-white/70">
+                  Sort, stack, match and fix
+                </span>
+              </span>
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white text-royal">
+                <GlyphPlay size={22} />
+              </span>
+            </Link>
+
+            {/* ── Learning path by stage (+ World after Foundation) ── */}
+            {pathGroups.map((group) => {
+              if (group.cats.length === 0) return null;
+              return (
+                <Fragment key={group.stage.id}>
+                  <section aria-label={group.stage.label}>
+                    <SectionHead
+                      title={group.stage.label}
+                      sub={`${group.count} topics`}
+                    />
+                    <div className="mt-3.5 flex flex-col gap-4">
+                      {group.cats.map((cat) => (
+                        <TopicCard
+                          key={cat.id}
+                          category={cat}
+                          stars={getCategoryStars(progress, cat.id)}
+                          mastery={getCategoryMastery(progress, cat.id)}
+                          current={cat.id === currentId}
+                          done={getCategoryStars(progress, cat.id) >= 3}
+                        />
+                      ))}
+                      <StageLandmark
+                        label={group.stage.label}
+                        color={categories.find((c) => c.stage === group.stage.id)?.color ?? group.cats[0].color}
+                      />
+                    </div>
+                  </section>
+
+                  {group.stage.id === "foundation" && WORLD_LESSONS.length > 0 && (
+                    <section aria-label="How the World Works">
+                      <SectionHead
+                        title="How the World Works"
+                        sub={`${WORLD_LESSONS.length} little lessons about real life`}
+                      />
+                      <div className="mt-3.5 flex flex-col gap-4">
+                        {WORLD_LESSONS.map((lesson) => {
+                          const stars = getCategoryStars(progress, worldNodeId(lesson.id));
+                          return (
+                            <div key={lesson.id} className="relative">
+                              {lesson.id === worldCurrentId && (
+                                <span className="kt-bob absolute -top-4 left-24 z-10 rounded-full bg-gold px-3.5 py-1 text-[13px] font-black text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]">
+                                  START
+                                </span>
+                              )}
+                              <Link
+                                href={`/world/${lesson.id}`}
+                                onClick={() => playPop()}
+                                className="kt-card flex items-center gap-3.5 p-3.5"
+                              >
+                                <span
+                                  className="grid h-[84px] w-[84px] shrink-0 place-items-center overflow-hidden text-white"
+                                  style={{
+                                    borderRadius: 24,
+                                    background: lesson.color,
+                                    boxShadow: `inset 0 -6px 0 rgba(0,0,0,0.12)`,
+                                  }}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={lesson.image}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    draggable={false}
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = "none";
+                                    }}
+                                  />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-[18px] font-black leading-tight text-ink">
+                                    {lesson.title}
+                                  </span>
+                                  <span className="mt-0.5 line-clamp-2 block text-[13.5px] font-bold leading-snug text-soft">
+                                    {lesson.bigIdea}
+                                  </span>
+                                </span>
+                                <PillButton small color={lesson.color} className="pointer-events-none shrink-0 self-end">
+                                  {stars > 0 ? "Again" : "Start"}
+                                </PillButton>
+                              </Link>
+                            </div>
+                          );
+                        })}
+                        <StageLandmark label="How the World Works" color={WORLD_LESSONS[0].color} />
+                      </div>
+                    </section>
+                  )}
+                </Fragment>
+              );
+            })}
+
+            {/* ── Footer shortcuts ── */}
+            <div className="grid grid-cols-2 gap-3 pb-2">
+              <PillButton href="/explore" className="w-full">
+                All topics
+              </PillButton>
+              <Link
+                href="/progress"
+                className="btn-led inline-flex min-h-[60px] items-center justify-center gap-1 rounded-full bg-mist px-6 text-[19px] font-black text-ink"
+                style={{ "--btn": "#E8EEFB", "--btn-deep": "#C9D6F2", "--btn-ink": "#182642" } as CSSProperties}
+              >
+                Progress <GlyphChevronR size={20} />
+              </Link>
+            </div>
+          </div>
+        </WaveSheet>
+      </div>
+
+      {/* ── Level-up celebration ── */}
+      {showLevelUp && (
+        <CelebrationScreen
+          stars={3}
+          title={`Level ${showLevelUp.level}`}
+          subtitle={`You're ${/^[aeiou]/i.test(showLevelUp.name) ? "an" : "a"} ${showLevelUp.name} now`}
+          xpEarned={xp}
+          onKeepGoing={collectLevelUp}
+          keepGoingLabel="Collect"
+        />
+      )}
+    </main>
   );
 }

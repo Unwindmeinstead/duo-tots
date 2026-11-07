@@ -32,12 +32,12 @@ const m = (prefix: string, words: Array<{ word: string; q?: string; a?: string }
 export const categories: VocabCategory[] = [
   /* ═══ FOUNDATION (first words a 2yo needs) — Numbers first: baseline immersive topic ═══ */
   {
-    id: "numbers", name: "Numbers", color: "#0071e3", stage: "foundation", imageMode: "digit",
+    id: "numbers", name: "Numbers", color: "#2B7FFF", stage: "foundation", imageMode: "digit",
     description: "Counting is the gateway to all mathematics.",
     items: Array.from({ length: 101 }, (_, i) => ({ id: `num-${i}`, word: String(i), imageQuery: String(i) })),
   },
   {
-    id: "shapes", name: "Shapes", color: "#af52de", stage: "foundation", imageMode: "shape",
+    id: "shapes", name: "Shapes", color: "#8B5CF6", stage: "foundation", imageMode: "shape",
     description: "Spatial reasoning starts with recognizing shapes.",
     items: m("shp", [
       { word: "Circle" }, { word: "Square" }, { word: "Triangle" },
@@ -51,16 +51,16 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "alphabets", name: "Alphabets", color: "#5856d6", stage: "foundation", imageMode: "alphabet",
-    description: "Uppercase letters A–Z, same flow as Numbers: big type, swipe, and quiz on the card.",
+    id: "alphabets", name: "Alphabet", color: "#38BDF8", stage: "foundation", imageMode: "alphabet",
+    description: "Letters A to Z.",
     items: Array.from({ length: 26 }, (_, i) => {
       const L = String.fromCharCode(65 + i);
       return { id: `abc-${L.toLowerCase()}`, word: L, imageQuery: `Letter ${L}` };
     }),
   },
   {
-    id: "actions", name: "Actions", color: "#ff9500", stage: "foundation", imageMode: "static",
-    description: "Verbs: custom PNGs in public/images/actions — target 1170×2080 (9:16 portrait), borderless, full bleed.",
+    id: "actions", name: "Actions", color: "#FF9F2E", stage: "foundation", imageMode: "static",
+    description: "Words for things you do.",
     items: m("act", [
       { word: "Run" }, { word: "Jump" }, { word: "Eat" }, { word: "Sleep" }, { word: "Walk" },
       { word: "Play" }, { word: "Dance" }, { word: "Sing" }, { word: "Clap" }, { word: "Wave" },
@@ -69,8 +69,8 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "emotions", name: "Emotions", color: "#ff3b30", stage: "foundation", imageMode: "static",
-    description: "Custom high-res emotion art in public/images/emotions (PNG, 1376×768).",
+    id: "emotions", name: "Emotions", color: "#F0519B", stage: "foundation", imageMode: "static",
+    description: "Words for feelings.",
     items: m("emo", [
       { word: "Happy" }, { word: "Sad" }, { word: "Angry" }, { word: "Scared" },
       { word: "Excited" }, { word: "Tired" }, { word: "Hungry" },
@@ -81,7 +81,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "everyday", name: "Everyday", color: "#636366", stage: "foundation", imageMode: "static",
+    id: "everyday", name: "Everyday", color: "#17BEBB", stage: "foundation", imageMode: "static",
     description: "Objects a child sees and touches every single day.",
     items: m("day", [
       { word: "Chair", a: "chair" }, { word: "Table", a: "table" }, { word: "Door", a: "door" }, { word: "Window", a: "window" },
@@ -92,7 +92,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "nature", name: "Nature", color: "#34c759", stage: "foundation", imageMode: "vector",
+    id: "nature", name: "Nature", color: "#34C759", stage: "foundation", imageMode: "vector",
     description: "The natural world builds wonder and observation skills.",
     items: m("nat", [
       { word: "Tree" }, { word: "Flower" }, { word: "Rain" }, { word: "Sun" },
@@ -104,7 +104,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "animals", name: "Animals", color: "#58cc02", stage: "foundation", imageMode: "static",
+    id: "animals", name: "Animals", color: "#FF7A59", stage: "foundation", imageMode: "static",
     description: "Friendly animals your child sees every day.",
     items: m("ani", [
       { word: "Dog" }, { word: "Cat" }, { word: "Bird" }, { word: "Fish" },
@@ -118,7 +118,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "food", name: "Food", color: "#ff9500", stage: "foundation", imageMode: "vector",
+    id: "food", name: "Food", color: "#FFA826", stage: "foundation", imageMode: "vector",
     description: "Tasty food words for mealtime conversations.",
     items: m("food", [
       { word: "Apple" }, { word: "Banana" }, { word: "Milk" }, { word: "Bread" },
@@ -131,7 +131,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "toys", name: "Toys", color: "#1cb0f6", stage: "foundation", imageMode: "vector",
+    id: "toys", name: "Toys", color: "#FF6FA5", stage: "foundation", imageMode: "vector",
     description: "Playtime objects children already love.",
     items: m("toy", [
       { word: "Ball" }, { word: "Blocks", q: "Toy block" },
@@ -146,7 +146,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "colors", name: "Colors", color: "#af52de", stage: "foundation", imageMode: "color",
+    id: "colors", name: "Colors", color: "#D64FD6", stage: "foundation", imageMode: "color",
     description: "Basic color names with visual examples.",
     items: m("col", [
       { word: "Red" }, { word: "Blue" }, { word: "Green" }, { word: "Yellow" },
@@ -159,7 +159,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "body", name: "Body", color: "#ff3b30", stage: "foundation", imageMode: "vector",
+    id: "body", name: "Body", color: "#3ED6A5", stage: "foundation", imageMode: "vector",
     description: "Body part words toddlers can point to.",
     items: m("bod", [
       { word: "Eyes", q: "Human eye" }, { word: "Nose", q: "Human nose" },
@@ -173,7 +173,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "family", name: "Family", color: "#0071e3", stage: "foundation", imageMode: "vector",
+    id: "family", name: "Family", color: "#FF8FA3", stage: "foundation", imageMode: "vector",
     description: "Words for the people closest to them.",
     items: m("fam", [
       { word: "Mom", q: "Mother" }, { word: "Dad", q: "Father" },
@@ -187,8 +187,8 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "kid_general", name: "100 Words", color: "#5ac8fa", stage: "foundation", imageMode: "vector",
-    description: "A broad mix of school, home, food, clothes, animals, and places — all in one big list.",
+    id: "kid_general", name: "100 Words", color: "#9BC53D", stage: "foundation", imageMode: "vector",
+    description: "A mix of everyday words.",
     items: m("gen", [
       { word: "Pencil" }, { word: "Eraser" }, { word: "Ruler" }, { word: "Backpack" },
       { word: "Scissors" }, { word: "Glue", q: "Glue stick" }, { word: "Notebook" }, { word: "Marker", q: "Marker pen" },
@@ -219,8 +219,8 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "power_words", name: "Power Words", color: "#e63946", stage: "foundation", imageMode: "card",
-    description: "100 elite vocabulary words a brilliant child knows — across science, business, mindset, health, culture, and beyond.",
+    id: "power_words", name: "Power Words", color: "#6C8CFF", stage: "foundation", imageMode: "card",
+    description: "Big words for big ideas.",
     items: m("pw", [
       /* Mindset & Character */
       { word: "Ambition" }, { word: "Resilience" }, { word: "Discipline" },
@@ -277,7 +277,7 @@ export const categories: VocabCategory[] = [
 
   /* ═══ WORLD (broaden horizons) ═══ */
   {
-    id: "world_basics", name: "World", color: "#2ba84a", stage: "world", imageMode: "photo",
+    id: "world_basics", name: "World", color: "#2FBF71", stage: "world", imageMode: "photo",
     description: "Core global words for geography and culture.",
     items: m("wld", [
       { word: "Earth" }, { word: "Ocean" }, { word: "Mountain" },
@@ -290,7 +290,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "landmarks", name: "Landmarks", color: "#8e8e93", stage: "world", imageMode: "photo",
+    id: "landmarks", name: "Landmarks", color: "#C98A5E", stage: "world", imageMode: "photo",
     description: "Iconic structures every future leader should recognize.",
     items: m("lmk", [
       { word: "Eiffel Tower" }, { word: "Pyramids", q: "Great Pyramid of Giza" },
@@ -306,7 +306,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "us_presidents", name: "Presidents", color: "#1c3d7a", stage: "world", imageMode: "photo",
+    id: "us_presidents", name: "Presidents", color: "#3D5AFE", stage: "world", imageMode: "photo",
     description: "Early familiarity with important American leaders.",
     items: m("pres", [
       { word: "George Washington" }, { word: "John Adams" },
@@ -326,7 +326,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "top_people", name: "Great People", color: "#af52de", stage: "world", imageMode: "photo",
+    id: "top_people", name: "Great People", color: "#C65D9E", stage: "world", imageMode: "photo",
     description: "The most important people in history and today.",
     items: m("ppl", [
       { word: "Albert Einstein" }, { word: "Leonardo da Vinci" },
@@ -343,7 +343,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "inventions", name: "Inventions", color: "#ff9500", stage: "world", imageMode: "photo",
+    id: "inventions", name: "Inventions", color: "#3FBFB6", stage: "world", imageMode: "photo",
     description: "Breakthroughs that shaped civilization.",
     items: m("inv", [
       { word: "Wheel" }, { word: "Fire", q: "Control of fire by early humans" },
@@ -359,7 +359,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "leadership", name: "Leadership", color: "#ffc800", stage: "world", imageMode: "card",
+    id: "leadership", name: "Leadership", color: "#B07D4F", stage: "world", imageMode: "card",
     description: "Words that build confidence, character, and leadership.",
     items: m("lead", [
       { word: "Leader", q: "Leadership" }, { word: "Courage", q: "Firefighter" },
@@ -376,7 +376,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "modern_terms", name: "Technology", color: "#1cb0f6", stage: "world", imageMode: "photo",
+    id: "modern_terms", name: "Technology", color: "#5B6BE0", stage: "world", imageMode: "photo",
     description: "Big ideas children hear in the modern world.",
     items: m("tech", [
       { word: "Internet" }, { word: "Robot" }, { word: "Satellite" },
@@ -399,7 +399,7 @@ export const categories: VocabCategory[] = [
 
   /* ═══ ADVANCED (future leader track) ═══ */
   {
-    id: "money", name: "Money", color: "#2ba84a", stage: "advanced", imageMode: "photo",
+    id: "money", name: "Money", color: "#E3A008", stage: "advanced", imageMode: "photo",
     description: "Early money words every child should recognize.",
     items: m("mon", [
       { word: "Coin" }, { word: "Dollar", q: "United States dollar" },
@@ -418,7 +418,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "finance", name: "Finance", color: "#1c3d7a", stage: "advanced", imageMode: "card",
+    id: "finance", name: "Finance", color: "#8496B8", stage: "advanced", imageMode: "card",
     description: "Core finance concepts in child-friendly terms.",
     items: m("fin", [
       { word: "Save", q: "Savings account" }, { word: "Spend", q: "Expenditure" },
@@ -433,7 +433,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "space", name: "Space", color: "#4a3f8a", stage: "advanced", imageMode: "photo",
+    id: "space", name: "Space", color: "#5E60CE", stage: "advanced", imageMode: "photo",
     description: "Exciting space words to spark big curiosity.",
     items: m("spc", [
       { word: "Rocket" }, { word: "Astronaut" }, { word: "Moon" }, { word: "Mars" },
@@ -447,7 +447,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "universe", name: "Universe", color: "#6b4fa2", stage: "advanced", imageMode: "photo",
+    id: "universe", name: "Universe", color: "#8163D6", stage: "advanced", imageMode: "photo",
     description: "Big-picture cosmic ideas and objects.",
     items: m("uni", [
       { word: "Universe" }, { word: "Star" }, { word: "Planet" },
@@ -463,7 +463,7 @@ export const categories: VocabCategory[] = [
     ]),
   },
   {
-    id: "physics", name: "Physics", color: "#ff3b30", stage: "advanced", imageMode: "card",
+    id: "physics", name: "Physics", color: "#FFA26B", stage: "advanced", imageMode: "card",
     description: "Foundational physics words for future problem-solvers.",
     items: m("phy", [
       { word: "Force" }, { word: "Energy" }, { word: "Motion", q: "Motion (physics)" },
@@ -479,7 +479,7 @@ export const categories: VocabCategory[] = [
 
 export const STAGES: { id: Stage; label: string }[] = [
   { id: "foundation", label: "Foundation" },
-  { id: "world", label: "World & People" },
+  { id: "world", label: "World and people" },
   { id: "advanced", label: "Advanced" },
 ];
 
