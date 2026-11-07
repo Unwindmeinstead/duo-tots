@@ -359,6 +359,7 @@ export function ArtTile({
       <img
         src={src}
         alt=""
+        decoding="async"
         onError={() => setFailed(true)}
         className="shrink-0 object-cover"
         style={{ width: size, height: tileH, borderRadius: radius }}
@@ -409,7 +410,7 @@ export function TopicCard({
       )}
       <Link
         href={`/lesson/${category.id}`}
-        className="kt-card flex items-center gap-3.5 p-3.5"
+        className="kt-card kt-card-press flex items-center gap-3.5 p-3.5"
         aria-label={`${category.name} — ${category.items.length} words`}
       >
         <span className="relative shrink-0">

@@ -1,0 +1,77 @@
+/* ════════════════════════════════════════════════════════════════
+   DuoTots MOTION SYSTEM — one vocabulary for the whole app.
+   Premium = fast-out, gentle settle; 200–320ms; transform and
+   opacity ONLY — nothing in this file animates layout, so motion
+   never costs a reflow. Every duration/easing token lives here
+   and nowhere else; components reference the vars, never raw
+   numbers, so the feel stays consistent surface to surface.
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --dur-instant: 120ms; /* press feedback */
+  --dur-quick: 200ms; /* colour / state fades */
+  --dur-tab: 300ms; /* dock indicator glide */
+  --dur-page: 280ms; /* page enter */
+
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1); /* fast out, soft landing */
+  --ease-press: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ─── Page enter (tab switches) ───
+   The new page arrives as one composited layer: a fade with a
+   whisper of rise. Keyframed (not a persistent transform), so the
+   moment it lands the page is back to natural layout — fixed
+   children and sticky headers are never trapped by it. */
+@keyframes kt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.kt-page-enter {
+  animation: kt-page-in var(--dur-page) var(--ease-glide);
+}
+
+/* ─── Dock: gliding active pill + tactile press ───
+   The white pill is its own layer behind the active tab and moves
+   on transform alone — the compositor carries it at 60fps while
+   the main thread is busy mounting the new page. */
+.kt-tab-glide {
+  transition:
+    transform var(--dur-tab) var(--ease-glide),
+    opacity var(--dur-quick) ease-out;
+  will-change: transform;
+}
+
+/* Press squash on the glyph+label stack (dock tabs). */
+.kt-tab-press {
+  transition: transform var(--dur-instant) var(--ease-press);
+}
+a:active .kt-tab-press {
+  transform: scale(0.86);
+}
+
+/* ─── Card press (topic cards and other big tappables) ───
+   The same squash, gentler, for large surfaces. */
+.kt-card-press {
+  transition: transform var(--dur-quick) var(--ease-press);
+}
+.kt-card-press:active {
+  transform: scale(0.98);
+}
+
+/* ─── Reduced motion: content swaps instantly, nothing travels ─── */
+@media (prefers-reduced-motion: reduce) {
+  .kt-page-enter {
+    animation: none;
+  }
+  .kt-tab-glide,
+  .kt-tab-press,
+  .kt-card-press {
+    transition: none;
+  }
+}

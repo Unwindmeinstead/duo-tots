@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ClientShell } from "@/components/client-shell";
 import "./globals.css";
+import "../styles/motion.css";
 
 export const metadata: Metadata = {
   title: "DuoTots — Visual Learning",
