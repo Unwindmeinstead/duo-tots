@@ -7,9 +7,11 @@
    visible over a blurred copy of itself), digit hero, letter hero,
    colour swatch, shape art, static art or a concept card — and
    answers a tap with a pop, a squash and a burst of sparkles.
-   EXCEPTION — Nature (Grey, 2026-11-07): a tap there speaks the
-   word ONLY. No pop, no squash/bounce, no sparkles. Scoped by
-   categoryId below; every other category keeps the full reaction. */
+   NO-BOUNCE RULE (Grey, 2026-11-07): on every PHOTO/IMAGE deck a
+   tap speaks the word with pop + sparkles but the CARD ITSELF
+   never bounces/squashes — the motion read as a glitch to him.
+   Only the glyph decks (Numbers, Alphabet, Shapes) keep the full
+   card motion; he likes those. See deckKeepsTapMotion below. */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { resolveWordImage } from "@/lib/media";
@@ -33,6 +35,16 @@ export const COLOR_MAP: Record<string, string> = {
 
 const ONES = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+/** Tap-motion rule (Grey, 2026-11-07): only the glyph decks —
+    Numbers (digit), Alphabet (alphabet), Shapes (shape) — keep the
+    card bounce/squash on tap. Every other deck (photo, vector,
+    static art, colour, concept card) speaks with pop + sparkles
+    but no card motion. Shared with the sentence card, whose photo
+    follows the deck it appears in. */
+export function deckKeepsTapMotion(imageMode: ImageMode): boolean {
+  return imageMode === "digit" || imageMode === "alphabet" || imageMode === "shape";
+}
 
 export function numberToWord(n: number): string {
   if (isNaN(n) || n < 0) return "";
@@ -314,24 +326,23 @@ export function WordVisual({
     };
   }, [imageQuery, imageMode, wantsRemote]);
 
-  /* Nature deck: tap = speak only, no reaction animation or pop
-     (Grey, 2026-11-07). Keyed on the category this card already
-     knows it belongs to, so no other lesson's behaviour changes. */
-  const speakOnly = categoryId === "nature";
+  /* No-bounce rule (Grey, 2026-11-07): photo/image decks keep the
+     pop and the sparkles but the card never moves; only the glyph
+     decks (digit / alphabet / shape) run the squash + bounce. */
+  const noBounce = !deckKeepsTapMotion(imageMode);
+  const bounceCls = burstKey > 0 && !noBounce ? "kt-bounce" : "";
 
   const triggerReaction = () => {
-    if (speakOnly) {
-      onTap?.();
-      return;
-    }
     playPop();
     setBurstKey((k) => k + 1);
-    if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
-    setReacting(false);
-    requestAnimationFrame(() => {
-      setReacting(true);
-      reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
-    });
+    if (!noBounce) {
+      if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
+      setReacting(false);
+      requestAnimationFrame(() => {
+        setReacting(true);
+        reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
+      });
+    }
     onTap?.();
   };
 
@@ -350,7 +361,7 @@ export function WordVisual({
     return (
       <div role="button" onClick={triggerReaction} aria-label={`Hear ${label || word}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
         <span className={`flex h-full flex-col items-center justify-center px-4 ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={`flex flex-col items-center ${burstKey > 0 ? "kt-bounce" : ""}`}>
+          <span key={burstKey} className={`flex flex-col items-center ${bounceCls}`}>
             <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
               {word}
             </span>
@@ -381,7 +392,7 @@ export function WordVisual({
     return (
       <div role="button" onClick={triggerReaction} aria-label={`Hear letter ${letter}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
         <span className={`flex h-full flex-col items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
+          <span key={burstKey} className={bounceCls}>
             <span className="select-none text-[clamp(7rem,58vmin,20rem)] font-black uppercase leading-none tracking-tight text-white">
               {letter}
             </span>
@@ -407,7 +418,7 @@ export function WordVisual({
     return (
       <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: hex }}>
         <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
+          <span key={burstKey} className={bounceCls}>
             <span
               className={`select-none px-4 text-center font-black leading-none ${sz}`}
               style={{ color: dark ? "#FFFFFF" : "#182642", textShadow: dark ? "0 3px 14px rgba(0,0,0,0.25)" : "none" }}
@@ -427,7 +438,7 @@ export function WordVisual({
     return (
       <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer bg-white`}>
         <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
+          <span key={burstKey} className={bounceCls}>
             <ShapeArt word={word} size={Math.min(300, 220)} />
           </span>
         </span>
@@ -506,7 +517,7 @@ export function WordVisual({
     return (
       <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.88) }}>
         <span className={`flex h-full items-center justify-center px-5 ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
+          <span key={burstKey} className={bounceCls}>
             <span className={`block select-none text-balance text-center font-black leading-[0.95] ${sz}`} style={{ color: categoryColor }}>
               {word}
             </span>
