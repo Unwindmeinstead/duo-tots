@@ -68,7 +68,7 @@ export default function WorldPage() {
                     />
                     {isDone && (
                       <span
-                        className="absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-full bg-white text-gold-deep shadow"
+                        className="absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-full bg-white text-gold-deep"
                         aria-label="Done"
                       >
                         <GlyphStar size={17} />

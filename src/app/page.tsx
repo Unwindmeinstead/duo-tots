@@ -167,7 +167,7 @@ export default function Home() {
             <Link
               href="/play"
               onClick={() => playPop()}
-              className="flex items-center gap-4 rounded-[28px] bg-royal-deep p-4 text-white shadow-[0_12px_32px_rgba(14,42,99,0.14)]"
+              className="flex items-center gap-4 rounded-[28px] bg-royal-deep p-4 text-white"
               aria-label="Play games"
             >
               <span className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-[22px]">
@@ -239,7 +239,7 @@ export default function Home() {
                           return (
                             <div key={lesson.id} className="relative">
                               {lesson.id === worldCurrentId && (
-                                <span className="kt-bob absolute -top-4 left-24 z-10 rounded-full bg-gold px-3.5 py-1 text-[13px] font-black text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]">
+                                <span className="kt-bob absolute -top-4 left-24 z-10 rounded-full bg-gold px-3.5 py-1 text-[13px] font-black text-ink">
                                   START
                                 </span>
                               )}
@@ -253,7 +253,6 @@ export default function Home() {
                                   style={{
                                     borderRadius: 20,
                                     background: lesson.color,
-                                    boxShadow: `inset 0 -6px 0 rgba(0,0,0,0.12)`,
                                   }}
                                 >
                                   {/* Fallback mark, covered by the photo when it loads. */}
