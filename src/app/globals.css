@@ -54,6 +54,37 @@ body {
   overflow-x: clip;
 }
 
+/* ─── Kid-proof touch layer ───
+   A toddler mashing or HOLDING the screen must never summon the
+   browser's own UI: no iOS long-press callout (Copy / Save Image),
+   no text selection, no image drag ghost. Selection suppression
+   sits on <body> — per the CSS UI spec a `none` used value
+   propagates to descendants that don't opt back in. The touch
+   callout is killed on every element individually (WebKit does
+   not reliably inherit it), and images additionally lose their
+   native drag. The JS half of this layer (contextmenu/dragstart
+   guards) lives in client-shell.tsx.
+   Carve-out: real form fields keep normal behaviour so a future
+   parent/settings surface can still be typed and selected in. */
+body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+body *:not(input):not(textarea):not([contenteditable]) {
+  -webkit-touch-callout: none;
+}
+img {
+  -webkit-user-drag: none;
+}
+input,
+textarea,
+[contenteditable] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ─── 3D ledge buttons ───
    A saturated pill with a darker bottom ledge baked into the shadow.
    On press the pill sinks 4px and the ledge collapses — the toy

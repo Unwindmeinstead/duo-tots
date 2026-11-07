@@ -11,7 +11,7 @@
    cut. Activity routes keep their own entrances and are rendered
    bare, untouched by the wrapper. */
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { TabBar } from "./tab-bar";
 
@@ -23,7 +23,30 @@ const CHROME_ROUTES: readonly string[] = [
   "/world",
 ];
 
+/* Kid-proof touch layer (JS half — the CSS half is in globals.css):
+   a long-press on a lesson card must never open the context menu,
+   and no element may start a native drag. One document-level guard
+   covers every route because this shell wraps the whole app from
+   the root layout. Real form fields are exempt so a future
+   parent/settings surface keeps working normally. */
+function useKidProofTouch() {
+  useEffect(() => {
+    const guard = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, [contenteditable]")) return;
+      e.preventDefault();
+    };
+    document.addEventListener("contextmenu", guard);
+    document.addEventListener("dragstart", guard);
+    return () => {
+      document.removeEventListener("contextmenu", guard);
+      document.removeEventListener("dragstart", guard);
+    };
+  }, []);
+}
+
 export function ClientShell({ children }: { children: ReactNode }) {
+  useKidProofTouch();
   const pathname = usePathname() ?? "";
   const showTabs = CHROME_ROUTES.includes(pathname);
   return (
