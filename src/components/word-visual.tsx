@@ -8,7 +8,6 @@
    colour swatch, shape art, static art or a concept card — and
    answers a tap with a pop, a squash and a burst of sparkles. */
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { resolveWordImage } from "@/lib/media";
 import { getLocalImage } from "@/lib/local-images";
@@ -419,7 +418,7 @@ export function WordVisual({
           <img
             src={src}
             alt={word}
-            className={`h-full w-full ${isActionArt ? "object-cover" : "object-contain p-4"}`}
+            className={`h-full w-full object-contain ${isActionArt ? "" : "p-4"}`}
             draggable={false}
           />
         </span>
@@ -474,26 +473,17 @@ export function WordVisual({
   }
 
   return (
-    <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block bg-white`}>
-      <span className={`absolute inset-0 block ${reacting ? "kt-squash" : ""}`}>
-        <Image
-          src={imageUrl}
-          alt=""
-          aria-hidden
-          fill
-          className="pointer-events-none scale-110 object-cover blur-2xl brightness-[.82] saturate-[1.15]"
-          sizes="(max-width: 768px) 100vw, 768px"
-        />
-        <span className="pointer-events-none absolute inset-0 bg-black/10" aria-hidden />
-        <Image
-          src={imageUrl}
-          alt={word}
-          fill
-          className="kt-fade-in object-contain"
-          sizes="(max-width: 768px) 100vw, 768px"
-          priority
-        />
-      </span>
+    <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className="relative flex h-full w-full items-center justify-center">
+      {/* The card IS the photo: it renders at its own aspect ratio, as
+          large as the stage allows — the whole picture, edge to edge,
+          never cropped and no filler bands (Grey's rule, 2026-11-07). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageUrl}
+        alt={word}
+        className={`kt-fade-in block max-h-full max-w-full rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}
+        draggable={false}
+      />
       <Sparkles burstKey={burstKey} />
     </button>
   );

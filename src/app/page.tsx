@@ -267,7 +267,7 @@ export default function Home() {
                                   <img
                                     src={lesson.image}
                                     alt=""
-                                    className="h-full w-full object-cover"
+                                    className="h-full w-full object-contain"
                                     draggable={false}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = "none";

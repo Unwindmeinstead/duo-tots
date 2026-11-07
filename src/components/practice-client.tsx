@@ -116,7 +116,6 @@ function OptionPicture({ item, category }: { item: VocabItem; category: VocabCat
   if (src) {
     return (
       <span className={`${frame} bg-mist`}>
-        <Image src={src} alt="" aria-hidden fill className="scale-110 object-cover blur-xl brightness-90 saturate-[1.15]" sizes="140px" />
         <Image
           src={src}
           alt={item.word}

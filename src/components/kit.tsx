@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { VocabCategory } from "@/lib/vocab";
 import { getLocalImage } from "@/lib/local-images";
-import { deepen, GOLD, GOLD_DEEP, INK, PARTY_COLORS } from "@/lib/theme";
+import { deepen, GOLD, GOLD_DEEP, INK, PARTY_COLORS, tint } from "@/lib/theme";
 import {
   CATEGORY_GLYPHS,
   GlyphCheck,
@@ -365,8 +365,8 @@ export function ArtTile({
         src={src}
         alt=""
         onError={() => setFailed(true)}
-        className="shrink-0 object-cover"
-        style={{ width: size, height: size, borderRadius: radius }}
+        className="shrink-0 object-contain"
+        style={{ width: size, height: size, borderRadius: radius, background: tint(category.color, 0.85) }}
         draggable={false}
       />
     );

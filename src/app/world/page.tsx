@@ -53,12 +53,12 @@ export default function WorldPage() {
                   onClick={() => playPop()}
                   className="kt-card flex h-full flex-col overflow-hidden"
                 >
-                  <div className="relative h-32 shrink-0 overflow-hidden">
+                  <div className="relative h-32 shrink-0 overflow-hidden bg-mist">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={lesson.image}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                       loading={i > 5 ? "lazy" : undefined}
                     />
                     {isDone && (

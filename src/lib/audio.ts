@@ -13,15 +13,20 @@ function getVoice(): SpeechSynthesisVoice | null {
   const english = voices.filter((v) => /^en[-_]/i.test(v.lang));
 
   const ranked = [
-    /Samantha/i,
-    /Karen/i,
-    /Daniel/i,
-    /Google US English/i,
+    /Ava/i,
+    /Zoe/i,
+    /Microsoft Aria/i,
+    /Microsoft Jenny/i,
     /Google UK English Female/i,
-    /Microsoft Zira/i,
-    /Microsoft David/i,
-    /Enhanced/i,
+    /Karen/i,
+    /Moira/i,
+    /Natural/i,
+    /Neural/i,
     /Premium/i,
+    /Enhanced/i,
+    /Samantha/i,
+    /Google US English/i,
+    /Microsoft Zira/i,
   ];
 
   for (const re of ranked) {
@@ -66,7 +71,7 @@ export async function speakWord(word: string): Promise<{ source: string }> {
     utterance.pitch = 0.98;
   } else {
     utterance.rate = 0.78;
-    utterance.pitch = 1.0;
+    utterance.pitch = 1.08;
   }
   utterance.volume = 1;
 
@@ -178,9 +183,16 @@ export function playGentle(): void {
     if (!earconsOn()) return;
     const ctx = getAudioContext();
     if (!ctx) return;
-    // Warm try-again "bloop": soft descending sine G4 → E4, ~250ms.
-    // Informs, never scolds — never a buzzer, never harsh (Playbook §C)
-    playTone(ctx, { freq: 392, freqEnd: 329.63, start: ctx.currentTime, duration: 0.25, type: "sine", volume: 0.08 });
+    // Companion to THE DING — the same bell (sine + quiet triangle
+    // partial), softer and settling instead of rising: E6 → C#6, the
+    // A-major third, at roughly half the ding's volume. It says "good
+    // try, have another go" in the ding's own voice — never a buzzer,
+    // never a scold (Playbook §C).
+    const t = ctx.currentTime;
+    playTone(ctx, { freq: 1318.5, start: t, duration: 0.2, type: "sine", volume: 0.07 });
+    playTone(ctx, { freq: 1318.5, start: t, duration: 0.16, type: "triangle", volume: 0.025 });
+    playTone(ctx, { freq: 1108.73, start: t + 0.1, duration: 0.3, type: "sine", volume: 0.07 });
+    playTone(ctx, { freq: 1108.73, start: t + 0.1, duration: 0.24, type: "triangle", volume: 0.025 });
   } catch { /* sound is best-effort — never crash a tap */ }
 }
 

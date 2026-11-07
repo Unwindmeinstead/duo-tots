@@ -176,28 +176,22 @@ export function WorldLessonClient({
             type="button"
             onClick={onSeeTap}
             aria-label={`See it: ${lesson.title}. Tap to hear: ${lesson.sayIt}`}
-            className="kt-pop-in relative block h-full w-full overflow-hidden rounded-[30px] text-left"
+            className="kt-pop-in relative flex h-full w-full items-center justify-center text-left"
           >
-            {/* Blurred same-image fill — the whole photo stays visible */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={lesson.image}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[.82]"
-            />
-            <span key={seeSquash} className={`${seeSquash > 0 ? "kt-squash " : ""}absolute inset-0 block`}>
+            {/* The card IS the photo — whole picture, never cropped. */}
+            <span key={seeSquash} className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${seeSquash > 0 ? "kt-squash" : ""}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={lesson.image}
                 alt={lesson.title}
-                className="absolute inset-0 h-full w-full object-contain"
+                className="block max-h-full max-w-full"
+                draggable={false}
               />
+              <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-[14px] font-black text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
+                <GlyphSpeaker size={18} /> Tap to hear
+              </span>
             </span>
             <Sparkles burstKey={seeBurst} />
-            <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-[14px] font-black text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
-              <GlyphSpeaker size={18} /> Tap to hear
-            </span>
           </button>
         )}
 
