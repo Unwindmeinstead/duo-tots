@@ -200,7 +200,7 @@ export function RoundButton({
   children: ReactNode;
   className?: string;
 }) {
-  const cls = `grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-royal shadow-[0_8px_20px_rgba(14,42,99,0.18)] ${className}`;
+  const cls = `grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-royal ${className}`;
   if (href) {
     return (
       <Link href={href} aria-label={label} className={cls}>
