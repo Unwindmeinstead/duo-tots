@@ -255,12 +255,20 @@ export default function Home() {
                                   </span>
                                   {/* The thumbnail IS the photo — whole picture
                                       at its own natural aspect, never cropped
-                                      or banded: height set, width follows. */}
+                                      or banded: height set, width follows.
+                                      Height is the fixed h-24 of the tile, NOT
+                                      h-full: a percentage height inside this
+                                      grid span resolves to auto, which let the
+                                      photo render at natural size (up to
+                                      1920px wide) and blew the card — and the
+                                      whole page — out sideways. max-w-40 caps
+                                      wide photos; object-contain keeps the
+                                      whole picture visible if the cap binds. */}
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={lesson.image}
                                     alt=""
-                                    className="relative block h-full w-auto"
+                                    className="relative block h-24 w-auto max-w-40 object-contain"
                                     draggable={false}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = "none";
