@@ -77,7 +77,7 @@ export function SentenceCard({
         <span className="block text-[30px] font-black leading-[1.15] tracking-tight text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]">
           {sentence}
         </span>
-        <span className="mt-3 inline-flex items-center gap-3">
+        <span className="mt-3 inline-flex items-center">
           <span
             className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-white"
             style={{ background: categoryColor }}
@@ -85,7 +85,7 @@ export function SentenceCard({
           >
             <GlyphSpeaker size={22} />
           </span>
-          <span className="text-[14px] font-black text-white">Tap to hear</span>
+          {/* Speaker disc only — no "Tap to hear" wording (Grey, 2026-11-07). */}
         </span>
       </span>
         </span>
@@ -104,7 +104,7 @@ export function SentenceCard({
         <span className="block text-[30px] font-black leading-[1.15] tracking-tight text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]">
           {sentence}
         </span>
-        <span className="mt-3 inline-flex items-center gap-3">
+        <span className="mt-3 inline-flex items-center">
           <span
             className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-white"
             style={{ background: categoryColor }}
@@ -112,7 +112,7 @@ export function SentenceCard({
           >
             <GlyphSpeaker size={22} />
           </span>
-          <span className="text-[14px] font-black text-white">Tap to hear</span>
+          {/* Speaker disc only — no "Tap to hear" wording (Grey, 2026-11-07). */}
         </span>
       </span>
         </>

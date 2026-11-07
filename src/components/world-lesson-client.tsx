@@ -147,8 +147,8 @@ export function WorldLessonClient({
               {lesson.bigIdea}
             </p>
             <div className="mt-8">
-              <PillButton color={color} onClick={() => void speak(lesson.bigIdea)} disabled={speaking}>
-                <GlyphSpeaker size={21} /> Tap to hear
+              <PillButton color={color} onClick={() => void speak(lesson.bigIdea)} disabled={speaking} label="Hear the big idea">
+                <GlyphSpeaker size={21} />
               </PillButton>
             </div>
           </div>
@@ -194,8 +194,8 @@ export function WorldLessonClient({
                 className="block max-h-full max-w-full"
                 draggable={false}
               />
-              <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-[14px] font-black text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
-                <GlyphSpeaker size={18} /> Tap to hear
+              <span className="absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center whitespace-nowrap rounded-full bg-white px-3.5 py-2.5 text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
+                <GlyphSpeaker size={18} />
               </span>
             </span>
             <Sparkles burstKey={seeBurst} />

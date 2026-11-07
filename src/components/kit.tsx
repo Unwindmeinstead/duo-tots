@@ -124,6 +124,7 @@ export function PillButton({
   children,
   className = "",
   small = false,
+  label,
 }: {
   color?: string;
   ink?: string;
@@ -133,6 +134,8 @@ export function PillButton({
   children: ReactNode;
   className?: string;
   small?: boolean;
+  /** Accessible name for icon-only pills (no visible text). */
+  label?: string;
 }) {
   const style = {
     "--btn": color,
@@ -144,7 +147,7 @@ export function PillButton({
   } ${className}`;
   if (href) {
     return (
-      <Link href={href} className={cls} style={style}>
+      <Link href={href} className={cls} style={style} aria-label={label}>
         {children}
       </Link>
     );
@@ -156,6 +159,7 @@ export function PillButton({
       disabled={disabled}
       className={cls}
       style={style}
+      aria-label={label}
     >
       {children}
     </button>

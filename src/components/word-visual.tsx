@@ -13,7 +13,7 @@ import { resolveWordImage } from "@/lib/media";
 import { getLocalImage } from "@/lib/local-images";
 import { playPop } from "@/lib/audio";
 import { Sparkles } from "@/components/kit";
-import { CATEGORY_GLYPHS } from "@/components/glyphs";
+import { CATEGORY_GLYPHS, GlyphSpeaker } from "@/components/glyphs";
 import { deepen, tint } from "@/lib/theme";
 import type { ImageMode } from "@/lib/vocab";
 
@@ -321,11 +321,8 @@ export function WordVisual({
             <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
               {word}
             </span>
-            {label && (
-              <span className="mt-3 text-[clamp(1.3rem,5vmin,1.8rem)] font-black text-white/85">
-                {label}
-              </span>
-            )}
+            {/* No spelled-out name under the numeral — the digit is
+                plainly visible and tapping speaks it (Grey, 2026-11-07). */}
             {!isNaN(n) && n >= 1 && n <= 20 && (
               <span key={`dots-${stepKey ?? 0}`} className="mt-5 flex max-w-[min(78vw,24rem)] flex-wrap items-center justify-center gap-2" aria-hidden>
                 {Array.from({ length: n }, (_, i) => (
@@ -355,9 +352,8 @@ export function WordVisual({
               {letter}
             </span>
           </span>
-          <span className="mt-2 text-[clamp(1.3rem,5vmin,1.8rem)] font-black text-white/85">
-            Letter {letter}
-          </span>
+          {/* No "Letter X" caption — the letter is plainly visible and
+              tapping speaks it (Grey, 2026-11-07). */}
         </span>
         <Sparkles burstKey={burstKey} />
       </button>
@@ -399,16 +395,21 @@ export function WordVisual({
             <ShapeArt word={word} size={Math.min(300, 220)} />
           </span>
         </span>
-        {/* The shape carries no text of its own, so the word + hint sit
-            inside the tile's empty bottom band (ink on white — no scrim
-            needed), the same spot the photo cards carry theirs. */}
+        {/* The shape carries no text of its own, so the word sits inside
+            the tile's empty bottom band (ink on white — no scrim needed).
+            No "Tap to hear" wording anywhere (Grey, 2026-11-07): a tiny
+            speaker badge in the top corner says "tap = sound" instead. */}
         <span className="pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 text-center">
           <span className="block text-[26px] font-black leading-tight tracking-tight text-ink">
             {word}
           </span>
-          <span className="mt-0.5 block text-[12.5px] font-bold text-soft">
-            Tap to hear · swipe for more
-          </span>
+        </span>
+        <span
+          className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-white shadow-[0_6px_16px_rgba(14,42,99,0.22)]"
+          style={{ background: categoryColor }}
+          aria-hidden
+        >
+          <GlyphSpeaker size={20} />
         </span>
         <Sparkles burstKey={burstKey} />
       </button>
@@ -439,9 +440,6 @@ export function WordVisual({
         <span className={`pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
           <span className={`block text-[26px] font-black leading-tight tracking-tight ${isActionArt ? "text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]" : "text-ink"}`}>
             {word}
-          </span>
-          <span className={`mt-0.5 block text-[12.5px] font-bold ${isActionArt ? "text-white/80" : "text-soft"}`}>
-            Tap to hear · swipe for more
           </span>
         </span>
         <Sparkles burstKey={burstKey} />
@@ -499,9 +497,10 @@ export function WordVisual({
       {/* The card IS the photo: it renders at its own aspect ratio, as
           large as the stage allows — the whole picture, edge to edge,
           never cropped and no filler bands (Grey's rule, 2026-11-07).
-          The word + hint live INSIDE the photo now, on a soft dark
-          gradient band at its bottom edge (Grey's rule, 2026-11-07) —
-          the subject sits centre-frame, the band covers background. */}
+          The word lives INSIDE the photo now, on a soft dark gradient
+          band at its bottom edge (Grey's rule, 2026-11-07) — the
+          subject sits centre-frame, the band covers background. No
+          "Tap to hear" hint text (Grey, 2026-11-07). */}
       <span className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -513,9 +512,6 @@ export function WordVisual({
         <span className="pointer-events-none absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 via-black/45 to-transparent px-5 pb-4 pt-16 text-left">
           <span className="block text-[26px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
             {word}
-          </span>
-          <span className="mt-0.5 block text-[12.5px] font-bold text-white/80">
-            Tap to hear · swipe for more
           </span>
         </span>
       </span>
