@@ -3,18 +3,24 @@
 /* ─── Game 3 — Finish the Pattern ───
    A row of 4 shapes sings a little rhythm (ABAB, AAB, AABB…); the
    5th spot is a dashed "?". Pick the shape that keeps the song
-   going and it pops into place. Wrong picks wiggle — try again. */
+   going and it pops into place. Wrong picks wiggle with the gentle
+   ding — try again.
+
+   Patterns are GENERATED every round (makePatternRounds): family,
+   shapes and colours are all dealt at random, distractors are
+   fresh tiles, and no family sings twice in a row — there is no
+   fixed pattern list to memorize. */
 
 import { useMemo, useState } from "react";
 import { GlyphCheck } from "@/components/glyphs";
-import { playCorrect, playPop } from "@/lib/audio";
-import { PATTERNS, SHAPE_DEFS, shuffle, tileKey } from "@/lib/games-data";
+import { playCorrect, playGentle } from "@/lib/audio";
+import { SHAPE_DEFS, makePatternRounds, tileKey, type PatternTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
 import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
 
 const ACCENT = "#34C759";
-const TOTAL = PATTERNS.length;
+const TOTAL = 5;
 
 export function FinishPattern({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
@@ -23,20 +29,21 @@ export function FinishPattern({ onBack }: { onBack: () => void }) {
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-finish-pattern");
 
-  const pattern = PATTERNS[round];
-  const choices = useMemo(
-    () => shuffle(pattern.choices),
+  const rounds = useMemo(
+    () => makePatternRounds(TOTAL),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [round, session],
+    [session],
   );
+  const pattern = rounds[round];
 
-  const pick = (key: string) => {
+  const pick = (tile: PatternTile) => {
     if (solved) return;
+    const key = tileKey(tile);
     if (key === tileKey(pattern.answer)) {
       playCorrect();
       setSolved(true);
     } else {
-      playPop();
+      playGentle();
       setWiggleKey(key);
       window.setTimeout(() => setWiggleKey((w) => (w === key ? null : w)), 450);
     }
@@ -120,14 +127,14 @@ export function FinishPattern({ onBack }: { onBack: () => void }) {
             <NextButton label={round + 1 >= TOTAL ? "Finish" : "Next"} accent={ACCENT} onClick={next} />
           ) : (
             <div className="flex gap-3">
-              {choices.map((tile) => {
+              {pattern.choices.map((tile) => {
                 const key = tileKey(tile);
                 return (
                   <ChoiceButton
                     key={key}
                     label={SHAPE_DEFS[tile.shape].label}
                     wiggling={wiggleKey === key}
-                    onTap={() => pick(key)}
+                    onTap={() => pick(tile)}
                   >
                     <ShapeSvg shape={tile.shape} color={tile.color} size={72} />
                     <span className="text-[14px] font-bold text-soft">{SHAPE_DEFS[tile.shape].label}</span>

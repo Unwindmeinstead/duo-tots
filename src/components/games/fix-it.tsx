@@ -2,15 +2,20 @@
 
 /* ─── Game 4 — Fix It ───
    One broken scene at a time: find the part that belongs and it
-   snaps into place. The flower is a friendly decoy — tap it and it
-   wiggles; nothing is ever "wrong" enough to block play. Scenes are
+   snaps into place. A wrong part wiggles with the gentle ding;
+   nothing is ever "wrong" enough to block play. Scenes are
    hand-drawn in the Kidtopia palette; scene geometry (wheel spots,
-   the door slot) matches the part drawings exactly. */
+   the door slot, the mast, the flower spot) matches the part
+   drawings exactly.
+
+   Scenes are dealt in random order every playthrough, and each
+   scene's two decoy parts are drawn at random from the pool —
+   no fixed order, no fixed decoy to memorize. */
 
 import { useMemo, useState } from "react";
 import { GlyphCheck } from "@/components/glyphs";
-import { playCorrect, playPop } from "@/lib/audio";
-import { FIX_CHOICES, FIX_SCENES, PART_DEFS, shuffle, type PartId } from "@/lib/games-data";
+import { playCorrect, playGentle } from "@/lib/audio";
+import { FIX_SCENES, PART_DEFS, fixChoices, shuffle, type PartId } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
 
@@ -34,6 +39,15 @@ function PartSvg({ part, size = 72 }: { part: PartId; size?: number }) {
           <line x1="68" y1="32" x2="32" y2="68" />
         </g>
         <circle cx="50" cy="50" r="12" fill="#FFC531" stroke="rgba(20,20,30,.2)" strokeWidth="2.5" />
+      </svg>
+    );
+  }
+  if (part === "sail") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden focusable="false">
+        <line x1="50" y1="8" x2="50" y2="92" stroke="#A06A35" strokeWidth="6" strokeLinecap="round" />
+        <polygon points="55,14 55,64 86,64" fill="#38BDF8" stroke="rgba(20,20,30,.15)" strokeWidth="2" />
+        <polygon points="45,32 45,64 22,64" fill="#7CD4FC" stroke="rgba(20,20,30,.15)" strokeWidth="2" />
       </svg>
     );
   }
@@ -164,6 +178,81 @@ function HouseScene({ fixed }: { fixed: boolean }) {
   );
 }
 
+function BoatScene({ fixed }: { fixed: boolean }) {
+  return (
+    <svg viewBox="0 0 320 210" className="w-full max-w-md" role="img" aria-label={fixed ? "A boat with its sail" : "A boat missing its sail"}>
+      {/* water */}
+      <path d="M8 186 Q 32 176 56 186 T 104 186 T 152 186 T 200 186 T 248 186 T 296 186 T 320 186" fill="none" stroke="#38BDF8" strokeWidth="6" strokeLinecap="round" opacity="0.65" />
+      <path d="M20 200 Q 44 192 68 200 T 116 200 T 164 200 T 212 200 T 260 200 T 308 200" fill="none" stroke="#38BDF8" strokeWidth="5" strokeLinecap="round" opacity="0.4" />
+      {/* mast */}
+      <line x1="160" y1="34" x2="160" y2="146" stroke="#A06A35" strokeWidth="7" strokeLinecap="round" />
+      {/* sail spot — the big triangle right of the mast */}
+      {fixed ? (
+        <g className="kt-pop-in" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+          <polygon points="168,42 168,140 244,140" fill="#38BDF8" stroke="rgba(20,20,30,.15)" strokeWidth="2.5" />
+          <polygon points="152,66 152,140 96,140" fill="#7CD4FC" stroke="rgba(20,20,30,.15)" strokeWidth="2.5" />
+        </g>
+      ) : (
+        <g className="kt-pulse-soft" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+          <polygon points="168,42 168,140 244,140" fill="rgba(20,20,30,0.05)" stroke={GHOST_STROKE} strokeWidth="3.5" strokeDasharray="7 6" strokeLinejoin="round" />
+        </g>
+      )}
+      {/* hull */}
+      <path d="M84 146 L236 146 L218 178 L102 178 Z" fill="#FF7A59" stroke="rgba(20,20,30,.15)" strokeWidth="2.5" strokeLinejoin="round" />
+      <rect x="84" y="146" width="152" height="9" fill="#E06543" opacity="0.55" />
+    </svg>
+  );
+}
+
+function GardenScene({ fixed }: { fixed: boolean }) {
+  return (
+    <svg viewBox="0 0 320 210" className="w-full max-w-md" role="img" aria-label={fixed ? "A garden with two flowers" : "A garden missing a flower"}>
+      <rect x="8" y="182" width="304" height="10" rx="5" fill={GROUND} opacity="0.45" />
+      {/* sun */}
+      <circle cx="276" cy="36" r="18" fill="#FFC531" />
+      {/* the flower that is already there */}
+      <g>
+        <path d="M96 182 C96 156 94 138 92 122" stroke="#34C759" strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M94 160 C84 160 78 154 76 146 C86 146 92 152 94 160 Z" fill="#34C759" />
+        <g fill="#F0519B">
+          <circle cx="92" cy="88" r="11" />
+          <circle cx="109" cy="98" r="11" />
+          <circle cx="104" cy="116" r="11" />
+          <circle cx="80" cy="116" r="11" />
+          <circle cx="75" cy="98" r="11" />
+        </g>
+        <circle cx="92" cy="102" r="9" fill="#FFC531" />
+      </g>
+      {/* the empty stem — its flower head is the missing part */}
+      <path d="M212 182 C212 154 214 134 216 116" stroke="#34C759" strokeWidth="6" fill="none" strokeLinecap="round" />
+      <path d="M214 158 C224 158 230 152 232 144 C222 144 216 150 214 158 Z" fill="#34C759" />
+      {fixed ? (
+        <g className="kt-pop-in" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+          <g fill="#8B5CF6">
+            <circle cx="216" cy="82" r="11" />
+            <circle cx="233" cy="92" r="11" />
+            <circle cx="228" cy="110" r="11" />
+            <circle cx="204" cy="110" r="11" />
+            <circle cx="199" cy="92" r="11" />
+          </g>
+          <circle cx="216" cy="96" r="9" fill="#FFC531" />
+        </g>
+      ) : (
+        <g className="kt-pulse-soft" style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+          <circle cx="216" cy="96" r="24" fill="rgba(20,20,30,0.05)" stroke={GHOST_STROKE} strokeWidth="3.5" strokeDasharray="7 6" />
+        </g>
+      )}
+      {/* grass tufts */}
+      <g stroke="#34C759" strokeWidth="4" strokeLinecap="round" opacity="0.7">
+        <line x1="140" y1="184" x2="136" y2="168" />
+        <line x1="150" y1="184" x2="152" y2="166" />
+        <line x1="262" y1="184" x2="258" y2="168" />
+        <line x1="272" y1="184" x2="274" y2="166" />
+      </g>
+    </svg>
+  );
+}
+
 export function FixIt({ onBack }: { onBack: () => void }) {
   const [sceneIdx, setSceneIdx] = useState(0);
   const [fixed, setFixed] = useState(false);
@@ -171,9 +260,16 @@ export function FixIt({ onBack }: { onBack: () => void }) {
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-fix-it");
 
-  const scene = FIX_SCENES[sceneIdx];
+  /* Scenes dealt in random order per playthrough; each scene's
+     choices are its part + two freshly drawn decoys. */
+  const scenes = useMemo(
+    () => shuffle(FIX_SCENES),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session],
+  );
+  const scene = scenes[sceneIdx];
   const choices = useMemo(
-    () => shuffle(FIX_CHOICES),
+    () => fixChoices(scene.correctPart),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [sceneIdx, session],
   );
@@ -184,7 +280,7 @@ export function FixIt({ onBack }: { onBack: () => void }) {
       playCorrect();
       setFixed(true);
     } else {
-      playPop();
+      playGentle();
       setWigglePart(part);
       window.setTimeout(() => setWigglePart((w) => (w === part ? null : w)), 450);
     }
@@ -232,6 +328,8 @@ export function FixIt({ onBack }: { onBack: () => void }) {
             {scene.id === "fix-car" && <CarScene fixed={fixed} />}
             {scene.id === "fix-bike" && <BikeScene fixed={fixed} />}
             {scene.id === "fix-house" && <HouseScene fixed={fixed} />}
+            {scene.id === "fix-boat" && <BoatScene fixed={fixed} />}
+            {scene.id === "fix-garden" && <GardenScene fixed={fixed} />}
             {fixed && (
               <span
                 className="kt-pop-in absolute -right-2 -top-2 grid h-10 w-10 place-items-center rounded-full text-white"

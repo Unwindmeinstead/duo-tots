@@ -52,6 +52,23 @@ export function ShapeSvg({
           {...common}
         />
       )}
+      {shape === "diamond" && <polygon points="50,6 90,50 50,94 10,50" {...common} />}
+      {shape === "oval" && <ellipse cx="50" cy="50" rx="31" ry="41" {...common} />}
+      {shape === "rectangle" && <rect x="8" y="26" width="84" height="48" rx="14" {...common} />}
+      {shape === "crescent" && (
+        <path d="M50 6 A44 44 0 1 0 50 94 A35 35 0 1 1 50 6 Z" {...common} />
+      )}
+      {shape === "pentagon" && <polygon points="50,7 93,38 76,90 24,90 7,38" {...common} />}
+      {shape === "hexagon" && <polygon points="50,8 86,29 86,71 50,92 14,71 14,29" {...common} />}
+      {shape === "octagon" && (
+        <polygon points="35,8 65,8 92,35 92,65 65,92 35,92 8,65 8,35" {...common} />
+      )}
+      {shape === "cross" && (
+        <path d="M38 10 H62 V38 H90 V62 H62 V90 H38 V62 H10 V38 H38 Z" {...common} />
+      )}
+      {shape === "arrow" && (
+        <polygon points="50,8 88,50 62,50 62,92 38,92 38,50 12,50" {...common} />
+      )}
     </svg>
   );
 }

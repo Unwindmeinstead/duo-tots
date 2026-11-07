@@ -1,7 +1,7 @@
 "use client";
 
 /* ─── Play hub (/play) ───
-   Four big game cards on the white sheet, in the reference card
+   Eight big game cards on the white sheet, in the reference card
    anatomy: saturated art tile, bold name, soft label, star row,
    play pill. Tapping one swaps the view to that game (single
    route, state-selected); the game's back disc returns here, and
@@ -19,6 +19,10 @@ import { ShapeSorter } from "./shape-sorter";
 import { StackingBlocks } from "./stacking-blocks";
 import { FinishPattern } from "./finish-pattern";
 import { FixIt } from "./fix-it";
+import { ColorFinder } from "./color-finder";
+import { OddOneOut } from "./odd-one-out";
+import { CountingFun } from "./counting-fun";
+import { ShadowMatch } from "./shadow-match";
 
 type GameDef = {
   id: GameId;
@@ -67,6 +71,51 @@ const GAMES: GameDef[] = [
     color: "#2B7FFF",
     icon: <GlyphGear size={40} />,
     Component: FixIt,
+  },
+  {
+    id: "game-color-finder",
+    name: "Color finder",
+    label: "Hear the color, tap it",
+    color: "#D64FD6",
+    icon: (
+      <svg width={46} height={46} viewBox="0 0 24 24" aria-hidden>
+        <circle cx="9" cy="9" r="5.5" fill="#FFFFFF" opacity="0.95" />
+        <circle cx="15.5" cy="9" r="5.5" fill="#FFFFFF" opacity="0.6" />
+        <circle cx="12.2" cy="15" r="5.5" fill="#FFFFFF" opacity="0.8" />
+      </svg>
+    ),
+    Component: ColorFinder,
+  },
+  {
+    id: "game-odd-one-out",
+    name: "Odd one out",
+    label: "Spot the different one",
+    color: "#17BEBB",
+    icon: (
+      <svg width={46} height={46} viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden>
+        <circle cx="7" cy="7" r="3" />
+        <circle cx="17" cy="7" r="3" />
+        <circle cx="7" cy="17" r="3" />
+        <polygon points="17,13.8 18.2,16.3 20.9,16.6 18.9,18.5 19.4,21.2 17,19.8 14.6,21.2 15.1,18.5 13.1,16.6 15.8,16.3" />
+      </svg>
+    ),
+    Component: OddOneOut,
+  },
+  {
+    id: "game-counting-fun",
+    name: "Counting fun",
+    label: "Count them, tap the number",
+    color: "#FF6FA5",
+    icon: <span className="text-[25px] font-black tracking-tight text-white">123</span>,
+    Component: CountingFun,
+  },
+  {
+    id: "game-shadow-match",
+    name: "Shadow match",
+    label: "Who makes this shadow?",
+    color: "#8163D6",
+    icon: <ShapeSvg shape="star" color="#2A3350" size={44} />,
+    Component: ShadowMatch,
   },
 ];
 

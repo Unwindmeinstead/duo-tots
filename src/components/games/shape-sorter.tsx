@@ -3,45 +3,50 @@
 /* ─── Game 1 — Shape Sorter ───
    A big dashed "hole" on the sheet shows the shape to find; three
    chunky shapes sit below. The right one flies in and fills the
-   hole with colour. A wrong one just wiggles — tap again, no
-   penalty, no fail state. */
+   hole with colour. A wrong one just wiggles with the gentle
+   companion ding — tap again, no penalty, no fail state.
+
+   Every game is dealt fresh (makeSorterRounds): random target
+   shapes in random colours, random distractors, shuffled spots —
+   there is no fixed round order to memorize. */
 
 import { useMemo, useState } from "react";
 import { GlyphCheck } from "@/components/glyphs";
-import { playCorrect, playPop } from "@/lib/audio";
-import { SHAPE_DEFS, SORTER_ROUNDS, shuffle, sorterChoices, type ShapeId } from "@/lib/games-data";
+import { playCorrect, playGentle } from "@/lib/audio";
+import { makeSorterRounds, tileKey, type ShapeTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
 import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, useGameCompletion } from "./shared";
 
 const ACCENT = "#FF9F2E";
-const TOTAL = SORTER_ROUNDS.length;
+const TOTAL = 5;
 
 export function ShapeSorter({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
   const [filled, setFilled] = useState(false);
-  const [wiggleId, setWiggleId] = useState<ShapeId | null>(null);
+  const [wiggleKey, setWiggleKey] = useState<string | null>(null);
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-shape-sorter");
 
-  const target = SORTER_ROUNDS[round];
-  const targetDef = SHAPE_DEFS[target];
-  /* Choices reshuffle every round (and every replay via `session`). */
-  const choices = useMemo(
-    () => shuffle(sorterChoices(target)),
+  /* The whole game is dealt once per playthrough (and re-dealt on
+     replay via `session`) — rounds never repeat a target shape. */
+  const rounds = useMemo(
+    () => makeSorterRounds(TOTAL),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [target, session],
+    [session],
   );
+  const { target, choices } = rounds[round];
 
-  const pick = (shape: ShapeId) => {
+  const pick = (tile: ShapeTile) => {
     if (filled) return;
-    if (shape === target) {
+    if (tile.shape === target.shape) {
       playCorrect();
       setFilled(true);
     } else {
-      playPop();
-      setWiggleId(shape);
-      window.setTimeout(() => setWiggleId((w) => (w === shape ? null : w)), 450);
+      playGentle();
+      const key = tileKey(tile);
+      setWiggleKey(key);
+      window.setTimeout(() => setWiggleKey((w) => (w === key ? null : w)), 450);
     }
   };
 
@@ -52,7 +57,7 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
     }
     setRound((r) => r + 1);
     setFilled(false);
-    setWiggleId(null);
+    setWiggleKey(null);
   };
 
   const replay = () => {
@@ -60,7 +65,7 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
     setSession((s) => s + 1);
     setRound(0);
     setFilled(false);
-    setWiggleId(null);
+    setWiggleKey(null);
   };
 
   if (xpEarned !== null) {
@@ -80,22 +85,23 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
       <GameHeader title="Shape sorter" onBack={onBack} step={round} total={TOTAL} />
       <GameSheet>
         <p className="pt-4 text-center text-[20px] font-black text-ink">
-          Find the {targetDef.label.toLowerCase()}!
+          Find the {target.colorName.toLowerCase()}{" "}
+          {target.shape === "block" ? "block" : target.shape}!
         </p>
 
         {/* The hole — dashed ghost until the right shape fills it */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div
             className="kt-card relative flex h-56 w-56 items-center justify-center sm:h-64 sm:w-64"
-            aria-label={filled ? `${targetDef.label} matched` : `Empty ${targetDef.label.toLowerCase()} hole`}
+            aria-label={filled ? "Shape matched" : "Empty shape hole"}
           >
             {filled ? (
               <span key={`filled-${round}-${session}`} className="kt-fly-in inline-flex">
-                <ShapeSvg shape={target} color={targetDef.color} size={168} />
+                <ShapeSvg shape={target.shape} color={target.color} size={168} />
               </span>
             ) : (
               <span className="kt-pulse-soft inline-flex">
-                <ShapeSvg shape={target} color={targetDef.color} size={168} mode="ghost" />
+                <ShapeSvg shape={target.shape} color={target.color} size={168} mode="ghost" />
               </span>
             )}
             {filled && (
@@ -118,15 +124,15 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
             <NextButton label={round + 1 >= TOTAL ? "Finish" : "Next"} accent={ACCENT} onClick={next} />
           ) : (
             <div className="flex gap-3">
-              {choices.map((shape) => (
+              {choices.map((tile) => (
                 <ChoiceButton
-                  key={shape}
-                  label={SHAPE_DEFS[shape].label}
-                  wiggling={wiggleId === shape}
-                  onTap={() => pick(shape)}
+                  key={tileKey(tile)}
+                  label={`${tile.colorName} ${tile.shape}`}
+                  wiggling={wiggleKey === tileKey(tile)}
+                  onTap={() => pick(tile)}
                 >
-                  <ShapeSvg shape={shape} color={SHAPE_DEFS[shape].color} size={76} />
-                  <span className="text-[14px] font-bold text-soft">{SHAPE_DEFS[shape].label}</span>
+                  <ShapeSvg shape={tile.shape} color={tile.color} size={76} />
+                  <span className="text-[14px] font-bold capitalize text-soft">{tile.shape}</span>
                 </ChoiceButton>
               ))}
             </div>

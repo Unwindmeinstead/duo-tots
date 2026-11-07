@@ -3,17 +3,21 @@
 /* ─── Game 2 — Stacking Blocks ───
    A ghost tower on the sheet shows where each block goes; the NEXT
    block's ghost gently pulses. Tap that block in the tray and it
-   pops onto the tower. Wrong blocks wiggle. The last block
-   finishes the game. */
+   pops onto the tower. Wrong blocks wiggle with the gentle ding.
+   The last block finishes the game.
+
+   The tower itself is dealt fresh every playthrough (makeTower):
+   6 blocks drawn from 8 shapes × 10 colours, tray shuffled — the
+   old single fixed tower is gone, so there's nothing to memorize. */
 
 import { useMemo, useState } from "react";
-import { playCorrect, playPop } from "@/lib/audio";
-import { STACK_BLOCKS, shuffle, type StackBlock } from "@/lib/games-data";
+import { playCorrect, playGentle } from "@/lib/audio";
+import { makeTower, shuffle, type StackBlock } from "@/lib/games-data";
 import { ShapeSvg } from "./shapes";
 import { GameCelebration, GameHeader, GameSheet, useGameCompletion } from "./shared";
 
 const ACCENT = "#8B5CF6";
-const TOTAL = STACK_BLOCKS.length;
+const TOTAL = 6;
 
 export function StackingBlocks({ onBack }: { onBack: () => void }) {
   const [placed, setPlaced] = useState(0);
@@ -22,14 +26,20 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-stacking-blocks");
 
-  /* The tray is shuffled once per playthrough; placed blocks leave it. */
-  const tray = useMemo(
-    () => shuffle(STACK_BLOCKS),
+  /* The tower is dealt once per playthrough; the tray is the same
+     deal shuffled. Placed blocks leave the tray. */
+  const tower = useMemo(
+    () => makeTower(TOTAL),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [session],
   );
-  const needed: StackBlock | undefined = STACK_BLOCKS[placed];
-  const remaining = tray.filter((b) => !STACK_BLOCKS.slice(0, placed).some((p) => p.id === b.id));
+  const tray = useMemo(
+    () => shuffle(tower),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session, tower],
+  );
+  const needed: StackBlock | undefined = tower[placed];
+  const remaining = tray.filter((b) => !tower.slice(0, placed).some((p) => p.id === b.id));
 
   const tapBlock = (block: StackBlock) => {
     if (!needed) return;
@@ -40,7 +50,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
       setJustPlaced(block.id);
       if (nextPlaced >= TOTAL) finish();
     } else {
-      playPop();
+      playGentle();
       setWiggleId(block.id);
       window.setTimeout(() => setWiggleId((w) => (w === block.id ? null : w)), 450);
     }
@@ -73,7 +83,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
         <p className="pt-4 text-center text-[20px] font-black text-ink">
           {needed ? (
             <>
-              Tap the <span style={{ color: needed.color }}>{needed.label.toLowerCase()}</span>!
+              Tap the <span style={{ color: needed.color }}>{needed.label}</span>!
             </>
           ) : (
             "You did it!"
@@ -83,19 +93,23 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
         {/* Tower — ghosts below, placed blocks pop in over them */}
         <div className="flex min-h-0 flex-1 flex-col items-center justify-end pb-2 pt-4">
           <div className="flex flex-col-reverse items-center" role="img" aria-label={`Tower, ${placed} of ${TOTAL} blocks stacked`}>
-            {STACK_BLOCKS.map((block, i) => {
+            {tower.map((block, i) => {
               const isPlaced = i < placed;
               const isNext = i === placed;
-              const slotHeight = block.shape === "block" ? Math.round(block.width * 0.42) + 6 : block.width + 4;
+              /* Six dealt blocks render at a fit scale — the dealt
+                 `width` carries the narrowing rhythm, the scale
+                 keeps the whole tower on one phone screen. */
+              const display = Math.round(block.width * 0.55);
+              const slotHeight = block.shape === "block" ? Math.round(display * 0.42) + 5 : display + 3;
               return (
                 <div key={block.id} className="flex items-center justify-center" style={{ height: slotHeight }}>
                   {isPlaced ? (
                     <span className={justPlaced === block.id ? "kt-pop-in inline-flex" : "inline-flex"}>
-                      <ShapeSvg shape={block.shape} color={block.color} size={block.width} />
+                      <ShapeSvg shape={block.shape} color={block.color} size={display} />
                     </span>
                   ) : (
                     <span className={isNext ? "kt-pulse-soft inline-flex" : "inline-flex opacity-60"}>
-                      <ShapeSvg shape={block.shape} color={block.color} size={block.width} mode="ghost" />
+                      <ShapeSvg shape={block.shape} color={block.color} size={display} mode="ghost" />
                     </span>
                   )}
                 </div>
@@ -119,7 +133,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
               }`}
             >
               <ShapeSvg shape={block.shape} color={block.color} size={block.shape === "block" ? 84 : 58} />
-              <span className="text-[12px] font-bold text-soft">{block.label}</span>
+              <span className="text-[12px] font-bold capitalize text-soft">{block.label}</span>
             </button>
           ))}
         </div>
