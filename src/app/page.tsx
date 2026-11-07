@@ -239,7 +239,7 @@ export default function Home() {
                           return (
                             <div key={lesson.id} className="relative">
                               {lesson.id === worldCurrentId && (
-                                <span className="kt-bob absolute -top-4 left-24 z-10 rounded-full bg-gold px-3.5 py-1 text-[13px] font-black text-ink">
+                                <span className="kt-bob absolute -top-4 left-[104px] z-10 rounded-full bg-gold px-3.5 py-1 text-[13px] font-black text-ink">
                                   START
                                 </span>
                               )}
@@ -249,9 +249,9 @@ export default function Home() {
                                 className="kt-card flex items-center gap-3.5 p-3.5"
                               >
                                 <span
-                                  className="relative block h-[126px] w-[84px] shrink-0 overflow-hidden"
+                                  className="relative block h-[80px] w-[120px] shrink-0 overflow-hidden"
                                   style={{
-                                    borderRadius: 20,
+                                    borderRadius: 18,
                                     background: lesson.color,
                                   }}
                                 >
@@ -259,17 +259,19 @@ export default function Home() {
                                   <span className="absolute inset-0 grid place-items-center text-white" aria-hidden>
                                     <GlyphStar size={30} />
                                   </span>
-                                  {/* Uniform portrait tile — the same fixed
-                                      84×126 (2:3) box as ArtTile on the topic
-                                      rows, and the cover fills it as the
-                                      photo-card. Every World cover is a true
-                                      900×1350 portrait (blueprint), so the
-                                      fill never clips the subject; the fixed
-                                      box keeps every row the same height and
-                                      the text column the same width. */}
+                                  {/* LANDSCAPE thumbnail (Grey's reversal,
+                                      Nov 7): the World lists show horizontal
+                                      thumbs — fixed 120×80 (3:2) box, and
+                                      lesson.thumb is a true 1200×800
+                                      landscape composition (whole subject,
+                                      never a cropped vertical), so the fill
+                                      clips nothing. The vertical cover
+                                      (lesson.image) still serves the
+                                      in-lesson see-it card. Fixed box =
+                                      uniform rows, steady text column. */}
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
-                                    src={lesson.image}
+                                    src={lesson.thumb}
                                     alt=""
                                     className="absolute inset-0 block h-full w-full object-cover"
                                     draggable={false}

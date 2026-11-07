@@ -23,6 +23,11 @@ export interface WorldLesson {
   /** Beat 3 — "see it" photo: /images/world_book/<slug>.webp when generated,
       otherwise an existing local photo path that fits the lesson. */
   image: string;
+  /** List thumbnail — LANDSCAPE 1200x800 (Grey's reversal, Nov 7):
+      the World lesson lists (home Foundation rows + World index) show
+      horizontal thumbs; the vertical `image` stays the in-lesson
+      see-it card. Thumbs live at /images/world_book/thumbs/<slug>.webp */
+  thumb: string;
   /** Accent color for the node + lesson chrome. */
   color: string;
 }
@@ -36,6 +41,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Build your home from blocks together. Put a toy person inside for everyone in your family.",
     question: "Who do you love in our home?",
     image: "/images/world_book/me-family-home.webp",
+    thumb: "/images/world_book/thumbs/me-family-home.webp",
     color: "#FF9F2E",
   },
   {
@@ -46,6 +52,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Play leader of the parade! You lead and we follow your steps. Then swap — now you follow.",
     question: "If you were the leader today, how would you help us?",
     image: "/images/world_book/who-is-in-charge.webp",
+    thumb: "/images/world_book/thumbs/who-is-in-charge.webp",
     color: "#8B5CF6",
   },
   {
@@ -56,6 +63,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Play red light, green light! Red means freeze. Green means go. You hold the cards and lead.",
     question: "What rule keeps you safe?",
     image: "/images/world_book/rules-keep-us-safe.webp",
+    thumb: "/images/world_book/thumbs/rules-keep-us-safe.webp",
     color: "#FF7A59",
   },
   {
@@ -66,6 +74,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Play helpers! Take turns with a toy stethoscope or a helper hat. Be the helper, then say thank you.",
     question: "Which helper would you like to be today?",
     image: "/images/world_book/people-who-help.webp",
+    thumb: "/images/world_book/thumbs/people-who-help.webp",
     color: "#34C759",
   },
   {
@@ -76,6 +85,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Plant a seed in a cup of soil together. Water it every day and watch it grow.",
     question: "Who helped bring this food to us?",
     image: "/images/food/apple.webp",
+    thumb: "/images/world_book/thumbs/food-gets-to-us.webp",
     color: "#FFA826",
   },
   {
@@ -86,6 +96,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Pour water play with two cups and a jug. Then practise turning the tap all the way off — no drips!",
     question: "Where does the water in your cup come from?",
     image: "/images/kid_general/faucet.webp",
+    thumb: "/images/world_book/thumbs/where-water-comes-from.webp",
     color: "#2B7FFF",
   },
   {
@@ -96,6 +107,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Shine a flashlight on a ball and turn it slowly. When our mark faces the light, it is day. When it turns away, it is night!",
     question: "Is it the sun's turn now, or the moon's turn?",
     image: "/images/nature/sun.webp",
+    thumb: "/images/world_book/thumbs/day-night-sun-moon.webp",
     color: "#F0519B",
   },
   {
@@ -106,6 +118,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Dress the teddy bear! Call out the weather — rain, sun, snow — and dress the bear to match.",
     question: "What will you wear for this weather?",
     image: "/images/nature/rain.webp",
+    thumb: "/images/world_book/thumbs/weather-and-seasons.webp",
     color: "#17BEBB",
   },
   {
@@ -116,6 +129,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Build animal homes from blocks and blankets — a nest for a toy bird, a den for a bear — and feed each animal.",
     question: "Where does this animal live, and what does it need?",
     image: "/images/nature/nest.webp",
+    thumb: "/images/world_book/thumbs/animals-and-homes.webp",
     color: "#FF6FA5",
   },
   {
@@ -126,6 +140,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Water your seed with a tiny cup every day. Each week, measure the sprout against your hand — growing, slowly!",
     question: "What is something good that grows slowly?",
     image: "/images/nature/seed.webp",
+    thumb: "/images/world_book/thumbs/plants-grow-slow.webp",
     color: "#9BC53D",
   },
   {
@@ -136,6 +151,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Make a ramp from a book. Roll a ball and a toy car down it. Higher ramp — faster! Does a block roll or slide?",
     question: "What is the fastest way this could move?",
     image: "/images/toys/bicycle.webp",
+    thumb: "/images/world_book/thumbs/how-things-move.webp",
     color: "#38BDF8",
   },
   {
@@ -146,6 +162,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Make a plan first — say what you will build. Build it step by step with blocks. If it falls, say: fix it and try again!",
     question: "What will you build, and what is your first step?",
     image: "/images/toys/blocks.webp",
+    thumb: "/images/world_book/thumbs/how-things-are-built.webp",
     color: "#D64FD6",
   },
   {
@@ -156,6 +173,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Play shop with a basket, play food, and paper money. For every thing you sell, name who made it — then say thank you.",
     question: "Who made this — and how can we thank them?",
     image: "/images/world_book/money-and-trading.webp",
+    thumb: "/images/world_book/thumbs/money-and-trading.webp",
     color: "#3ED6A5",
   },
   {
@@ -166,6 +184,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     doIt: "Do one helping thing together: fill a bird feeder, water a thirsty plant, or pack a small bag of food to share.",
     question: "Who can we help today?",
     image: "/images/world_book/our-earth.webp",
+    thumb: "/images/world_book/thumbs/our-earth.webp",
     color: "#5B6BE0",
   },
 ];

@@ -42,7 +42,7 @@ export default function WorldPage() {
             title="Book 1"
             sub={`${doneCount} of ${WORLD_LESSONS.length} done`}
           />
-          <div className="mt-4 grid grid-cols-2 gap-3.5">
+          <div className="mt-4 flex flex-col gap-3.5">
             {WORLD_LESSONS.map((lesson, i) => {
               const stars = getCategoryStars(progress, worldNodeId(lesson.id));
               const isDone = stars > 0;
@@ -51,53 +51,55 @@ export default function WorldPage() {
                   key={lesson.id}
                   href={`/world/${lesson.id}`}
                   onClick={() => playPop()}
-                  className="kt-card flex h-full flex-col overflow-hidden"
+                  className="kt-card flex items-center gap-3.5 p-3.5"
                 >
-                  <div className="relative shrink-0">
-                    {/* The card top IS the photo at the uniform 2:3
-                        blueprint shape — every World cover is a true
-                        900×1350 portrait, so the fixed aspect box keeps
-                        all fourteen cards identical and nothing clips. */}
+                  <span
+                    className="relative block h-[80px] w-[120px] shrink-0 overflow-hidden"
+                    style={{ borderRadius: 18, background: lesson.color }}
+                  >
+                    {/* LANDSCAPE thumbnail (Grey's reversal, Nov 7):
+                        same fixed 120×80 (3:2) tile as the home
+                        Foundation rows; lesson.thumb is a true 1200×800
+                        landscape composition, so nothing clips. The
+                        vertical cover still serves the in-lesson card. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={lesson.image}
+                      src={lesson.thumb}
                       alt=""
-                      className="block aspect-[2/3] w-full object-cover"
+                      className="absolute inset-0 block h-full w-full object-cover"
                       draggable={false}
                       loading={i > 5 ? "lazy" : undefined}
                     />
                     {isDone && (
                       <span
-                        className="absolute right-2.5 top-2.5 grid h-8 w-8 place-items-center rounded-full bg-white text-gold-deep"
+                        className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-white text-gold-deep"
                         aria-label="Done"
                       >
-                        <GlyphStar size={17} />
+                        <GlyphStar size={13} />
                       </span>
                     )}
-                  </div>
-                  <div className="flex flex-1 flex-col p-3.5">
-                    <div className="flex items-start gap-2">
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start gap-2">
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-royal text-[13px] font-black text-white">
                         {i + 1}
                       </span>
-                      <p className="text-[15.5px] font-black leading-snug tracking-tight text-ink">
+                      <span className="line-clamp-2 text-[16px] font-black leading-snug tracking-tight text-ink">
                         {lesson.title}
-                      </p>
-                    </div>
-                    <p className="mt-1.5 line-clamp-2 text-[13px] font-bold leading-snug text-soft">
-                      {lesson.sayIt}
-                    </p>
-                    <span className="mt-auto pt-3">
-                      <PillButton
-                        small
-                        color={isDone ? GOLD : lesson.color}
-                        ink={isDone ? "#182642" : "#FFFFFF"}
-                        className="pointer-events-none min-h-11 px-4 text-[14px]"
-                      >
-                        {isDone ? "Play again" : "Start"}
-                      </PillButton>
+                      </span>
                     </span>
-                  </div>
+                    <span className="mt-1 line-clamp-2 block text-[13px] font-bold leading-snug text-soft">
+                      {lesson.sayIt}
+                    </span>
+                  </span>
+                  <PillButton
+                    small
+                    color={isDone ? GOLD : lesson.color}
+                    ink={isDone ? "#182642" : "#FFFFFF"}
+                    className="pointer-events-none min-h-11 shrink-0 self-end px-4 text-[14px]"
+                  >
+                    {isDone ? "Play again" : "Start"}
+                  </PillButton>
                 </Link>
               );
             })}
