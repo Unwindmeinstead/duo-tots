@@ -14,7 +14,7 @@ import { useMemo, useState } from "react";
 import { playCorrect, playGentle } from "@/lib/audio";
 import { makeTower, shuffle, type StackBlock } from "@/lib/games-data";
 import { ShapeSvg } from "./shapes";
-import { GameCelebration, GameHeader, GameSheet, PromptRow, useGameCompletion } from "./shared";
+import { GameCelebration, GameHeader, GameSheet, PromptRow, useAutoAnnounce, useGameCompletion } from "./shared";
 
 const ACCENT = "#8B5CF6";
 const TOTAL = 6;
@@ -39,6 +39,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
     [session, tower],
   );
   const needed: StackBlock | undefined = tower[placed];
+  useAutoAnnounce(needed ? `Tap the ${needed.label}!` : "", `${session}-${placed}`);
   const remaining = tray.filter((b) => !tower.slice(0, placed).some((p) => p.id === b.id));
 
   const tapBlock = (block: StackBlock) => {
@@ -91,52 +92,64 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
           <p className="pt-4 text-center text-[20px] font-black text-ink">You did it!</p>
         )}
 
-        {/* Tower — ghosts below, placed blocks pop in over them */}
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-end pb-2 pt-4">
-          <div className="flex flex-col-reverse items-center" role="img" aria-label={`Tower, ${placed} of ${TOTAL} blocks stacked`}>
-            {tower.map((block, i) => {
-              const isPlaced = i < placed;
-              const isNext = i === placed;
-              /* Six dealt blocks render at a fit scale — the dealt
-                 `width` carries the narrowing rhythm, the scale
-                 keeps the whole tower on one phone screen. */
-              const display = Math.round(block.width * 0.55);
-              const slotHeight = block.shape === "block" ? Math.round(display * 0.42) + 5 : display + 3;
-              return (
-                <div key={block.id} className="flex items-center justify-center" style={{ height: slotHeight }}>
-                  {isPlaced ? (
-                    <span className={justPlaced === block.id ? "kt-pop-in inline-flex" : "inline-flex"}>
-                      <ShapeSvg shape={block.shape} color={block.color} size={display} />
-                    </span>
-                  ) : (
-                    <span className={isNext ? "kt-pulse-soft inline-flex" : "inline-flex opacity-60"}>
-                      <ShapeSvg shape={block.shape} color={block.color} size={display} mode="ghost" />
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          {/* Ground */}
-          <div className="mt-1 h-3 w-64 max-w-full rounded-full bg-[#34C759] opacity-50" />
-        </div>
+        {/* Play area (Grey's scroll rule, 2026-11-07): the page
+            itself stays locked — the tower is dealt at a fit scale
+            so tower + tray share one phone screen, and this region
+            scrolls INTERNALLY only if a short screen still can't
+            hold them; when everything fits, nothing scrolls. The
+            header + spoken prompt above stay fixed either way. */}
+        <div className="kt-noscroll flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex min-h-full flex-col">
+            {/* Tower — ghosts below, placed blocks pop in over them */}
+            <div className="flex flex-1 flex-col items-center justify-end pb-2 pt-4">
+              <div className="flex flex-col-reverse items-center" role="img" aria-label={`Tower, ${placed} of ${TOTAL} blocks stacked`}>
+                {tower.map((block, i) => {
+                  const isPlaced = i < placed;
+                  const isNext = i === placed;
+                  /* Six dealt blocks render at a fit scale — the dealt
+                     `width` carries the narrowing rhythm, the scale
+                     keeps the whole tower on one phone screen. The
+                     tappable tray blocks below keep their full
+                     chunky size; only the tower display shrinks. */
+                  const display = Math.round(block.width * 0.46);
+                  const slotHeight = block.shape === "block" ? Math.round(display * 0.42) + 4 : display + 2;
+                  return (
+                    <div key={block.id} className="flex items-center justify-center" style={{ height: slotHeight }}>
+                      {isPlaced ? (
+                        <span className={justPlaced === block.id ? "kt-pop-in inline-flex" : "inline-flex"}>
+                          <ShapeSvg shape={block.shape} color={block.color} size={display} />
+                        </span>
+                      ) : (
+                        <span className={isNext ? "kt-pulse-soft inline-flex" : "inline-flex opacity-60"}>
+                          <ShapeSvg shape={block.shape} color={block.color} size={display} mode="ghost" />
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Ground */}
+              <div className="mt-1 h-3 w-64 max-w-full rounded-full bg-[#34C759] opacity-50" />
+            </div>
 
-        {/* Tray of blocks still to stack */}
-        <div className="flex flex-wrap justify-center gap-3 pt-2">
-          {remaining.map((block) => (
-            <button
-              key={block.id}
-              type="button"
-              aria-label={block.label}
-              onClick={() => tapBlock(block)}
-              className={`kt-card flex min-h-[104px] min-w-[96px] flex-col items-center justify-center gap-1 px-3 py-2 transition-transform active:scale-95 ${
-                wiggleId === block.id ? "kt-wiggle" : ""
-              }`}
-            >
-              <ShapeSvg shape={block.shape} color={block.color} size={block.shape === "block" ? 84 : 58} />
-              <span className="text-[12px] font-bold capitalize text-soft">{block.label}</span>
-            </button>
-          ))}
+            {/* Tray of blocks still to stack */}
+            <div className="flex flex-wrap justify-center gap-3 pb-1 pt-2">
+              {remaining.map((block) => (
+                <button
+                  key={block.id}
+                  type="button"
+                  aria-label={block.label}
+                  onClick={() => tapBlock(block)}
+                  className={`kt-card flex min-h-[104px] min-w-[96px] flex-col items-center justify-center gap-1 px-3 py-2 transition-transform active:scale-95 ${
+                    wiggleId === block.id ? "kt-wiggle" : ""
+                  }`}
+                >
+                  <ShapeSvg shape={block.shape} color={block.color} size={block.shape === "block" ? 84 : 58} />
+                  <span className="text-[12px] font-bold capitalize text-soft">{block.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </GameSheet>
     </div>

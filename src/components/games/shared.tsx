@@ -7,13 +7,12 @@
    runs the same beat — fanfare → completeActivity(2 stars) → save →
    celebration — and returns the XP actually earned. */
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { PillButton, Pips, RoundButton } from "@/components/kit";
 import { GlyphChevronL, GlyphSpeaker } from "@/components/glyphs";
 import { CelebrationScreen } from "@/components/celebration";
-import { playCelebration, playPop, playStarChime, speakWord } from "@/lib/audio";
+import { isSoundEnabled, playCelebration, playPop, playStarChime, speakWord } from "@/lib/audio";
 import { completeActivity, loadProgress, saveProgress } from "@/lib/progress";
-import { deepen } from "@/lib/theme";
 import type { GameId } from "@/lib/games-data";
 
 /* ─── Blue-zone game header ─── */
@@ -77,11 +76,33 @@ export function SpeakerButton({
         void speakWord(text);
       }}
       className="grid h-14 w-14 shrink-0 place-items-center rounded-full text-white transition-transform active:scale-95"
-      style={{ background: accent, boxShadow: `0 4px 0 ${deepen(accent)}` }}
+      style={{ background: accent }}
     >
       <GlyphSpeaker size={26} />
     </button>
   );
+}
+
+/* ─── Auto-announce (Grey's rule, 2026-11-07) ───
+   The first time a round's page appears — game open AND every new
+   round — the prompt announces itself out loud, exactly once, with
+   the SAME string the speaker button speaks. The ref guard (keyed
+   by session+round, the Animal Pick pattern) keeps StrictMode's
+   double effect and plain re-renders from ever double-speaking a
+   round. The parent sound setting gates the announcement: with
+   sound OFF the auto-announce stays silent — the manual speaker
+   button remains the parent's deliberate exception (speech is
+   never gated in audio.ts; only this automatic path checks). */
+
+export function useAutoAnnounce(text: string, roundKey: string) {
+  const spokenFor = useRef<string>("");
+  useEffect(() => {
+    if (!text) return;
+    if (spokenFor.current === roundKey) return;
+    spokenFor.current = roundKey;
+    if (!isSoundEnabled()) return;
+    void speakWord(text);
+  }, [text, roundKey]);
 }
 
 /** The top-area prompt row every game renders directly under the

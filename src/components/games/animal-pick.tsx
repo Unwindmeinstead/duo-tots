@@ -9,14 +9,14 @@
    position memory. A wrong tap wiggles with the gentle companion
    ding; no fail state. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { GlyphCheck } from "@/components/glyphs";
+import { useMemo, useState } from "react";
+import { GlyphCheck, GlyphSpeaker } from "@/components/glyphs";
 import { playCorrect, playGentle, speakWord } from "@/lib/audio";
 import { sample, shuffle } from "@/lib/games-data";
 import { getLocalImage } from "@/lib/local-images";
 import { categories } from "@/lib/vocab";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useAutoAnnounce, useGameCompletion } from "./shared";
 
 const ACCENT = "#34C759";
 const TOTAL = 5;
@@ -63,14 +63,9 @@ export function AnimalPick({ onBack }: { onBack: () => void }) {
   const { target, choices } = rounds[round];
 
   /* Call the animal out as each round lands — hearing the word is
-     half the game (same guard pattern as Color Finder). */
-  const spokenFor = useRef<string>("");
-  useEffect(() => {
-    const key = `${session}-${round}-${target.slug}`;
-    if (spokenFor.current === key) return;
-    spokenFor.current = key;
-    void speakWord(`Find the ${target.word.toLowerCase()}!`);
-  }, [session, round, target]);
+     half the game. The shared hook speaks it exactly once per
+     round and stays silent when the parent sound setting is off. */
+  useAutoAnnounce(`Find the ${target.word.toLowerCase()}!`, `${session}-${round}`);
 
   const pick = (a: Animal) => {
     if (found) return;
@@ -124,17 +119,45 @@ export function AnimalPick({ onBack }: { onBack: () => void }) {
           Find the {target.word.toLowerCase()}!
         </PromptRow>
 
+        {/* Centre stage — before the pick it holds a big listening
+            disc (tap it to hear the call-out again); on the find,
+            the animal's own portrait pops up large centre-stage,
+            the way the other games stage their found item. */}
         <div className="flex flex-1 flex-col items-center justify-center py-4">
-          <p className="h-6 text-[17px] font-black" style={{ color: found ? GREEN_DEEP : "transparent" }}>
-            {found ? `That's the ${target.word.toLowerCase()}!` : " "}
-          </p>
-          {found && (
-            <span
-              className="kt-pop-in mt-1 grid h-10 w-10 place-items-center rounded-full text-white"
-              style={{ background: GREEN }}
-            >
-              <GlyphCheck size={21} />
-            </span>
+          {found ? (
+            <>
+              <div className="kt-pop-in relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={target.src}
+                  alt={target.word}
+                  className="h-[280px] w-[210px] rounded-[24px] object-cover"
+                  draggable={false}
+                />
+                <span
+                  className="absolute -right-2 -top-2 grid h-10 w-10 place-items-center rounded-full text-white"
+                  style={{ background: GREEN }}
+                >
+                  <GlyphCheck size={21} />
+                </span>
+              </div>
+              <p className="mt-4 h-6 text-[17px] font-black" style={{ color: GREEN_DEEP }}>
+                {`That's the ${target.word.toLowerCase()}!`}
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                aria-label={`Hear it again: find the ${target.word.toLowerCase()}`}
+                onClick={() => void speakWord(`Find the ${target.word.toLowerCase()}!`)}
+                className="kt-pulse-soft grid h-28 w-28 place-items-center rounded-full text-white transition-transform active:scale-95"
+                style={{ background: ACCENT }}
+              >
+                <GlyphSpeaker size={52} />
+              </button>
+              <p className="mt-4 h-6 text-[17px] font-black text-soft">Listen… who is it?</p>
+            </>
           )}
         </div>
 

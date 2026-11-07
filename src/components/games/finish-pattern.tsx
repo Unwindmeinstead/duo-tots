@@ -17,7 +17,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { SHAPE_DEFS, makePatternRounds, tileKey, type PatternTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#34C759";
 const TOTAL = 5;
@@ -35,6 +35,7 @@ export function FinishPattern({ onBack }: { onBack: () => void }) {
     [session],
   );
   const pattern = rounds[round];
+  useAutoAnnounce("What comes next?", `${session}-${round}`);
 
   const pick = (tile: PatternTile) => {
     if (solved) return;

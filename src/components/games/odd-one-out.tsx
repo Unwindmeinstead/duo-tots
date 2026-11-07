@@ -14,7 +14,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeOddRounds } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#17BEBB";
 const TOTAL = 5;
@@ -32,6 +32,7 @@ export function OddOneOut({ onBack }: { onBack: () => void }) {
     [session],
   );
   const { tiles, oddIndex } = rounds[round];
+  useAutoAnnounce("Tap the one that's different!", `${session}-${round}`);
 
   const pick = (idx: number) => {
     if (found) return;

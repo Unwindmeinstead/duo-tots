@@ -183,7 +183,6 @@ export function PlayHub() {
                   style={{
                     borderRadius: 24,
                     background: color,
-                    boxShadow: "inset 0 -6px 0 rgba(0,0,0,0.12)",
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

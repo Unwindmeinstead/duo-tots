@@ -13,7 +13,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { SHAPE_DEFS, makeShadowRounds, tileKey, type ShapeTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#8163D6";
 const SHADOW = "#2A3350";
@@ -32,6 +32,7 @@ export function ShadowMatch({ onBack }: { onBack: () => void }) {
     [session],
   );
   const { target, choices } = rounds[round];
+  useAutoAnnounce("Which one makes this shadow?", `${session}-${round}`);
 
   const pick = (tile: ShapeTile) => {
     if (matched) return;

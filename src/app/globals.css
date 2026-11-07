@@ -102,29 +102,30 @@ textarea,
 .btn-led {
   background: var(--btn, var(--color-royal));
   color: var(--btn-ink, #fff);
-  box-shadow:
-    inset 0 -5px 0 var(--btn-deep, var(--color-royal-deep)),
-    0 10px 22px rgba(14, 42, 99, 0.18);
+  /* FLAT (Grey's no-shadows rule, 2026-11-07): no ledge, no drop
+     shadow — the press feel is a subtle scale instead. */
+  box-shadow: none;
   transition:
     transform 90ms ease,
-    box-shadow 90ms ease,
     filter 120ms ease;
 }
 .btn-led:active {
-  transform: translateY(4px);
-  box-shadow:
-    inset 0 -1px 0 var(--btn-deep, var(--color-royal-deep)),
-    0 4px 10px rgba(14, 42, 99, 0.14);
+  transform: scale(0.97);
+  box-shadow: none;
 }
 .btn-led:disabled {
   opacity: 0.55;
 }
 
-/* White sheet card — the reference's content card species. */
+/* White sheet card — the reference's content card species.
+   FLAT (Grey's no-shadows rule, 2026-11-07): no drop shadow. A
+   hairline flat border keeps the card readable on the white
+   sheet now that the shadow is gone — border, not shadow. */
 .kt-card {
   background: var(--color-paper);
+  border: 2px solid #e7edf7;
   border-radius: 28px;
-  box-shadow: var(--shadow-card);
+  box-shadow: none;
 }
 
 /* Pale circle texture for the blue zone (concentric rings, like the

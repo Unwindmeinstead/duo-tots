@@ -54,10 +54,12 @@ export function randomInt(min: number, max: number): number {
 }
 
 /* ─── Colours ───
-   The colour vocabulary the games draw from (mirrors the Colors
-   lesson). SHAPE_COLORS is the saturated subset used to paint
+   The colour vocabulary the games draw from (the first 13 mirror
+   the Colors lesson; 8 more shades follow so Color Finder can
+   deal 20+ distinct target colours — Grey's 20-puzzle bar,
+   2026-11-07). SHAPE_COLORS is the saturated subset used to paint
    shapes — white/black/grey shapes would wash out on the white
-   sheet, so shape games skip them; Color Finder plays all 13. */
+   sheet, so shape games skip them; Color Finder plays all 21. */
 
 export type GameColor = { name: string; hex: string };
 
@@ -75,6 +77,14 @@ export const GAME_COLORS: GameColor[] = [
   { name: "White", hex: "#FFFFFF" },
   { name: "Gray", hex: "#9AA3B2" },
   { name: "Black", hex: "#3A3A48" },
+  { name: "Lime", hex: "#8FD14F" },
+  { name: "Magenta", hex: "#D6339F" },
+  { name: "Navy", hex: "#1E4FA3" },
+  { name: "Lavender", hex: "#B79CED" },
+  { name: "Peach", hex: "#FFB38A" },
+  { name: "Mint", hex: "#63D6A4" },
+  { name: "Coral", hex: "#FF6F61" },
+  { name: "Gold", hex: "#DFA320" },
 ];
 
 export const SHAPE_COLORS: GameColor[] = GAME_COLORS.slice(0, 10);
@@ -217,46 +227,126 @@ export function makeTower(count = 6): StackBlock[] {
 }
 
 /* ─── Finish the Pattern ───
-   Patterns are GENERATED, not listed: a family (ABAB / AABB / AAB /
-   ABB / ABC) is dealt two or three random tiles and sung out to
-   4 shown + the missing 5th. Distractors are fresh random tiles.
-   No family repeats back-to-back within a game. */
+   Patterns are GENERATED from STRUCTURES, not listed: a structure
+   is a letter unit (AB, AAB, ABBC, ABCD…) sung out to `shown`
+   tiles + the missing next one, in one of five attribute modes —
+   "both" (each letter is its own shape+colour tile), "shape"
+   (letters differ by shape only, one colour throughout), "color"
+   (letters differ by colour only, one shape throughout), "dual"
+   (the SHAPE cycle and the COLOUR cycle run different units at
+   the same time), and "grow" (runs grow or shrink: 1-2-3, 3-2-1).
+   25 structures — Grey's 20-puzzle bar (2026-11-07); the old game
+   had 5 families. Rounds within a game never repeat a structure,
+   so no pattern sings twice in one playthrough. */
 
 export type PatternRound = {
   id: string;
-  /** The 4 tiles shown in the row. */
+  /** Which structure dealt this round (e.g. "abbc", "dual-1"). */
+  structure: string;
+  /** The tiles shown in the row (4 or 5). */
   shown: PatternTile[];
   answer: PatternTile;
   /** Exactly 3 choices, including the answer, shuffled. */
   choices: PatternTile[];
 };
 
-type PatternFamily = "ABAB" | "AABB" | "AAB" | "ABB" | "ABC";
+export type PatternStructure = {
+  id: string;
+  mode: "both" | "shape" | "color" | "dual" | "grow";
+  /** Letter unit repeated to build the row (both/shape/color). */
+  unit?: string;
+  /** Dual mode: the shape cycle and colour cycle run these units. */
+  shapeUnit?: string;
+  colorUnit?: string;
+  /** Grow mode: run length per letter (A×1, B×2, C×3…). */
+  runs?: number[];
+  shown: number;
+};
 
-const PATTERN_FAMILIES: PatternFamily[] = ["ABAB", "AABB", "AAB", "ABB", "ABC"];
+export const PATTERN_STRUCTURES: PatternStructure[] = [
+  /* both — the classic shape+colour songs */
+  { id: "abab", mode: "both", unit: "AB", shown: 4 },
+  { id: "abab-long", mode: "both", unit: "AB", shown: 5 },
+  { id: "aabb", mode: "both", unit: "AABB", shown: 4 },
+  { id: "aabb-long", mode: "both", unit: "AABB", shown: 5 },
+  { id: "aab", mode: "both", unit: "AAB", shown: 4 },
+  { id: "abb", mode: "both", unit: "ABB", shown: 4 },
+  { id: "abc", mode: "both", unit: "ABC", shown: 4 },
+  { id: "abc-long", mode: "both", unit: "ABC", shown: 5 },
+  { id: "abba", mode: "both", unit: "ABBA", shown: 4 },
+  { id: "aaab", mode: "both", unit: "AAAB", shown: 4 },
+  { id: "abbb", mode: "both", unit: "ABBB", shown: 4 },
+  { id: "aabc", mode: "both", unit: "AABC", shown: 4 },
+  { id: "abbc", mode: "both", unit: "ABBC", shown: 4 },
+  { id: "abcc", mode: "both", unit: "ABCC", shown: 4 },
+  { id: "abcd", mode: "both", unit: "ABCD", shown: 4 },
+  /* shape — one colour, the shapes carry the song */
+  { id: "shape-ab", mode: "shape", unit: "AB", shown: 4 },
+  { id: "shape-aab", mode: "shape", unit: "AAB", shown: 4 },
+  { id: "shape-abc", mode: "shape", unit: "ABC", shown: 4 },
+  /* color — one shape, the colours carry the song */
+  { id: "color-ab", mode: "color", unit: "AB", shown: 4 },
+  { id: "color-abb", mode: "color", unit: "ABB", shown: 4 },
+  { id: "color-abc", mode: "color", unit: "ABC", shown: 4 },
+  /* dual — shape cycle and colour cycle sing different units */
+  { id: "dual-1", mode: "dual", shapeUnit: "AB", colorUnit: "AAB", shown: 4 },
+  { id: "dual-2", mode: "dual", shapeUnit: "ABC", colorUnit: "AB", shown: 4 },
+  /* grow — the runs themselves grow or shrink */
+  { id: "grow-up", mode: "grow", runs: [1, 2, 3], shown: 5 },
+  { id: "grow-down", mode: "grow", runs: [3, 2, 1], shown: 5 },
+];
 
-function patternSequence(family: PatternFamily, a: PatternTile, b: PatternTile, c: PatternTile) {
-  switch (family) {
-    case "ABAB":
-      return { shown: [a, b, a, b], answer: a };
-    case "AABB":
-      return { shown: [a, a, b, b], answer: a };
-    case "AAB":
-      return { shown: [a, a, b, a], answer: a };
-    case "ABB":
-      return { shown: [a, b, b, a], answer: b };
-    case "ABC":
-      return { shown: [a, b, c, a], answer: b };
+/** Deal `shown + 1` tiles for a structure — the last one is the answer. */
+function patternSlots(s: PatternStructure): PatternTile[] {
+  const len = s.shown + 1;
+  if (s.mode === "grow") {
+    const growShapes = sample(SHAPE_IDS, 3);
+    const letters = (s.runs ?? [1, 2, 3]).map((_, i) => randomTile(growShapes[i % growShapes.length]));
+    const full: PatternTile[] = [];
+    (s.runs ?? [1, 2, 3]).forEach((run, i) => {
+      for (let k = 0; k < run; k++) full.push(letters[i]);
+    });
+    return full.slice(0, len);
   }
+  if (s.mode === "dual") {
+    const shapeUnit = s.shapeUnit ?? "AB";
+    const colorUnit = s.colorUnit ?? "AAB";
+    const shapeLetters = [...new Set(shapeUnit)];
+    const colorLetters = [...new Set(colorUnit)];
+    const shapes = sample(SHAPE_IDS, shapeLetters.length);
+    const colors = sample(SHAPE_COLORS, colorLetters.length);
+    const shapeOf: Record<string, ShapeId> = {};
+    shapeLetters.forEach((l, i) => (shapeOf[l] = shapes[i]));
+    const colorOf: Record<string, GameColor> = {};
+    colorLetters.forEach((l, i) => (colorOf[l] = colors[i]));
+    return Array.from({ length: len }, (_, i) => {
+      const c = colorOf[colorUnit[i % colorUnit.length]];
+      return { shape: shapeOf[shapeUnit[i % shapeUnit.length]], color: c.hex, colorName: c.name };
+    });
+  }
+  const unit = s.unit ?? "AB";
+  const letters = [...new Set(unit)];
+  const tileOf: Record<string, PatternTile> = {};
+  if (s.mode === "shape") {
+    const c = pick(SHAPE_COLORS);
+    const shapes = sample(SHAPE_IDS, letters.length);
+    letters.forEach((l, i) => (tileOf[l] = { shape: shapes[i], color: c.hex, colorName: c.name }));
+  } else if (s.mode === "color") {
+    const shape = pick(SHAPE_IDS);
+    const colors = sample(SHAPE_COLORS, letters.length);
+    letters.forEach((l, i) => (tileOf[l] = { shape, color: colors[i].hex, colorName: colors[i].name }));
+  } else {
+    const shapes = sample(SHAPE_IDS, letters.length);
+    letters.forEach((l, i) => (tileOf[l] = randomTile(shapes[i])));
+  }
+  return Array.from({ length: len }, (_, i) => tileOf[unit[i % unit.length]]);
 }
 
-export function makePatternRound(family?: PatternFamily): PatternRound {
-  const fam = family ?? pick(PATTERN_FAMILIES);
-  const shapes = sample(SHAPE_IDS, 3);
-  const a = randomTile(shapes[0]);
-  const b = randomTile(shapes[1]);
-  const c = randomTile(shapes[2]);
-  const { shown, answer } = patternSequence(fam, a, b, c);
+export function makePatternRound(structure?: PatternStructure): PatternRound {
+  const s = structure ?? pick(PATTERN_STRUCTURES);
+  const slots = patternSlots(s);
+  const shown = slots.slice(0, s.shown);
+  const answer = slots[s.shown];
   const distractors: PatternTile[] = [];
   while (distractors.length < 2) {
     const t = randomTile();
@@ -265,7 +355,8 @@ export function makePatternRound(family?: PatternFamily): PatternRound {
     }
   }
   return {
-    id: `pattern-${fam}-${tileKey(answer)}`,
+    id: `pattern-${s.id}-${tileKey(answer)}`,
+    structure: s.id,
     shown,
     answer,
     choices: shuffle([answer, ...distractors]),
@@ -273,29 +364,59 @@ export function makePatternRound(family?: PatternFamily): PatternRound {
 }
 
 export function makePatternRounds(count = 5): PatternRound[] {
+  /* Structures are sampled WITHOUT replacement (cycling through a
+     fresh shuffle when count outruns the pool), so a playthrough
+     never sings the same structure twice. */
   const rounds: PatternRound[] = [];
-  let lastFamily: PatternFamily | null = null;
+  let deck = shuffle(PATTERN_STRUCTURES);
   for (let i = 0; i < count; i++) {
-    let fam = pick(PATTERN_FAMILIES);
-    if (fam === lastFamily) fam = pick(PATTERN_FAMILIES.filter((f) => f !== lastFamily));
-    lastFamily = fam;
-    rounds.push(makePatternRound(fam));
+    if (deck.length === 0) deck = shuffle(PATTERN_STRUCTURES);
+    rounds.push(makePatternRound(deck.pop()));
   }
   return rounds;
 }
 
 /* ─── Fix it (part matching) ───
-   Five scenes, dealt in random order every playthrough; the part
-   choices are the scene's part + two decoys drawn from the pool —
-   no scene has a fixed decoy any more. */
+   Twenty scenes, dealt in random order every playthrough; the
+   part choices are the scene's part + two decoys drawn from the
+   16-part pool — no scene has a fixed decoy any more. (Was five
+   scenes until Grey's 20-puzzle bar, 2026-11-07.) */
 
-export type PartId = "wheel" | "door" | "flower" | "sail";
+export type PartId =
+  | "wheel"
+  | "door"
+  | "flower"
+  | "sail"
+  | "wing"
+  | "clockhand"
+  | "ear"
+  | "hat"
+  | "apple"
+  | "tail"
+  | "bulb"
+  | "fin"
+  | "flag"
+  | "cherry"
+  | "blade"
+  | "ray";
 
 export const PART_DEFS: Record<PartId, { label: string; color: string }> = {
   wheel: { label: "Wheel", color: "#4a4a58" },
   door: { label: "Door", color: "#FF7A59" },
   flower: { label: "Flower", color: "#F0519B" },
   sail: { label: "Sail", color: "#38BDF8" },
+  wing: { label: "Wing", color: "#F24949" },
+  clockhand: { label: "Hand", color: "#3A3A48" },
+  ear: { label: "Ear", color: "#A06A35" },
+  hat: { label: "Hat", color: "#3A3A48" },
+  apple: { label: "Apple", color: "#F24949" },
+  tail: { label: "Tail", color: "#38BDF8" },
+  bulb: { label: "Bulb", color: "#FFC531" },
+  fin: { label: "Fin", color: "#FF7A59" },
+  flag: { label: "Flag", color: "#F24949" },
+  cherry: { label: "Cherry", color: "#E03131" },
+  blade: { label: "Blade", color: "#FFDF8E" },
+  ray: { label: "Ray", color: "#FFC531" },
 };
 
 export const FIX_PARTS = Object.keys(PART_DEFS) as PartId[];
@@ -313,6 +434,21 @@ export const FIX_SCENES: FixScene[] = [
   { id: "fix-house", title: "The House", prompt: "The house is missing its door.", correctPart: "door" },
   { id: "fix-boat", title: "The Boat", prompt: "The boat is missing its sail.", correctPart: "sail" },
   { id: "fix-garden", title: "The Garden", prompt: "The garden is missing a flower.", correctPart: "flower" },
+  { id: "fix-truck", title: "The Truck", prompt: "The truck is missing a wheel.", correctPart: "wheel" },
+  { id: "fix-train", title: "The Train", prompt: "The train is missing a wheel.", correctPart: "wheel" },
+  { id: "fix-plane", title: "The Airplane", prompt: "The airplane is missing a wing.", correctPart: "wing" },
+  { id: "fix-clock", title: "The Clock", prompt: "The clock is missing a hand.", correctPart: "clockhand" },
+  { id: "fix-teddy", title: "The Teddy Bear", prompt: "The teddy bear is missing an ear.", correctPart: "ear" },
+  { id: "fix-snowman", title: "The Snowman", prompt: "The snowman is missing its hat.", correctPart: "hat" },
+  { id: "fix-tree", title: "The Tree", prompt: "The tree is missing an apple.", correctPart: "apple" },
+  { id: "fix-kite", title: "The Kite", prompt: "The kite is missing its tail.", correctPart: "tail" },
+  { id: "fix-lamp", title: "The Lamp", prompt: "The lamp is missing its bulb.", correctPart: "bulb" },
+  { id: "fix-fish", title: "The Fish", prompt: "The fish is missing a fin.", correctPart: "fin" },
+  { id: "fix-rocket", title: "The Rocket", prompt: "The rocket is missing a fin.", correctPart: "fin" },
+  { id: "fix-castle", title: "The Castle", prompt: "The castle is missing its flag.", correctPart: "flag" },
+  { id: "fix-cupcake", title: "The Cupcake", prompt: "The cupcake is missing its cherry.", correctPart: "cherry" },
+  { id: "fix-windmill", title: "The Windmill", prompt: "The windmill is missing a blade.", correctPart: "blade" },
+  { id: "fix-sun", title: "The Sun", prompt: "The sun is missing a ray.", correctPart: "ray" },
 ];
 
 /** The 3 choices for a scene: its part + 2 random decoys, shuffled. */

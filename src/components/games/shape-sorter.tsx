@@ -16,7 +16,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeSorterRounds, tileKey, type ShapeTile } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#FF9F2E";
 const TOTAL = 5;
@@ -40,6 +40,7 @@ export function ShapeSorter({ onBack }: { onBack: () => void }) {
      string, so it tracks the freshly dealt target every round. */
   const shapeWord = target.shape === "block" ? "block" : target.shape;
   const promptText = `Find the ${target.colorName.toLowerCase()} ${shapeWord}!`;
+  useAutoAnnounce(promptText, `${session}-${round}`);
 
   const pick = (tile: ShapeTile) => {
     if (filled) return;

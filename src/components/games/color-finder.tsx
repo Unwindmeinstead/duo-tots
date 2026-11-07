@@ -8,12 +8,12 @@
    target colour and three fresh decoys in shuffled spots, so the
    answer is never in the same place twice in a row. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { GlyphCheck } from "@/components/glyphs";
-import { playCorrect, playGentle, speakWord } from "@/lib/audio";
+import { playCorrect, playGentle } from "@/lib/audio";
 import { makeColorRounds, type GameColor } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP, deepen } from "@/lib/theme";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useAutoAnnounce, useGameCompletion } from "./shared";
 
 const ACCENT = "#D64FD6";
 const TOTAL = 5;
@@ -33,15 +33,9 @@ export function ColorFinder({ onBack }: { onBack: () => void }) {
   const { target, choices } = rounds[round];
 
   /* Call the colour out as each round lands — hearing the word is
-     half the game. The ref keeps StrictMode's double effect from
-     double-speaking in dev; production fires once per round. */
-  const spokenFor = useRef<string>("");
-  useEffect(() => {
-    const key = `${session}-${round}-${target.name}`;
-    if (spokenFor.current === key) return;
-    spokenFor.current = key;
-    void speakWord(`Find ${target.name.toLowerCase()}!`);
-  }, [round, session, target]);
+     half the game. The shared hook speaks it exactly once per
+     round and stays silent when the parent sound setting is off. */
+  useAutoAnnounce(`Find ${target.name.toLowerCase()}!`, `${session}-${round}`);
 
   const pick = (color: GameColor) => {
     if (found) return;

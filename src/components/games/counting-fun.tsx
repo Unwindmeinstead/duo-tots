@@ -13,7 +13,7 @@ import { playCorrect, playGentle, speakWord } from "@/lib/audio";
 import { NUMBER_WORDS, makeCountRounds } from "@/lib/games-data";
 import { GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion } from "./shared";
+import { ChoiceButton, GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#FF6FA5";
 const TOTAL = 5;
@@ -31,6 +31,7 @@ export function CountingFun({ onBack }: { onBack: () => void }) {
     [session],
   );
   const current = rounds[round];
+  useAutoAnnounce(`How many ${current.tile.shape}s do you see?`, `${session}-${round}`);
 
   const pick = (n: number) => {
     if (solved) return;
