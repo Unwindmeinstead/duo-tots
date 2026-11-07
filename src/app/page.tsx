@@ -59,6 +59,12 @@ export default function Home() {
   const [progress, setProgress] = useState(() => loadProgress());
   const [showLevelUp, setShowLevelUp] = useState<LevelInfo | null>(null);
   const levelCheckedRef = useRef(false);
+  const [pipDanceKey, setPipDanceKey] = useState(0);
+
+  const tapPip = () => {
+    playPop();
+    setPipDanceKey((k) => k + 1);
+  };
 
   const xp = progress.xp ?? 0;
   const dailyState = getDailyGoalState(progress);
@@ -120,22 +126,28 @@ export default function Home() {
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-royal">
       <BlueHeader streak={progress.streak} xp={xp} />
 
-      {/* ── Hero: headline + Pip center stage, melting into the blue ── */}
-      <div className="blue-rings relative px-5 pb-0 pt-1">
-        <h1 className="text-[32px] font-black leading-[1.08] tracking-tight text-white">
-          Let&apos;s learn
-          <br />
-          and play!
-        </h1>
-        <p className="mt-1.5 text-[15px] font-bold text-white/70">
-          Pick a card and let&apos;s go
-        </p>
-        <div className="pointer-events-none relative z-0 mx-auto -mb-16 mt-1 w-[min(320px,84vw)]">
-          <Mascot
-            pose="hero"
-            size={320}
-            className="[mask-image:radial-gradient(ellipse_72%_72%_at_50%_46%,black_58%,transparent_76%)]"
-          />
+      {/* ── Compact hero: Pip's medallion + one-line greeting.
+             Tap Pip and he dances. ── */}
+      <div className="blue-rings relative flex items-center gap-4 px-5 pb-3 pt-1">
+        <button
+          type="button"
+          onClick={tapPip}
+          aria-label="Say hi to Pip"
+          className="shrink-0 rounded-full transition-transform active:scale-95"
+        >
+          <span className="kt-bob block">
+            <span key={pipDanceKey} className={pipDanceKey ? "kt-dance block" : "block"}>
+              <Mascot pose="hero" size={72} ring />
+            </span>
+          </span>
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-[25px] font-black leading-[1.12] tracking-tight text-white">
+            Let&apos;s learn and play!
+          </h1>
+          <p className="mt-1 text-[14px] font-bold text-white/70">
+            Pick a card and let&apos;s go
+          </p>
         </div>
       </div>
 

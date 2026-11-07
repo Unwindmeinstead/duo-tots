@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import type { VocabCategory } from "@/lib/vocab";
 import { getLocalImage } from "@/lib/local-images";
-import { deepen, GOLD, GOLD_DEEP, INK, PARTY_COLORS, tint } from "@/lib/theme";
+import { deepen, GOLD, GOLD_DEEP, INK, PARTY_COLORS } from "@/lib/theme";
 import {
   CATEGORY_GLYPHS,
   GlyphCheck,
@@ -358,6 +358,9 @@ export function ArtTile({
   const [failed, setFailed] = useState(false);
   const src = firstArtwork(category);
   const Glyph = CATEGORY_GLYPHS[category.id] ?? CATEGORY_GLYPHS.kid_general;
+  /* Portrait 2:3 tile — the same shape as the lesson cards, so the
+     category's vertical artwork fills it edge to edge. */
+  const tileH = Math.round(size * 1.5);
   if (src && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -365,8 +368,8 @@ export function ArtTile({
         src={src}
         alt=""
         onError={() => setFailed(true)}
-        className="shrink-0 object-contain"
-        style={{ width: size, height: size, borderRadius: radius, background: tint(category.color, 0.85) }}
+        className="shrink-0 object-cover"
+        style={{ width: size, height: tileH, borderRadius: radius }}
         draggable={false}
       />
     );
@@ -376,7 +379,7 @@ export function ArtTile({
       className="grid shrink-0 place-items-center text-white"
       style={{
         width: size,
-        height: size,
+        height: tileH,
         borderRadius: radius,
         background: category.color,
         boxShadow: `inset 0 -6px 0 ${deepen(category.color)}`,
