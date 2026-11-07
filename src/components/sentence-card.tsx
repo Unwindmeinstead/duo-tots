@@ -109,7 +109,7 @@ export function SentenceCard({
   return (
     <CardStage onClick={handleTap} ariaLabel={sentence} className="text-left">
       <CardShell
-        className={`shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${imageSrc && reacting ? "kt-squash" : ""}`}
+        className={`${imageSrc && reacting ? "kt-squash" : ""}`}
         style={imageSrc ? undefined : { background: categoryColor }}
       >
         {imageSrc ? (

@@ -193,7 +193,7 @@ export function WorldLessonClient({
                 below-stage Next pill hides on this step; the band's
                 pill is the same goNext. Root is a div so the pill's
                 real button never nests inside another button. */}
-            <span className="relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)]">
+            <span className="relative block max-h-full max-w-full overflow-hidden rounded-[30px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={lesson.image}

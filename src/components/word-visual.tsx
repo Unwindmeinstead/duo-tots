@@ -580,7 +580,7 @@ export function WordVisual({
           exception: the word never shares a row with the buttons, so
           it can never truncate, even on wide photos with long words
           (Colosseum). No "Tap to hear" hint text (Grey, 2026-11-07). */}
-      <CardShell className={`shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
+      <CardShell className={`${reacting ? "kt-squash" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
