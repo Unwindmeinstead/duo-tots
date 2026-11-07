@@ -69,6 +69,40 @@ export function ShapeSvg({
       {shape === "arrow" && (
         <polygon points="50,8 88,50 62,50 62,92 38,92 38,50 12,50" {...common} />
       )}
+      {shape === "sphere" && (
+        <>
+          <circle cx="50" cy="50" r="37" {...common} />
+          <ellipse cx="36" cy="34" rx="13" ry="8" fill="#FFFFFF" opacity={ghost ? 0 : 0.45} transform="rotate(-24 36 34)" />
+        </>
+      )}
+      {shape === "cylinder" && (
+        <>
+          <path d="M22 26 V74 A28 10 0 0 0 78 74 V26" {...common} />
+          <ellipse cx="50" cy="26" rx="28" ry="10" {...common} />
+        </>
+      )}
+      {shape === "cone" && (
+        <>
+          <polygon points="50,10 76,76 24,76" {...common} />
+          <ellipse cx="50" cy="76" rx="26" ry="8" {...common} />
+        </>
+      )}
+      {shape === "pyramid" && (
+        <>
+          <polygon points="50,10 92,88 50,88" fill={ghost ? tint(color, 0.84) : deepen(color)} stroke={ghost ? color : deepen(color)} strokeWidth={ghost ? 4 : 3} strokeDasharray={ghost ? "8 6" : undefined} strokeLinejoin="round" />
+          <polygon points="50,10 50,88 8,88" {...common} />
+        </>
+      )}
+      {shape === "spiral" && (
+        <path
+          d="M50 50 m0 -4 a4 4 0 0 1 4 4 a8 8 0 0 1 -8 8 a12 12 0 0 1 -12 -12 a16 16 0 0 1 16 -16 a20 20 0 0 1 20 20 a24 24 0 0 1 -24 24 a28 28 0 0 1 -28 -28 a32 32 0 0 1 32 -32 a36 36 0 0 1 36 36"
+          fill="none"
+          stroke={ghost ? color : color}
+          strokeWidth={ghost ? 5 : 6}
+          strokeDasharray={ghost ? "8 6" : undefined}
+          strokeLinecap="round"
+        />
+      )}
     </svg>
   );
 }

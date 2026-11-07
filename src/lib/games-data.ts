@@ -5,7 +5,7 @@
    "Plugging in a new lesson type"): game-shape-sorter,
    game-stacking-blocks, game-finish-pattern, game-fix-it,
    game-color-finder, game-odd-one-out, game-counting-fun,
-   game-shadow-match.
+   game-shadow-match, game-big-small, game-animal-pick.
 
    REGENERATION LAW (Grey's order, 2026-11-07): the Play Zone trains
    IDENTIFICATION, not memorization — so nothing here is a fixed
@@ -24,7 +24,9 @@ export type GameId =
   | "game-color-finder"
   | "game-odd-one-out"
   | "game-counting-fun"
-  | "game-shadow-match";
+  | "game-shadow-match"
+  | "game-big-small"
+  | "game-animal-pick";
 
 /** Fisher–Yates shuffle on a copy — never mutates the source array. */
 export function shuffle<T>(items: readonly T[]): T[] {
@@ -78,8 +80,10 @@ export const GAME_COLORS: GameColor[] = [
 export const SHAPE_COLORS: GameColor[] = GAME_COLORS.slice(0, 10);
 
 /* ─── Shapes (shared drawing vocabulary) ───
-   Fifteen shapes — the sorter, patterns, stacking, odd-one-out,
-   counting and shadow games all draw from this one pool. */
+   Twenty shapes — the FULL Shapes-lesson pool (the plank "block"
+   stands in for Cube). The sorter, patterns, stacking,
+   odd-one-out, counting, shadow and big/small games all draw
+   from this one pool. */
 
 export type ShapeId =
   | "circle"
@@ -96,7 +100,12 @@ export type ShapeId =
   | "hexagon"
   | "octagon"
   | "cross"
-  | "arrow";
+  | "arrow"
+  | "sphere"
+  | "cylinder"
+  | "cone"
+  | "pyramid"
+  | "spiral";
 
 export const SHAPE_DEFS: Record<ShapeId, { label: string; color: string }> = {
   circle: { label: "Circle", color: "#FF7A59" },
@@ -114,6 +123,11 @@ export const SHAPE_DEFS: Record<ShapeId, { label: string; color: string }> = {
   octagon: { label: "Octagon", color: "#5B6BE0" },
   cross: { label: "Cross", color: "#F24949" },
   arrow: { label: "Arrow", color: "#6C8CFF" },
+  sphere: { label: "Sphere", color: "#FF7A59" },
+  cylinder: { label: "Cylinder", color: "#17BEBB" },
+  cone: { label: "Cone", color: "#FF9F2E" },
+  pyramid: { label: "Pyramid", color: "#C98A5E" },
+  spiral: { label: "Spiral", color: "#8B5CF6" },
 };
 
 export const SHAPE_IDS = Object.keys(SHAPE_DEFS) as ShapeId[];
@@ -439,4 +453,26 @@ export function makeShadowRounds(count = 5): ShadowRound[] {
     ).map((s) => randomTile(s));
     return { target, choices: shuffle([target, ...distractors]) };
   });
+}
+
+/* ─── Big and Small ───
+   Two copies of one shape, one big and one small; the ask flips
+   between BIG and SMALL and the big one's seat (left/right) is
+   re-dealt every round, so neither the word nor the side can be
+   memorized. Target shapes never repeat within a game. */
+
+export type BigSmallRound = {
+  tile: ShapeTile;
+  /** true → "Tap the BIG one!"; false → "Tap the SMALL one!" */
+  askBig: boolean;
+  /** true → the big copy sits in the first (left) seat. */
+  bigFirst: boolean;
+};
+
+export function makeBigSmallRounds(count = 5): BigSmallRound[] {
+  return sample(SHAPE_IDS, count).map((shape) => ({
+    tile: randomTile(shape),
+    askBig: Math.random() < 0.5,
+    bigFirst: Math.random() < 0.5,
+  }));
 }

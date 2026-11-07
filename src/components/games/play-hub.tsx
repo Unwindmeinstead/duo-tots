@@ -1,7 +1,7 @@
 "use client";
 
 /* ─── Play hub (/play) ───
-   Eight big game cards on the white sheet, in the reference card
+   Ten big game cards on the white sheet, in the reference card
    anatomy: saturated art tile, bold name, soft label, star row,
    play pill. Tapping one swaps the view to that game (single
    route, state-selected); the game's back disc returns here, and
@@ -23,6 +23,8 @@ import { ColorFinder } from "./color-finder";
 import { OddOneOut } from "./odd-one-out";
 import { CountingFun } from "./counting-fun";
 import { ShadowMatch } from "./shadow-match";
+import { BigSmall } from "./big-small";
+import { AnimalPick } from "./animal-pick";
 
 type GameDef = {
   id: GameId;
@@ -116,6 +118,35 @@ const GAMES: GameDef[] = [
     color: "#8163D6",
     icon: <ShapeSvg shape="star" color="#2A3350" size={44} />,
     Component: ShadowMatch,
+  },
+  {
+    id: "game-big-small",
+    name: "Big and small",
+    label: "Tap the big one, tap the small",
+    color: "#FF7A59",
+    icon: (
+      <span className="flex items-end gap-1.5">
+        <ShapeSvg shape="square" color="#FFFFFF" size={40} />
+        <ShapeSvg shape="square" color="#FFFFFF" size={22} />
+      </span>
+    ),
+    Component: BigSmall,
+  },
+  {
+    id: "game-animal-pick",
+    name: "Animal pick",
+    label: "Hear the animal, tap its photo",
+    color: "#34C759",
+    icon: (
+      <svg width={46} height={46} viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden>
+        <circle cx="6.2" cy="8.6" r="2.1" />
+        <circle cx="10.4" cy="5.4" r="2.3" />
+        <circle cx="15" cy="5.4" r="2.3" />
+        <circle cx="19" cy="8.8" r="2.1" />
+        <path d="M12.6 11.4c3.2 0 5.9 2.5 5.9 5.2 0 1.9-1.5 3.1-3.4 3.1-1.1 0-1.7-.4-2.5-.4s-1.4.4-2.5.4c-1.9 0-3.4-1.2-3.4-3.1 0-2.7 2.7-5.2 5.9-5.2Z" />
+      </svg>
+    ),
+    Component: AnimalPick,
   },
 ];
 
