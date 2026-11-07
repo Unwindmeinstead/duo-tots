@@ -249,7 +249,7 @@ export default function Home() {
                                 className="kt-card flex items-center gap-3.5 p-3.5"
                               >
                                 <span
-                                  className="relative grid h-24 shrink-0 place-items-center overflow-hidden text-white"
+                                  className="relative block h-[126px] w-[84px] shrink-0 overflow-hidden"
                                   style={{
                                     borderRadius: 20,
                                     background: lesson.color,
@@ -257,25 +257,22 @@ export default function Home() {
                                   }}
                                 >
                                   {/* Fallback mark, covered by the photo when it loads. */}
-                                  <span className="absolute inset-0 grid place-items-center" aria-hidden>
+                                  <span className="absolute inset-0 grid place-items-center text-white" aria-hidden>
                                     <GlyphStar size={30} />
                                   </span>
-                                  {/* The thumbnail IS the photo — whole picture
-                                      at its own natural aspect, never cropped
-                                      or banded: height set, width follows.
-                                      Height is the fixed h-24 of the tile, NOT
-                                      h-full: a percentage height inside this
-                                      grid span resolves to auto, which let the
-                                      photo render at natural size (up to
-                                      1920px wide) and blew the card — and the
-                                      whole page — out sideways. max-w-40 caps
-                                      wide photos; object-contain keeps the
-                                      whole picture visible if the cap binds. */}
+                                  {/* Uniform portrait tile — the same fixed
+                                      84×126 (2:3) box as ArtTile on the topic
+                                      rows, and the cover fills it as the
+                                      photo-card. Every World cover is a true
+                                      900×1350 portrait (blueprint), so the
+                                      fill never clips the subject; the fixed
+                                      box keeps every row the same height and
+                                      the text column the same width. */}
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={lesson.image}
                                     alt=""
-                                    className="relative block h-24 w-auto max-w-40 object-contain"
+                                    className="absolute inset-0 block h-full w-full object-cover"
                                     draggable={false}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = "none";
@@ -283,7 +280,7 @@ export default function Home() {
                                   />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block text-[18px] font-black leading-tight text-ink">
+                                  <span className="block line-clamp-2 text-[18px] font-black leading-tight text-ink">
                                     {lesson.title}
                                   </span>
                                   <span className="mt-0.5 line-clamp-2 block text-[13.5px] font-bold leading-snug text-soft">

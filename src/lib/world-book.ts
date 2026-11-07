@@ -35,7 +35,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     sayIt: "This is me. This is my family.",
     doIt: "Build your home from blocks together. Put a toy person inside for everyone in your family.",
     question: "Who do you love in our home?",
-    image: "/images/family/family.webp",
+    image: "/images/world_book/me-family-home.webp",
     color: "#FF9F2E",
   },
   {
@@ -45,7 +45,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     sayIt: "A leader helps people. A leader listens.",
     doIt: "Play leader of the parade! You lead and we follow your steps. Then swap — now you follow.",
     question: "If you were the leader today, how would you help us?",
-    image: "/images/leadership/leader.webp",
+    image: "/images/world_book/who-is-in-charge.webp",
     color: "#8B5CF6",
   },
   {
@@ -65,7 +65,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     sayIt: "Thank you for helping!",
     doIt: "Play helpers! Take turns with a toy stethoscope or a helper hat. Be the helper, then say thank you.",
     question: "Which helper would you like to be today?",
-    image: "/images/family/doctor.webp",
+    image: "/images/world_book/people-who-help.webp",
     color: "#34C759",
   },
   {
@@ -155,7 +155,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     sayIt: "Thank you for your work.",
     doIt: "Play shop with a basket, play food, and paper money. For every thing you sell, name who made it — then say thank you.",
     question: "Who made this — and how can we thank them?",
-    image: "/images/money/store.webp",
+    image: "/images/world_book/money-and-trading.webp",
     color: "#3ED6A5",
   },
   {
@@ -165,7 +165,7 @@ export const WORLD_LESSONS: WorldLesson[] = [
     sayIt: "We take care of our Earth.",
     doIt: "Do one helping thing together: fill a bird feeder, water a thirsty plant, or pack a small bag of food to share.",
     question: "Who can we help today?",
-    image: "/images/world_basics/earth.webp",
+    image: "/images/world_book/our-earth.webp",
     color: "#5B6BE0",
   },
 ];

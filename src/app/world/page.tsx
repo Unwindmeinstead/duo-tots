@@ -54,13 +54,15 @@ export default function WorldPage() {
                   className="kt-card flex h-full flex-col overflow-hidden"
                 >
                   <div className="relative shrink-0">
-                    {/* The card top IS the photo — whole picture at its
-                        own natural aspect, never cropped or banded. */}
+                    {/* The card top IS the photo at the uniform 2:3
+                        blueprint shape — every World cover is a true
+                        900×1350 portrait, so the fixed aspect box keeps
+                        all fourteen cards identical and nothing clips. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={lesson.image}
                       alt=""
-                      className="block h-auto w-full"
+                      className="block aspect-[2/3] w-full object-cover"
                       draggable={false}
                       loading={i > 5 ? "lazy" : undefined}
                     />
