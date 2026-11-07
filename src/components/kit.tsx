@@ -97,7 +97,7 @@ export function BlueHeader({
   );
 }
 
-/* ─── The white sheet with its scooped wave top edge ─── */
+/* ─── The white sheet (flat top edge, flush under the header) ─── */
 
 export function WaveSheet({
   children,
@@ -108,14 +108,6 @@ export function WaveSheet({
 }) {
   return (
     <div className="flex flex-1 flex-col">
-      <svg
-        viewBox="0 0 100 10"
-        preserveAspectRatio="none"
-        className="block h-[22px] w-full text-white"
-        aria-hidden
-      >
-        <path d="M0 10 V2.5 Q 50 12.5 100 2.5 V10 Z" fill="currentColor" />
-      </svg>
       <div className={`flex-1 bg-white ${className}`}>{children}</div>
     </div>
   );
