@@ -399,6 +399,17 @@ export function WordVisual({
             <ShapeArt word={word} size={Math.min(300, 220)} />
           </span>
         </span>
+        {/* The shape carries no text of its own, so the word + hint sit
+            inside the tile's empty bottom band (ink on white — no scrim
+            needed), the same spot the photo cards carry theirs. */}
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 text-center">
+          <span className="block text-[26px] font-black leading-tight tracking-tight text-ink">
+            {word}
+          </span>
+          <span className="mt-0.5 block text-[12.5px] font-bold text-soft">
+            Tap to hear · swipe for more
+          </span>
+        </span>
         <Sparkles burstKey={burstKey} />
       </button>
     );
@@ -421,6 +432,17 @@ export function WordVisual({
             className={`h-full w-full object-contain ${isActionArt ? "" : "p-4"}`}
             draggable={false}
           />
+        </span>
+        {/* Same in-card word band as the photo cards: full-bleed art
+            gets the dark gradient scrim, padded art reads it as a
+            caption over the tint. */}
+        <span className={`pointer-events-none absolute inset-x-0 bottom-0 block px-5 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
+          <span className={`block text-[26px] font-black leading-tight tracking-tight ${isActionArt ? "text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]" : "text-ink"}`}>
+            {word}
+          </span>
+          <span className={`mt-0.5 block text-[12.5px] font-bold ${isActionArt ? "text-white/80" : "text-soft"}`}>
+            Tap to hear · swipe for more
+          </span>
         </span>
         <Sparkles burstKey={burstKey} />
       </button>
@@ -476,14 +498,27 @@ export function WordVisual({
     <button type="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className="relative flex h-full w-full items-center justify-center">
       {/* The card IS the photo: it renders at its own aspect ratio, as
           large as the stage allows — the whole picture, edge to edge,
-          never cropped and no filler bands (Grey's rule, 2026-11-07). */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageUrl}
-        alt={word}
-        className={`kt-fade-in block max-h-full max-w-full rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}
-        draggable={false}
-      />
+          never cropped and no filler bands (Grey's rule, 2026-11-07).
+          The word + hint live INSIDE the photo now, on a soft dark
+          gradient band at its bottom edge (Grey's rule, 2026-11-07) —
+          the subject sits centre-frame, the band covers background. */}
+      <span className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt={word}
+          className="kt-fade-in block max-h-full max-w-full"
+          draggable={false}
+        />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 via-black/45 to-transparent px-5 pb-4 pt-16 text-left">
+          <span className="block text-[26px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
+            {word}
+          </span>
+          <span className="mt-0.5 block text-[12.5px] font-bold text-white/80">
+            Tap to hear · swipe for more
+          </span>
+        </span>
+      </span>
       <Sparkles burstKey={burstKey} />
     </button>
   );

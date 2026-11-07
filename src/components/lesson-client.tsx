@@ -19,6 +19,7 @@ import { CelebrationScreen } from "@/components/celebration";
 import { SentenceCard } from "@/components/sentence-card";
 import { SessionEnd } from "@/components/session-end";
 import { PillButton, RoundButton } from "@/components/kit";
+import { useScrollLock } from "@/lib/scroll-lock";
 import { GlyphChevronL, GlyphChevronR } from "@/components/glyphs";
 import { GOLD } from "@/lib/theme";
 import {
@@ -108,6 +109,12 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("deck");
+  /* One-screen stage: the deck (word + sentence cards) and the
+     celebration never scroll — the document locks so a vertical
+     drag can't slide the page around under the tap animation.
+     The goodbye recap is a summary page and may outgrow short
+     screens, so the lock releases for that phase. */
+  useScrollLock(phase !== "goodbye");
   const [progress, setProgress] = useState<ProgressState>(() => loadProgress());
   /* Deck is built once, from the progress snapshot loaded at mount —
      later progress updates never rebuild it. */
@@ -331,12 +338,10 @@ export function LessonClient({ category }: { category: VocabCategory }) {
     );
   }
 
-  const showWordLabel = category.imageMode !== "color";
-
   return (
     <div
       className="blue-rings flex h-dvh min-h-dvh flex-col overflow-hidden bg-royal"
-      style={{ overscrollBehaviorX: "none", touchAction: "pan-y" }}
+      style={{ overscrollBehavior: "none", touchAction: "none" }}
     >
       {/* ── Top band: back · chunky progress · counter ── */}
       <div className="shrink-0 px-4 pb-3 pt-[max(0.8rem,env(safe-area-inset-top))]">
@@ -372,7 +377,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
 
         <div
           ref={swipeRef}
-          className="relative h-full touch-manipulation"
+          className="relative h-full touch-none"
           onTouchStart={onStageTouchStart}
           onTouchEnd={onStageTouchEnd}
           onTouchCancel={onStageTouchCancel}
@@ -411,22 +416,17 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         </div>
       </div>
 
-      {/* ── Bottom band: prev · word · practice · next ── */}
+      {/* ── Bottom band: prev · practice · next ──
+          The word + "Tap to hear · swipe for more" used to live here,
+          under the picture; they now ride INSIDE the card itself, on
+          the photo's bottom band (Grey's rule, 2026-11-07) — word
+          visuals and sentence cards both carry their own in-card text,
+          so this band is buttons only and the stage keeps the height. */}
       <div
         className="shrink-0 px-4 pt-3"
         style={{ paddingBottom: "max(0.9rem, env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="mx-auto w-full max-w-2xl">
-          <div className="mb-2.5 px-1 text-center">
-            {showWordLabel && (
-              <p className="truncate text-[24px] font-black leading-tight tracking-tight text-white">
-                {current.word}
-              </p>
-            )}
-            <p className={`text-[12px] font-bold text-white/60 ${showWordLabel ? "" : "text-[14px]"}`}>
-              Tap to hear · swipe for more
-            </p>
-          </div>
           <div className="flex items-center gap-2.5">
             <button
               type="button"
