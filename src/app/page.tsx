@@ -2,7 +2,7 @@
 
 /* ─── Home ───
    The Kidtopia front door: the slim BlueHeader (Pip medallion +
-   wordmark, streak/star pills), then the white sheet (wave edge)
+   wordmark, streak/star pills), then the white sheet flush below.
    holding the daily goal, the next-up card, the Play Zone card and
    the learning path as chunky topic cards grouped by stage. */
 
@@ -17,7 +17,7 @@ import {
   TopicCard,
   WaveSheet,
 } from "@/components/kit";
-import { GlyphChevronR, GlyphPlay, GlyphPuzzle } from "@/components/glyphs";
+import { GlyphChevronR, GlyphPlay, GlyphStar } from "@/components/glyphs";
 import { CelebrationScreen } from "@/components/celebration";
 import { categories, STAGES } from "@/lib/vocab";
 import { WORLD_LESSONS, worldNodeId } from "@/lib/world-book";
@@ -170,8 +170,14 @@ export default function Home() {
               className="flex items-center gap-4 rounded-[28px] bg-royal-deep p-4 text-white shadow-[0_12px_32px_rgba(14,42,99,0.14)]"
               aria-label="Play games"
             >
-              <span className="grid h-[68px] w-[68px] shrink-0 place-items-center rounded-[22px] bg-white/15">
-                <GlyphPuzzle size={36} />
+              <span className="h-[68px] w-[68px] shrink-0 overflow-hidden rounded-[22px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/play-zone-thumb.webp"
+                  alt=""
+                  className="h-full w-full object-cover"
+                  draggable={false}
+                />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[20px] font-black leading-tight">
@@ -236,18 +242,25 @@ export default function Home() {
                                 className="kt-card flex items-center gap-3.5 p-3.5"
                               >
                                 <span
-                                  className="grid h-[84px] w-[84px] shrink-0 place-items-center overflow-hidden text-white"
+                                  className="relative grid h-24 shrink-0 place-items-center overflow-hidden text-white"
                                   style={{
-                                    borderRadius: 24,
+                                    borderRadius: 20,
                                     background: lesson.color,
                                     boxShadow: `inset 0 -6px 0 rgba(0,0,0,0.12)`,
                                   }}
                                 >
+                                  {/* Fallback mark, covered by the photo when it loads. */}
+                                  <span className="absolute inset-0 grid place-items-center" aria-hidden>
+                                    <GlyphStar size={30} />
+                                  </span>
+                                  {/* The thumbnail IS the photo — whole picture
+                                      at its own natural aspect, never cropped
+                                      or banded: height set, width follows. */}
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
                                   <img
                                     src={lesson.image}
                                     alt=""
-                                    className="h-full w-full object-contain"
+                                    className="relative block h-full w-auto"
                                     draggable={false}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).style.display = "none";
