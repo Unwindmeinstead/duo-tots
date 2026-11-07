@@ -7,15 +7,18 @@
    visible over a blurred copy of itself), digit hero, letter hero,
    colour swatch, shape art, static art or a concept card — and
    answers a tap with a pop, a squash and a burst of sparkles.
-   EXCEPTION — Nature (Grey, 2026-11-07): a tap there speaks the
-   word ONLY. No pop, no squash/bounce, no sparkles. Scoped by
-   categoryId below; every other category keeps the full reaction. */
+   NO-BOUNCE RULE (Grey, 2026-11-07): on every PHOTO/IMAGE deck a
+   tap speaks the word with pop + sparkles but the CARD ITSELF
+   never bounces/squashes — the motion read as a glitch to him.
+   Only the glyph decks (Numbers, Alphabet, Shapes) keep the full
+   card motion; he likes those. See deckKeepsTapMotion below. */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { resolveWordImage } from "@/lib/media";
 import { getLocalImage } from "@/lib/local-images";
 import { playPop } from "@/lib/audio";
 import { Sparkles } from "@/components/kit";
+import { CardBand, CardShell, CardStage } from "@/components/lesson-card";
 import { CATEGORY_GLYPHS, GlyphSpeaker } from "@/components/glyphs";
 import { deepen, tint } from "@/lib/theme";
 import type { ImageMode } from "@/lib/vocab";
@@ -33,6 +36,16 @@ export const COLOR_MAP: Record<string, string> = {
 
 const ONES = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
 const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+/** Tap-motion rule (Grey, 2026-11-07): only the glyph decks —
+    Numbers (digit), Alphabet (alphabet), Shapes (shape) — keep the
+    card bounce/squash on tap. Every other deck (photo, vector,
+    static art, colour, concept card) speaks with pop + sparkles
+    but no card motion. Shared with the sentence card, whose photo
+    follows the deck it appears in. */
+export function deckKeepsTapMotion(imageMode: ImageMode): boolean {
+  return imageMode === "digit" || imageMode === "alphabet" || imageMode === "shape";
+}
 
 export function numberToWord(n: number): string {
   if (isNaN(n) || n < 0) return "";
@@ -241,19 +254,9 @@ export interface WordVisualProps {
   footer?: ReactNode;
 }
 
-/* Footer pinned to a full-frame tile's bottom edge (digit / letter /
-   colour / concept / fallback modes — the frame IS the whole stage). */
-function BandFooter({ children }: { children?: ReactNode }) {
-  if (!children) return null;
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0 px-4 pb-4"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {children}
-    </div>
-  );
-}
+/* The controls band is the universal CardBand (lesson-card.tsx) —
+   pinned to the shell's bottom edge with the shared inset, so the
+   buttons land in the same place on every deck's card. */
 
 export function WordVisual({
   word,
@@ -314,28 +317,31 @@ export function WordVisual({
     };
   }, [imageQuery, imageMode, wantsRemote]);
 
-  /* Nature deck: tap = speak only, no reaction animation or pop
-     (Grey, 2026-11-07). Keyed on the category this card already
-     knows it belongs to, so no other lesson's behaviour changes. */
-  const speakOnly = categoryId === "nature";
+  /* No-bounce rule (Grey, 2026-11-07): photo/image decks keep the
+     pop and the sparkles but the card never moves; only the glyph
+     decks (digit / alphabet / shape) run the squash + bounce. */
+  const noBounce = !deckKeepsTapMotion(imageMode);
+  const bounceCls = burstKey > 0 && !noBounce ? "kt-bounce" : "";
 
   const triggerReaction = () => {
-    if (speakOnly) {
-      onTap?.();
-      return;
-    }
     playPop();
     setBurstKey((k) => k + 1);
-    if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
-    setReacting(false);
-    requestAnimationFrame(() => {
-      setReacting(true);
-      reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
-    });
+    if (!noBounce) {
+      if (reactTimerRef.current !== null) window.clearTimeout(reactTimerRef.current);
+      setReacting(false);
+      requestAnimationFrame(() => {
+        setReacting(true);
+        reactTimerRef.current = window.setTimeout(() => setReacting(false), 560);
+      });
+    }
     onTap?.();
   };
 
-  const frameCls = "relative h-full w-full overflow-hidden rounded-[30px]";
+  /* ── UNIVERSAL SHELL (Grey, 2026-11-07) ──
+     Every mode below renders inside CardStage + CardShell
+     (lesson-card.tsx): one outer box and one band position for
+     every deck. The tap target is the stage root; the visible card
+     is the shell centred inside it. */
 
   /* ── Digit hero: the numeral on a saturated tile, dots to count ── */
   if (imageMode === "digit") {
@@ -348,30 +354,32 @@ export function WordVisual({
           : "text-[clamp(6rem,44vmin,16rem)]";
     const label = isNaN(n) ? "" : numberToWord(n);
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${label || word}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
-        <span className={`flex h-full flex-col items-center justify-center px-4 ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={`flex flex-col items-center ${burstKey > 0 ? "kt-bounce" : ""}`}>
-            <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
-              {word}
-            </span>
-            {/* No spelled-out name under the numeral — the digit is
-                plainly visible and tapping speaks it (Grey, 2026-11-07). */}
-            {!isNaN(n) && n >= 1 && n <= 20 && (
-              <span key={`dots-${stepKey ?? 0}`} className="mt-5 flex max-w-[min(78vw,24rem)] flex-wrap items-center justify-center gap-2" aria-hidden>
-                {Array.from({ length: n }, (_, i) => (
-                  <span
-                    key={i}
-                    className="kt-pop-in h-4 w-4 rounded-full bg-white"
-                    style={{ animationDelay: `${i * 70}ms`, animationFillMode: "backwards" }}
-                  />
-                ))}
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${label || word}`}>
+        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+          <span className={`flex h-full flex-col items-center justify-center px-4 ${reacting ? "kt-squash" : ""}`}>
+            <span key={burstKey} className={`flex flex-col items-center ${bounceCls}`}>
+              <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
+                {word}
               </span>
-            )}
+              {/* No spelled-out name under the numeral — the digit is
+                  plainly visible and tapping speaks it (Grey, 2026-11-07). */}
+              {!isNaN(n) && n >= 1 && n <= 20 && (
+                <span key={`dots-${stepKey ?? 0}`} className="mt-5 flex max-w-[min(78vw,24rem)] flex-wrap items-center justify-center gap-2" aria-hidden>
+                  {Array.from({ length: n }, (_, i) => (
+                    <span
+                      key={i}
+                      className="kt-pop-in h-4 w-4 rounded-full bg-white"
+                      style={{ animationDelay: `${i * 70}ms`, animationFillMode: "backwards" }}
+                    />
+                  ))}
+                </span>
+              )}
+            </span>
           </span>
-        </span>
-        <BandFooter>{footer}</BandFooter>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <CardBand>{footer}</CardBand>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
@@ -379,19 +387,21 @@ export function WordVisual({
   if (imageMode === "alphabet") {
     const letter = (word.trim().slice(0, 1) || word).toUpperCase();
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear letter ${letter}`} className={`${frameCls} block cursor-pointer`} style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
-        <span className={`flex h-full flex-col items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
-            <span className="select-none text-[clamp(7rem,58vmin,20rem)] font-black uppercase leading-none tracking-tight text-white">
-              {letter}
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear letter ${letter}`}>
+        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+          <span className={`flex h-full flex-col items-center justify-center ${reacting ? "kt-squash" : ""}`}>
+            <span key={burstKey} className={bounceCls}>
+              <span className="select-none text-[clamp(7rem,58vmin,20rem)] font-black uppercase leading-none tracking-tight text-white">
+                {letter}
+              </span>
             </span>
+            {/* No "Letter X" caption — the letter is plainly visible and
+                tapping speaks it (Grey, 2026-11-07). */}
           </span>
-          {/* No "Letter X" caption — the letter is plainly visible and
-              tapping speaks it (Grey, 2026-11-07). */}
-        </span>
-        <BandFooter>{footer}</BandFooter>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <CardBand>{footer}</CardBand>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
@@ -405,57 +415,61 @@ export function WordVisual({
       : len > 5 ? "text-[clamp(2.6rem,12vmin,5rem)]"
       : "text-[clamp(3rem,14vmin,6rem)]";
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: hex }}>
-        <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
-            <span
-              className={`select-none px-4 text-center font-black leading-none ${sz}`}
-              style={{ color: dark ? "#FFFFFF" : "#182642", textShadow: dark ? "0 3px 14px rgba(0,0,0,0.25)" : "none" }}
-            >
-              {word}
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+        <CardShell style={{ background: hex }}>
+          <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
+            <span key={burstKey} className={bounceCls}>
+              <span
+                className={`select-none px-4 text-center font-black leading-none ${sz}`}
+                style={{ color: dark ? "#FFFFFF" : "#182642", textShadow: dark ? "0 3px 14px rgba(0,0,0,0.25)" : "none" }}
+              >
+                {word}
+              </span>
             </span>
           </span>
-        </span>
-        <BandFooter>{footer}</BandFooter>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <CardBand>{footer}</CardBand>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
   /* ── Shape art on a clean white stage ── */
   if (imageMode === "shape") {
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer bg-white`}>
-        <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
-            <ShapeArt word={word} size={Math.min(300, 220)} />
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+        <CardShell className="bg-white">
+          <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
+            <span key={burstKey} className={bounceCls}>
+              <ShapeArt word={word} size={Math.min(300, 220)} />
+            </span>
           </span>
-        </span>
-        {/* The shape carries no text of its own, so the word sits inside
-            the tile's bottom band (ink on white — no scrim needed), on
-            its own line ABOVE the in-card controls (variant A stacking
-            rule: the word never shares its row with the buttons).
-            No "Tap to hear" wording anywhere (Grey, 2026-11-07): a tiny
-            speaker badge in the top corner says "tap = sound" instead. */}
-        <span className="absolute inset-x-0 bottom-0 block px-4 pb-4">
-          <span className="block text-center text-[26px] font-black leading-tight tracking-tight text-ink">
-            {word}
+          {/* The shape carries no text of its own, so the word sits inside
+              the card's bottom band (ink on white — no scrim needed), on
+              its own line ABOVE the in-card controls (variant A stacking
+              rule: the word never shares its row with the buttons).
+              No "Tap to hear" wording anywhere (Grey, 2026-11-07): a tiny
+              speaker badge in the top corner says "tap = sound" instead. */}
+          <span className="absolute inset-x-0 bottom-0 block px-4 pb-4">
+            <span className="block text-center text-[26px] font-black leading-tight tracking-tight text-ink">
+              {word}
+            </span>
+            {footer ? (
+              <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+                {footer}
+              </div>
+            ) : null}
           </span>
-          {footer ? (
-            <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
-              {footer}
-            </div>
-          ) : null}
-        </span>
-        <span
-          className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-white shadow-[0_6px_16px_rgba(14,42,99,0.22)]"
-          style={{ background: categoryColor }}
-          aria-hidden
-        >
-          <GlyphSpeaker size={20} />
-        </span>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <span
+            className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-white shadow-[0_6px_16px_rgba(14,42,99,0.22)]"
+            style={{ background: categoryColor }}
+            aria-hidden
+          >
+            <GlyphSpeaker size={20} />
+          </span>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
@@ -467,32 +481,32 @@ export function WordVisual({
     const src = `/images/${categoryId}/${key}.${ext}${isCuratedPng ? `?v=${encodeURIComponent(CURATED_STATIC_BITMAP_VER)}` : ""}`;
     const isActionArt = categoryId === "actions";
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.9) }}>
-        <span className={`block h-full w-full ${reacting ? "kt-squash" : ""}`}>
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+        <CardShell className={reacting ? "kt-squash" : ""} style={{ background: tint(categoryColor, 0.9) }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={word}
-            className={`h-full w-full object-contain ${isActionArt ? "" : "p-4"}`}
+            className={`absolute inset-0 h-full w-full object-contain ${isActionArt ? "" : "p-4"}`}
             draggable={false}
           />
-        </span>
-        {/* Same in-card band as the photo cards: word on its own line,
-            controls stacked under it (variant A). Full-bleed art gets
-            the dark gradient scrim, padded art reads it as a caption
-            over the tint. */}
-        <span className={`absolute inset-x-0 bottom-0 block px-4 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
-          <span className={`block text-[26px] font-black leading-tight tracking-tight ${isActionArt ? "text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]" : "text-ink"}`}>
-            {word}
+          {/* Same in-card band as the photo cards: word on its own line,
+              controls stacked under it (variant A). Full-bleed art gets
+              the dark gradient scrim, padded art reads it as a caption
+              over the tint. */}
+          <span className={`absolute inset-x-0 bottom-0 block px-4 pb-4 pt-16 ${isActionArt ? "bg-gradient-to-t from-black/80 via-black/45 to-transparent text-left" : "text-center"}`}>
+            <span className={`block text-[26px] font-black leading-tight tracking-tight ${isActionArt ? "text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]" : "text-ink"}`}>
+              {word}
+            </span>
+            {footer ? (
+              <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+                {footer}
+              </div>
+            ) : null}
           </span>
-          {footer ? (
-            <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
-              {footer}
-            </div>
-          ) : null}
-        </span>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
@@ -504,65 +518,82 @@ export function WordVisual({
       : len > 6 ? "text-[clamp(2.4rem,11vmin,4.4rem)]"
       : "text-[clamp(2.8rem,13vmin,5.4rem)]";
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.88) }}>
-        <span className={`flex h-full items-center justify-center px-5 ${reacting ? "kt-squash" : ""}`}>
-          <span key={burstKey} className={burstKey > 0 ? "kt-bounce" : ""}>
-            <span className={`block select-none text-balance text-center font-black leading-[0.95] ${sz}`} style={{ color: categoryColor }}>
-              {word}
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+          <span className={`flex h-full items-center justify-center px-5 ${reacting ? "kt-squash" : ""}`}>
+            <span key={burstKey} className={bounceCls}>
+              <span className={`block select-none text-balance text-center font-black leading-[0.95] ${sz}`} style={{ color: categoryColor }}>
+                {word}
+              </span>
             </span>
           </span>
-        </span>
-        <BandFooter>{footer}</BandFooter>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <CardBand>{footer}</CardBand>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
-  /* ── Photo / vector: blurred fill + whole photo, never cropped ── */
+  /* ── Photo / vector: the photo inside the universal shell ── */
   if (loading) {
     return (
-      <div className={`${frameCls} grid place-items-center`} style={{ background: tint(categoryColor, 0.88) }}>
-        <div className="kt-spinner" />
-      </div>
+      <CardStage>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+          <span className="grid h-full place-items-center">
+            <span className="kt-spinner" />
+          </span>
+        </CardShell>
+      </CardStage>
     );
   }
 
   if (!imageUrl) {
     const Glyph = CATEGORY_GLYPHS[categoryId] ?? CATEGORY_GLYPHS.kid_general;
     return (
-      <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className={`${frameCls} block cursor-pointer`} style={{ background: tint(categoryColor, 0.88) }}>
-        <span className={`flex h-full flex-col items-center justify-center gap-3 ${reacting ? "kt-squash" : ""}`}>
-          <span style={{ color: categoryColor }}>
-            <Glyph size={72} />
+      <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+          <span className={`flex h-full flex-col items-center justify-center gap-3 ${reacting ? "kt-squash" : ""}`}>
+            <span style={{ color: categoryColor }}>
+              <Glyph size={72} />
+            </span>
+            <span className="text-[24px] font-black text-ink">{word}</span>
           </span>
-          <span className="text-[24px] font-black text-ink">{word}</span>
-        </span>
-        <BandFooter>{footer}</BandFooter>
-        <Sparkles burstKey={burstKey} />
-      </div>
+          <CardBand>{footer}</CardBand>
+          <Sparkles burstKey={burstKey} />
+        </CardShell>
+      </CardStage>
     );
   }
 
   return (
-    <div role="button" onClick={triggerReaction} aria-label={`Hear ${word}`} className="relative flex h-full w-full cursor-pointer items-center justify-center">
-      {/* The card IS the photo: it renders at its own aspect ratio, as
-          large as the stage allows — the whole picture, edge to edge,
-          never cropped and no filler bands (Grey's rule, 2026-11-07).
+    <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
+      {/* The photo lives inside the universal shell (Grey, 2026-11-07):
+          the shell is 2:3 — the rebuilt portrait photos' own aspect —
+          so they fill it edge-to-edge exactly. A wider photo is shown
+          WHOLE inside the shell (object-contain, never cropped) over
+          a blurred copy of itself; the shell's box, and with it the
+          bottom band's position, is the same either way.
           Variant A (Grey's pick, 2026-11-07): the word AND the lesson
-          controls live INSIDE the photo, stacked in its bottom band
+          controls live INSIDE the card, stacked in its bottom band
           over the soft dark gradient — word on its own line first,
           the control row under it. Stacking is the law, not an
           exception: the word never shares a row with the buttons, so
           it can never truncate, even on wide photos with long words
-          (Colosseum). No "Tap to hear" hint text (Grey, 2026-11-07).
-          The root is a div, not a <button>, so the band's real buttons
-          never nest inside another button. */}
-      <span className={`relative block max-h-full max-w-full overflow-hidden rounded-[30px] shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
+          (Colosseum). No "Tap to hear" hint text (Grey, 2026-11-07). */}
+      <CardShell className={`shadow-[0_18px_44px_rgba(14,42,99,0.30)] ${reacting ? "kt-squash" : ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl"
+          draggable={false}
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
           alt={word}
-          className="kt-fade-in block max-h-full max-w-full"
+          className="kt-fade-in absolute inset-0 h-full w-full object-contain"
           draggable={false}
         />
         <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/80 via-black/45 to-transparent px-4 pb-4 pt-14 text-left">
@@ -575,8 +606,8 @@ export function WordVisual({
             </div>
           ) : null}
         </span>
-      </span>
-      <Sparkles burstKey={burstKey} />
-    </div>
+        <Sparkles burstKey={burstKey} />
+      </CardShell>
+    </CardStage>
   );
 }
