@@ -3,9 +3,14 @@
 /* ─── World lesson ───
    "How the World Works" step-through: 5 beats per lesson (big idea
    → say it → see it → do it → one question), skinned in the
-   Kidtopia system — blue-zone header with pips, big rounded stage
+   Kidtopia system — slim header with pips, big rounded stage
    cards, one pill to move on. Completion goes through the generic
-   completeActivity hook only — no progress edits. */
+   completeActivity hook only — no progress edits.
+   FRAME FIX (Grey, 2026-11-08): like the word lessons, this frame
+   still painted the pre-redesign full-screen blue stage; it now
+   sits on the same clean neutral paper as the rest of the app,
+   the header type is ink on paper, and the see-it card fills the
+   stage the way the word cards do. */
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -115,21 +120,24 @@ export function WorldLessonClient({
 
   return (
     <div
-      className="blue-rings flex h-dvh flex-col overflow-hidden bg-royal"
+      className="flex h-dvh flex-col overflow-hidden bg-paper"
       style={{ overscrollBehavior: "none", touchAction: "none" }}
     >
-      {/* Header — back disc, title, step pips */}
+      {/* Header — back disc, title, step pips. On paper now (frame
+          fix, 2026-11-08): ink type, gold pips, and the white back
+          disc gets the sheet's hairline border so it reads on the
+          neutral ground instead of floating on blue. */}
       <header className="flex shrink-0 items-center gap-3 px-4 pb-2 pt-[max(0.8rem,env(safe-area-inset-top))] min-[402px]:px-5">
-        <RoundButton href="/world" label="Back to all world lessons">
+        <RoundButton href="/world" label="Back to all world lessons" className="border-2 border-[#E7EDF7]">
           <GlyphChevronL size={26} />
         </RoundButton>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[21px] font-black text-white">{lesson.title}</h1>
-          <p className="mt-0.5 text-[13.5px] font-bold text-white/70">
+          <h1 className="truncate text-[21px] font-black text-ink">{lesson.title}</h1>
+          <p className="mt-0.5 text-[13.5px] font-bold text-soft">
             Lesson {lessonNumber} · {STEP_LABELS[step]}
           </p>
           <div className="mt-2">
-            <Pips step={step} total={TOTAL_STEPS} />
+            <Pips step={step} total={TOTAL_STEPS} color="#FFC531" />
           </div>
         </div>
       </header>
@@ -193,21 +201,37 @@ export function WorldLessonClient({
                 speaker pill and the Next pill on the row under it. The
                 below-stage Next pill hides on this step; the band's
                 pill is the same goNext. Root is a div so the pill's
-                real button never nests inside another button. */}
-            <span className="relative block max-h-full max-w-full overflow-hidden rounded-[30px]">
+                real button never nests inside another button.
+                Frame fix (2026-11-08): the card now FILLS the stage
+                like the word cards — the photo sits whole inside it
+                (contain) over a blurred copy of itself. */}
+            <span className="relative block h-full w-full overflow-hidden rounded-[30px] bg-white">
               {/* Animated lessons (2026-11-08): the scene IS the card
-                  — same 2:3 stage, same chrome, the concept in motion.
-                  Lessons without a scene keep their photo card. */}
+                  — same stage-filling box, same chrome, the concept
+                  in motion. Lessons without a scene keep their photo
+                  card. */}
               {hasWorldScene(lesson.id) ? (
-                <WorldScene lessonId={lesson.id} />
+                <span className="flex h-full w-full items-center justify-center">
+                  <WorldScene lessonId={lesson.id} />
+                </span>
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={lesson.image}
-                  alt={lesson.title}
-                  className="block max-h-full max-w-full"
-                  draggable={false}
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={lesson.image}
+                    alt=""
+                    aria-hidden
+                    className="absolute inset-0 h-full w-full scale-125 object-cover blur-2xl"
+                    draggable={false}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={lesson.image}
+                    alt={lesson.title}
+                    className="absolute inset-0 h-full w-full object-contain"
+                    draggable={false}
+                  />
+                </>
               )}
               <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-4 pt-14">
                 <span className="block text-[24px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
@@ -265,7 +289,7 @@ export function WorldLessonClient({
           className="mx-auto w-full max-w-2xl shrink-0 px-4 pt-2 min-[402px]:px-5"
           style={{ paddingBottom: "max(0.9rem, env(safe-area-inset-bottom, 0px))" }}
         >
-          <PillButton color="#FFFFFF" ink="#1748AC" onClick={goNext} className="min-h-[64px] w-full text-[20px]">
+          <PillButton color="#1D5CD6" onClick={goNext} className="min-h-[64px] w-full text-[20px]">
             {isLast ? "Finish" : "Next"}
             {!isLast && <GlyphChevronR size={20} />}
           </PillButton>

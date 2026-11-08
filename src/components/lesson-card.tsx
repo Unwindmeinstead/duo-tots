@@ -11,15 +11,23 @@
    The rule now: every card — photo, digit hero, letter hero, colour
    swatch, shape art, static art, concept card, sentence card —
    renders inside this shell. Same outer box on a given device,
-   same bottom band position, same button inset. The shell's aspect
-   is 2:3, the aspect of the rebuilt portrait photos (900×1350), so
-   portrait photos fill it edge-to-edge exactly; wider photos sit
-   whole inside it (contain, over a blurred copy of themselves). */
+   same bottom band position, same button inset.
 
+   FRAME FIX (Grey, 2026-11-08, from his own phone screenshot): the
+   shell used to be a strict 2:3 box vertically centred under a big
+   external chrome band on a full-screen blue stage — ~25% of the
+   phone was dead blue above the card. The band is gone (progress is
+   a hairline; back / speaker / counter ride INSIDE the card via
+   CardChrome below) and the shell now FILLS its stage: full stage
+   height, stage width — capped on short/wide screens so the box
+   keeps a sane portrait proportion there. Portrait photos (2:3)
+   sit whole inside it (contain, over a blurred copy of themselves)
+   exactly as before; nothing is ever cropped. */
+
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+import { GlyphChevronL, GlyphSpeaker } from "@/components/glyphs";
 
-/** Card aspect — width : height, matching the portrait photo rebuild. */
-export const LESSON_CARD_ASPECT = "2 / 3";
 /** Card corner radius (px) — the Kidtopia 30px card curve. */
 export const LESSON_CARD_RADIUS = 30;
 /** Bottom inset of the button row inside every card (px), and the
@@ -55,17 +63,26 @@ export function CardStage({
 }
 
 /**
- * The fixed-geometry card box. Width follows the stage; height is
- * the width at the universal aspect, clamped by the stage height.
- * Content modes fill it absolutely / by flex centring; the bottom
- * band anchors to its bottom edge — the same place on every card.
+ * The fixed-geometry card box. The shell FILLS its stage (frame
+ * fix, Grey, 2026-11-08): height is the stage's full height and the
+ * width follows the stage, capped at (viewport height × 2/3) so a
+ * short/wide screen (a desktop window) still gets a portrait card
+ * instead of a giant slab — the cap that used to keep the 2:3 box
+ * inside the stage, kept for width only. On phones the cap never
+ * binds: the card starts right under the hairline and runs to the
+ * stage's bottom edge. Content modes fill it absolutely / by flex
+ * centring; the bottom band anchors to its bottom edge — the same
+ * place on every card. `chrome` (CardChrome) renders last, inside
+ * the card's top edge, above every content mode.
  */
 export function CardShell({
   children,
+  chrome,
   className = "",
   style,
 }: {
   children: ReactNode;
+  chrome?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -73,27 +90,82 @@ export function CardShell({
     <div
       className={`relative block max-h-full shrink-0 overflow-hidden ${className}`}
       style={{
-        aspectRatio: LESSON_CARD_ASPECT,
         borderRadius: LESSON_CARD_RADIUS,
-        /* Size from the stage's HEIGHT as well as its width. On a
-           short stage (a desktop window: height < 1.5 × max-w-2xl)
-           a bare `w-full` box prices its height off the full column
-           width (672px → 1008px tall) and the stage's
-           align-items:center then centres a box the stage cannot
-           hold — its top half spills off-screen and the card reads
-           as a giant square-ish slab, not the tall 2:3 photo card
-           (desktop render bug, Grey, 2026-11-07). Capping the width
-           at (stage height × 2/3) keeps the whole 2:3 box inside
-           the stage at every viewport; on phones (tall stages) the
-           cap never binds and the width-driven size is unchanged.
-           `shrink-0` stops the stage's flex row from re-squashing
-           the box when the cap and the column width disagree. */
-        width: "min(100%, calc((100dvh - 9rem) * 2 / 3))",
+        /* No drop shadow — flat is the Kidtopia law (Grey, 2026-11-07). */
+        height: "100%",
+        width: "min(100%, calc((100dvh - 3.5rem) * 2 / 3))",
         marginInline: "auto",
         ...style,
       }}
     >
       {children}
+      {chrome}
+    </div>
+  );
+}
+
+/**
+ * In-card top chrome (Grey's standing rulings, enforced 2026-11-08):
+ * a small back arrow INSIDE the card's top-left, a speaker badge in
+ * the top corner (tap = hear the word), and the "n/20" counter chip
+ * inside the top-right. There is NO chrome outside the card anymore
+ * — no external back disc, no progress bar, no counter pill. Chips
+ * are flat white with a hairline ring so they read on any photo and
+ * on the white Shapes card alike; each chip stops click propagation
+ * so pressing one never also triggers the card's tap-to-speak.
+ */
+export function CardChrome({
+  backHref,
+  counter,
+  onSpeak,
+  extra,
+}: {
+  backHref?: string;
+  /** Compact in-photo counter, e.g. "3/20". */
+  counter?: string;
+  onSpeak?: () => void;
+  /** Extra node stacked under the top-right chips (sentence word pill). */
+  extra?: ReactNode;
+}) {
+  const chip =
+    "grid h-11 w-11 place-items-center rounded-full bg-white text-ink ring-1 ring-black/10";
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between p-3">
+      <span
+        className="pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {backHref ? (
+          <Link href={backHref} aria-label="Back to home" className={chip}>
+            <GlyphChevronL size={22} />
+          </Link>
+        ) : null}
+      </span>
+      <span className="flex flex-col items-end gap-2">
+        <span className="flex items-center gap-2">
+          {onSpeak ? (
+            <span
+              className="pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Hear it"
+                onClick={onSpeak}
+                className={`${chip} transition-transform active:scale-95`}
+              >
+                <GlyphSpeaker size={20} />
+              </button>
+            </span>
+          ) : null}
+          {counter ? (
+            <span className="pointer-events-auto flex h-11 items-center rounded-full bg-white px-3 text-[15px] font-black tabular-nums text-ink ring-1 ring-black/10">
+              {counter}
+            </span>
+          ) : null}
+        </span>
+        {extra}
+      </span>
     </div>
   );
 }

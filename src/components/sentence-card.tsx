@@ -33,6 +33,10 @@ export interface SentenceCardProps {
   noBounce?: boolean;
   /** Lesson controls (prev · Practice · Next) for the in-photo band. */
   footer?: ReactNode;
+  /** In-card top chrome (back · speaker · counter) — CardChrome from
+      lesson-card.tsx, shared with the word cards (frame fix, Grey,
+      2026-11-08). */
+  chrome?: ReactNode;
 }
 
 export function SentenceCard({
@@ -43,6 +47,7 @@ export function SentenceCard({
   onSpeak,
   noBounce = false,
   footer,
+  chrome,
 }: SentenceCardProps) {
   const [burstKey, setBurstKey] = useState(0);
   const [reacting, setReacting] = useState(false);
@@ -69,8 +74,11 @@ export function SentenceCard({
     onSpeak?.();
   };
 
+  /* The word pill rides under the shared chrome row (back · speaker
+     · counter own the card's top edge since the 2026-11-08 frame
+     fix) — same right edge, one row down, so nothing overlaps. */
   const wordPill = (
-    <span className="absolute right-3 top-3 inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-black text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]">
+    <span className="absolute right-3 top-[4.25rem] inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-black text-ink ring-1 ring-black/10">
       <span className="h-2.5 w-2.5 rounded-full" style={{ background: categoryColor }} aria-hidden />
       {word}
     </span>
@@ -109,6 +117,7 @@ export function SentenceCard({
   return (
     <CardStage onClick={handleTap} ariaLabel={sentence} className="text-left">
       <CardShell
+        chrome={chrome}
         className={`${imageSrc && reacting ? "kt-squash" : ""}`}
         style={imageSrc ? undefined : { background: categoryColor }}
       >

@@ -19,7 +19,7 @@ import { getLocalImage } from "@/lib/local-images";
 import { playPop } from "@/lib/audio";
 import { Sparkles } from "@/components/kit";
 import { CardBand, CardShell, CardStage } from "@/components/lesson-card";
-import { CATEGORY_GLYPHS, GlyphSpeaker } from "@/components/glyphs";
+import { CATEGORY_GLYPHS } from "@/components/glyphs";
 import { deepen, tint } from "@/lib/theme";
 import type { ImageMode } from "@/lib/vocab";
 
@@ -252,6 +252,12 @@ export interface WordVisualProps {
       the card's tap-to-speak. Tile modes pin it to the frame's bottom
       edge; photo modes stack it under the word inside the scrim. */
   footer?: ReactNode;
+  /** In-card top chrome (back · speaker · counter) — CardChrome from
+      lesson-card.tsx, rendered inside the shell's top edge on EVERY
+      mode (frame fix, Grey, 2026-11-08). Before this, only the
+      Shapes deck carried a speaker badge and no deck carried the
+      back arrow or counter inside the card. */
+  chrome?: ReactNode;
 }
 
 /* The controls band is the universal CardBand (lesson-card.tsx) —
@@ -268,6 +274,7 @@ export function WordVisual({
   stepKey,
   onTap,
   footer,
+  chrome,
 }: WordVisualProps) {
   /* A QC-passed local photo wins over every other source. */
   const slug = (assetKey ?? word.toLowerCase()).replace(/\s+/g, "-");
@@ -369,7 +376,7 @@ export function WordVisual({
     const label = isNaN(n) ? "" : numberToWord(n);
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${label || word}`}>
-        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }} chrome={chrome}>
           <span className={`flex h-full flex-col items-center justify-center px-4 ${reacting ? "kt-squash" : ""}`}>
             <span key={burstKey} className={`flex flex-col items-center ${bounceCls}`}>
               <span className={`select-none font-black tabular-nums leading-none tracking-tighter text-white ${sz}`}>
@@ -412,7 +419,7 @@ export function WordVisual({
     const letter = (word.trim().slice(0, 1) || word).toUpperCase();
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear letter ${letter}`}>
-        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }}>
+        <CardShell style={{ background: categoryColor, boxShadow: `inset 0 -10px 0 ${deepen(categoryColor)}` }} chrome={chrome}>
           <span className={`flex h-full flex-col items-center justify-center ${reacting ? "kt-squash" : ""}`}>
             <span key={burstKey} className={bounceCls}>
               <span className="select-none text-[clamp(7rem,58vmin,20rem)] font-black uppercase leading-none tracking-tight text-white">
@@ -440,7 +447,7 @@ export function WordVisual({
       : "text-[clamp(3rem,14vmin,6rem)]";
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-        <CardShell style={{ background: hex }}>
+        <CardShell style={{ background: hex }} chrome={chrome}>
           <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
             <span key={burstKey} className={bounceCls}>
               <span
@@ -462,7 +469,7 @@ export function WordVisual({
   if (imageMode === "shape") {
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-        <CardShell className="bg-white">
+        <CardShell className="bg-white" chrome={chrome}>
           <span className={`flex h-full items-center justify-center ${reacting ? "kt-squash" : ""}`}>
             <span key={burstKey} className={bounceCls}>
               <ShapeArt word={word} size={Math.min(300, 220)} />
@@ -472,8 +479,11 @@ export function WordVisual({
               the card's bottom band (ink on white — no scrim needed), on
               its own line ABOVE the in-card controls (variant A stacking
               rule: the word never shares its row with the buttons).
-              No "Tap to hear" wording anywhere (Grey, 2026-11-07): a tiny
-              speaker badge in the top corner says "tap = sound" instead. */}
+              No "Tap to hear" wording anywhere (Grey, 2026-11-07): the
+              shared CardChrome speaker badge in the top corner (passed
+              as `chrome`) says "tap = sound" — it used to be a bespoke
+              badge on this deck only; since 2026-11-08 every deck
+              carries the same one. */}
           <span className="absolute inset-x-0 bottom-0 block px-4 pb-4">
             <span className="block text-center text-[26px] font-black leading-tight tracking-tight text-ink">
               {word}
@@ -483,13 +493,6 @@ export function WordVisual({
                 {footer}
               </div>
             ) : null}
-          </span>
-          <span
-            className="pointer-events-none absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-white shadow-[0_6px_16px_rgba(14,42,99,0.22)]"
-            style={{ background: categoryColor }}
-            aria-hidden
-          >
-            <GlyphSpeaker size={20} />
           </span>
           <Sparkles burstKey={burstKey} />
         </CardShell>
@@ -506,7 +509,7 @@ export function WordVisual({
     const isActionArt = categoryId === "actions";
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-        <CardShell className={reacting ? "kt-squash" : ""} style={{ background: tint(categoryColor, 0.9) }}>
+        <CardShell className={reacting ? "kt-squash" : ""} style={{ background: tint(categoryColor, 0.9) }} chrome={chrome}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
@@ -543,7 +546,7 @@ export function WordVisual({
       : "text-[clamp(2.8rem,13vmin,5.4rem)]";
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }} chrome={chrome}>
           <span className={`flex h-full items-center justify-center px-5 ${reacting ? "kt-squash" : ""}`}>
             <span key={burstKey} className={bounceCls}>
               <span className={`block select-none text-balance text-center font-black leading-[0.95] ${sz}`} style={{ color: categoryColor }}>
@@ -562,7 +565,7 @@ export function WordVisual({
   if (loading) {
     return (
       <CardStage>
-        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }} chrome={chrome}>
           <span className="grid h-full place-items-center">
             <span className="kt-spinner" />
           </span>
@@ -575,7 +578,7 @@ export function WordVisual({
     const Glyph = CATEGORY_GLYPHS[categoryId] ?? CATEGORY_GLYPHS.kid_general;
     return (
       <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-        <CardShell style={{ background: tint(categoryColor, 0.88) }}>
+        <CardShell style={{ background: tint(categoryColor, 0.88) }} chrome={chrome}>
           <span className={`flex h-full flex-col items-center justify-center gap-3 ${reacting ? "kt-squash" : ""}`}>
             <span style={{ color: categoryColor }}>
               <Glyph size={72} />
@@ -591,12 +594,14 @@ export function WordVisual({
 
   return (
     <CardStage onClick={triggerReaction} ariaLabel={`Hear ${word}`}>
-      {/* The photo lives inside the universal shell (Grey, 2026-11-07):
-          the shell is 2:3 — the rebuilt portrait photos' own aspect —
-          so they fill it edge-to-edge exactly. A wider photo is shown
-          WHOLE inside the shell (object-contain, never cropped) over
-          a blurred copy of itself; the shell's box, and with it the
-          bottom band's position, is the same either way.
+      {/* The photo lives inside the universal shell (Grey, 2026-11-07;
+          frame fix 2026-11-08): the shell fills the stage, and the
+          photo is shown WHOLE inside it (object-contain, never
+          cropped) over a blurred copy of itself — a 2:3 portrait
+          photo meets the shell's edges wherever the aspects agree
+          and letterboxes over its own blur where the taller shell
+          leaves room. The shell's box, and with it the bottom band's
+          position, is the same either way.
           Variant A (Grey's pick, 2026-11-07): the word AND the lesson
           controls live INSIDE the card, stacked in its bottom band
           over the soft dark gradient — word on its own line first,
@@ -604,7 +609,7 @@ export function WordVisual({
           exception: the word never shares a row with the buttons, so
           it can never truncate, even on wide photos with long words
           (Colosseum). No "Tap to hear" hint text (Grey, 2026-11-07). */}
-      <CardShell className={`${reacting ? "kt-squash" : ""}`}>
+      <CardShell className={`${reacting ? "kt-squash" : ""}`} chrome={chrome}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}

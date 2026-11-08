@@ -1,13 +1,22 @@
 "use client";
 
 /* ─── Lesson ───
-   One category as a deck of full-stage cards. Chrome is the
-   Kidtopia lesson band: a chunky gold progress bar in the blue
-   zone, and the word visual as a big rounded card whose own bottom
-   band carries the word and the pill actions (Previous · Practice ·
-   Next) INSIDE the photo — variant A (Grey's pick, 2026-11-07).
-   The deck logic — blocked bursts for new words, record-once
-   semantics, the completion celebration — is unchanged. */
+   One category as a deck of full-stage cards. The word visual is a
+   big rounded card whose own bottom band carries the word and the
+   pill actions (Previous · Practice · Next) INSIDE the photo —
+   variant A (Grey's pick, 2026-11-07).
+   FRAME FIX (Grey, 2026-11-08, from his phone screenshot): this
+   page frame was the one surface the Kidtopia rebuild never
+   migrated — it still painted the pre-redesign full-screen blue
+   stage (bg-royal + rings) with an external chrome band (white
+   back disc, chunky gold progress bar, "1 / 20" pill) floating
+   above a low, centred card. Now the frame matches the rest of
+   the app: the clean neutral paper background, ONE hairline of
+   progress at the very top, and the card filling the stage under
+   it — back arrow, speaker badge and the n/N counter ride INSIDE
+   the card (CardChrome, lesson-card.tsx). The deck logic —
+   blocked bursts for new words, record-once semantics, the
+   completion celebration — is unchanged. */
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,10 +28,11 @@ import { WordVisual, deckKeepsTapMotion } from "@/components/word-visual";
 import { CelebrationScreen } from "@/components/celebration";
 import { SentenceCard } from "@/components/sentence-card";
 import { SessionEnd } from "@/components/session-end";
-import { PillButton, RoundButton } from "@/components/kit";
+import { PillButton } from "@/components/kit";
+import { CardChrome } from "@/components/lesson-card";
 import { useScrollLock } from "@/lib/scroll-lock";
 import { GlyphChevronL, GlyphChevronR } from "@/components/glyphs";
-import { GOLD } from "@/lib/theme";
+import { GOLD, INK } from "@/lib/theme";
 import {
   getCategoryStars,
   getNextLesson,
@@ -225,20 +235,18 @@ export function LessonClient({ category }: { category: VocabCategory }) {
   };
 
   /* The lesson controls, rendered by the card itself inside the
-     photo's bottom band (variant A, Grey's pick 2026-11-07). Prev is
-     a dark glass disc so it reads on any photo; Practice stays the
-     white pill, Next the gold pill. The card wraps this node in a
-     click-shield so pressing a control never speaks the word. */
+     photo's bottom band (variant A, Grey's pick 2026-11-07). ONE
+     pill family (frame fix, Grey, 2026-11-08): Prev used to be a
+     small dark glass disc while Practice/Next were big pills —
+     now all three are the same ledge pill at the same size; Prev
+     and Practice are white, Next keeps the gold accent. The card
+     wraps this node in a click-shield so pressing a control never
+     speaks the word. */
   const cardControls = (
     <div className="flex items-center gap-2.5">
-      <button
-        type="button"
-        aria-label="Previous card"
-        onClick={() => go(-1)}
-        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-black/35 text-white ring-1 ring-white/45 backdrop-blur-[2px] transition-transform active:scale-95"
-      >
-        <GlyphChevronL size={22} />
-      </button>
+      <PillButton small color="#FFFFFF" ink={INK} onClick={() => go(-1)} className="shrink-0" label="Previous card">
+        <GlyphChevronL size={19} /> Prev
+      </PillButton>
       <div className="flex-1" />
       <PillButton small color="#FFFFFF" ink="#1748AC" href={`/practice?category=${category.id}`} className="shrink-0">
         Practice
@@ -247,6 +255,19 @@ export function LessonClient({ category }: { category: VocabCategory }) {
         Next <GlyphChevronR size={19} />
       </PillButton>
     </div>
+  );
+
+  /* In-card top chrome (frame fix, Grey, 2026-11-08): back arrow,
+     speaker badge and the compact n/N counter ride INSIDE the
+     card — the external band that used to carry them is gone. The
+     speaker speaks exactly what a card tap speaks (the sentence on
+     sentence steps, the word otherwise). */
+  const cardChrome = (
+    <CardChrome
+      backHref="/"
+      counter={`${itemIndex + 1}/${total}`}
+      onSpeak={() => void speak()}
+    />
   );
 
   /* Prev/Next walk deck steps. Advancing past the last step ends the
@@ -384,42 +405,41 @@ export function LessonClient({ category }: { category: VocabCategory }) {
 
   return (
     <div
-      className="blue-rings flex h-dvh min-h-dvh flex-col overflow-hidden bg-royal"
-      style={{ overscrollBehavior: "none", touchAction: "none" }}
+      className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-paper"
+      style={{
+        overscrollBehavior: "none",
+        touchAction: "none",
+        paddingTop: "env(safe-area-inset-top, 0px)",
+      }}
     >
-      {/* ── Top band: back · chunky progress · counter ── */}
-      <div className="shrink-0 px-4 pb-3 pt-[max(0.8rem,env(safe-area-inset-top))]">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
-          <RoundButton href="/" label="Back to home">
-            <GlyphChevronL size={26} />
-          </RoundButton>
-          <div
-            className="h-4 flex-1 overflow-hidden rounded-full bg-white/25"
-            role="img"
-            aria-label={`Card ${itemIndex + 1} of ${total}`}
-          >
-            <div
-              className="kt-bar h-full rounded-full bg-gold"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <span className="flex h-11 items-center rounded-full bg-white px-3.5 text-[15px] font-black tabular-nums text-ink shadow-[0_8px_20px_rgba(14,42,99,0.18)]">
-            {itemIndex + 1} / {total}
-          </span>
-        </div>
+      {/* ── Progress: ONE minimal hairline at the very top ──
+          (frame fix, Grey, 2026-11-08). The chunky bar, the white
+          counter pill and the external back disc that used to live
+          in a band here are gone — back, speaker and counter ride
+          inside the card (CardChrome); this hairline is the only
+          chrome left outside it. */}
+      <div
+        className="h-[3px] w-full shrink-0 bg-ink/10"
+        role="img"
+        aria-label={`Card ${itemIndex + 1} of ${total}`}
+      >
+        <div
+          className="kt-bar h-full bg-gold"
+          style={{ width: `${pct}%` }}
+        />
       </div>
 
       {/* ── Stage ──
-          No below-card band anymore: the controls live inside the
-          card (variant A), so the stage runs to the screen's bottom
-          edge (safe-area padded) and the photo grows into the space
-          the old band used. */}
+          The card fills the stage: it starts right under the
+          hairline (a slim 8px breath) and runs to the screen's
+          bottom edge (safe-area padded) — the dead space the old
+          blue frame left above and below the card is reclaimed. */}
       <div
-        className="relative mx-auto min-h-0 w-full max-w-2xl flex-1 px-3"
+        className="relative mx-auto min-h-0 w-full max-w-2xl flex-1 px-3 pt-2"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
       >
         {step.sayIt ? (
-          <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center">
             <span className="kt-pulse-soft inline-flex items-center rounded-full bg-gold px-4 py-2 text-[15px] font-black text-ink shadow-[0_10px_22px_rgba(14,42,99,0.18)]">
               Say it!
             </span>
@@ -452,6 +472,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
               onSpeak={speak}
               noBounce={!deckKeepsTapMotion(category.imageMode)}
               footer={cardControls}
+              chrome={cardChrome}
             />
           ) : (
             <WordVisual
@@ -465,6 +486,7 @@ export function LessonClient({ category }: { category: VocabCategory }) {
               stepKey={stepIndex}
               onTap={speak}
               footer={cardControls}
+              chrome={cardChrome}
             />
           )}
         </div>
