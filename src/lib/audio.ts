@@ -46,42 +46,79 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
 }
 
 /* ─── Real American recordings (wired 2026-11-08) ───
-   For single words, /api/tts returns a real en-US human recording
-   (dictionaryapi.dev, US clips only — the route filters out the
-   British/Australian clips Grey rejected). A warm human voice beats
-   any device synth for a learning toddler, so it is tried first;
-   anything that goes wrong (offline, no US clip, playback error)
-   falls straight through to the device voice below. Sentences and
-   phrases skip the lookup entirely — a dictionary has no phrase
-   audio — and go direct to device speech. Results cache for the
-   session so repeat taps never refetch. */
+   For single words we find a real en-US human recording: first a
+   Wikimedia Commons US clip probed straight from this device, then
+   our /api/tts route's chain (dictionaryapi.dev US clips only —
+   British/Australian recordings are filtered out everywhere; Grey
+   rejected that voice). A warm human voice beats any device synth
+   for a learning toddler, so it is tried first; anything that goes
+   wrong (offline, no US clip, playback error) falls straight
+   through to the device voice below. Sentences and phrases skip
+   the lookup entirely — dictionaries have no phrase audio — and
+   go direct to device speech. Results cache for the session so
+   repeat taps never refetch. */
 const clipCache = new Map<string, string | null>();
 let clipPlayer: HTMLAudioElement | null = null;
+
+async function fetchWithTimeout(
+  url: string,
+  ms: number,
+  init?: RequestInit,
+): Promise<Response | null> {
+  try {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), ms);
+    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    window.clearTimeout(timer);
+    return res;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchUsClip(word: string): Promise<string | null> {
   const key = word.toLowerCase();
   const cached = clipCache.get(key);
   if (cached !== undefined) return cached;
-  try {
-    const ctrl = new AbortController();
-    const timer = window.setTimeout(() => ctrl.abort(), 2500);
-    const res = await fetch(`/api/tts?word=${encodeURIComponent(key)}`, {
-      signal: ctrl.signal,
-    });
-    window.clearTimeout(timer);
-    if (!res.ok) {
-      clipCache.set(key, null);
-      return null;
-    }
-    const data = (await res.json()) as { audioUrl?: string | null };
-    const url =
-      typeof data.audioUrl === "string" && data.audioUrl ? data.audioUrl : null;
-    clipCache.set(key, url);
-    return url;
-  } catch {
-    clipCache.set(key, null);
-    return null;
+
+  let url: string | null = null;
+
+  /* 1) Wikimedia Commons US recording, probed straight from the
+     device. Why client-side first: dictionaryapi.dev intermittently
+     502s and throttles datacenter egress (observed live 2026-11-08 —
+     our own /api/tts route, running on Vercel, got nulls while the
+     same lookups succeeded from a home-style connection), but the
+     kid's device IS a home connection. Commons' En-us-<word>.ogg
+     files (the classic Wiktionary US recordings) are CORS-open and
+     broad — they include words dictionaryapi has no US clip for. */
+  const commonsUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/En-us-${encodeURIComponent(key)}.ogg`;
+  const probe = await fetchWithTimeout(commonsUrl, 2000, { method: "HEAD" });
+  if (probe?.ok) {
+    url = commonsUrl;
   }
+
+  /* 2) Our /api/tts route — its server-side chain (dictionary
+     entries, retry, Commons, media-pattern probe, 30-day cached)
+     may still land clips the direct probe missed. */
+  if (!url) {
+    const res = await fetchWithTimeout(
+      `/api/tts?word=${encodeURIComponent(key)}`,
+      2500,
+    );
+    if (res?.ok) {
+      try {
+        const data = (await res.json()) as { audioUrl?: string | null };
+        if (typeof data.audioUrl === "string" && data.audioUrl) {
+          url = data.audioUrl;
+        }
+      } catch {
+        /* fall through to device speech */
+      }
+    }
+  }
+
+  clipCache.set(key, url);
+  return url;
 }
 
 function playClip(url: string): Promise<boolean> {
