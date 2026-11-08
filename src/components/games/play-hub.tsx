@@ -1,7 +1,7 @@
 "use client";
 
 /* ─── Play hub (/play) ───
-   Ten big game cards on the white sheet, in the reference card
+   Fourteen big game cards on the white sheet, in the reference card
    anatomy: each game carries its own matte-clay thumbnail (the
    game's idea at a glance), bold name, soft label, star row,
    play pill. Tapping one swaps the view to that game (single
@@ -26,6 +26,10 @@ import { CountingFun } from "./counting-fun";
 import { ShadowMatch } from "./shadow-match";
 import { BigSmall } from "./big-small";
 import { AnimalPick } from "./animal-pick";
+import { DrawLetters } from "./draw-letters";
+import { DrawNumbers } from "./draw-numbers";
+import { DrawAnimals } from "./draw-animals";
+import { DrawWords } from "./draw-words";
 
 type GameDef = {
   id: GameId;
@@ -116,6 +120,38 @@ const GAMES: GameDef[] = [
     color: "#34C759",
     thumb: "/images/play/animal-pick.webp",
     Component: AnimalPick,
+  },
+  {
+    id: "game-draw-letters",
+    name: "Draw letters",
+    label: "Trace the letter with your finger",
+    color: "#F24949",
+    thumb: "/images/play/draw-letters.webp",
+    Component: DrawLetters,
+  },
+  {
+    id: "game-draw-numbers",
+    name: "Draw numbers",
+    label: "Trace the number with your finger",
+    color: "#8B5CF6",
+    thumb: "/images/play/draw-numbers.webp",
+    Component: DrawNumbers,
+  },
+  {
+    id: "game-draw-animals",
+    name: "Draw animals",
+    label: "Trace the animal's shape",
+    color: "#FF7A59",
+    thumb: "/images/play/draw-animals.webp",
+    Component: DrawAnimals,
+  },
+  {
+    id: "game-draw-words",
+    name: "Draw words",
+    label: "Trace the whole word",
+    color: "#D64FD6",
+    thumb: "/images/play/draw-words.webp",
+    Component: DrawWords,
   },
 ];
 

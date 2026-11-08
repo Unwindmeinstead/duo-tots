@@ -5,7 +5,9 @@
    "Plugging in a new lesson type"): game-shape-sorter,
    game-stacking-blocks, game-finish-pattern, game-fix-it,
    game-color-finder, game-odd-one-out, game-counting-fun,
-   game-shadow-match, game-big-small, game-animal-pick.
+   game-shadow-match, game-big-small, game-animal-pick,
+   game-draw-letters, game-draw-numbers, game-draw-animals,
+   game-draw-words.
 
    REGENERATION LAW (Grey's order, 2026-11-07): the Play Zone trains
    IDENTIFICATION, not memorization — so nothing here is a fixed
@@ -26,7 +28,11 @@ export type GameId =
   | "game-counting-fun"
   | "game-shadow-match"
   | "game-big-small"
-  | "game-animal-pick";
+  | "game-animal-pick"
+  | "game-draw-letters"
+  | "game-draw-numbers"
+  | "game-draw-animals"
+  | "game-draw-words";
 
 /** Fisher–Yates shuffle on a copy — never mutates the source array. */
 export function shuffle<T>(items: readonly T[]): T[] {
@@ -612,3 +618,54 @@ export function makeBigSmallRounds(count = 5): BigSmallRound[] {
     bigFirst: Math.random() < 0.5,
   }));
 }
+
+/* ─── Drawing games (Grey's order, 2026-11-08) ───
+   Four trace-to-build decks. DECK SIZE LAW: every drawing deck
+   carries at least 20 items — letters are the full A–Z (26),
+   numbers exactly 1–20, animals exactly 20, words exactly 20.
+   Rounds are SAMPLED from the full deck at play time (the
+   regeneration law above): a session never deals the same item
+   twice, and the order is never the deck order. */
+
+/** Draw Letters — the whole alphabet, A–Z. */
+export const DRAW_LETTERS: string[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+/** Draw Numbers — 1 through 20. */
+export const DRAW_NUMBERS: number[] = Array.from({ length: 20 }, (_, i) => i + 1);
+
+/** Draw Animals — 20 animals from the app's own Animals lesson,
+    each with its flat animal artwork on disk
+    (public/images/animals/<slug>.svg) serving as the trace guide. */
+export type DrawAnimal = { name: string; slug: string };
+
+export const DRAW_ANIMALS: DrawAnimal[] = [
+  { name: "Dog", slug: "dog" },
+  { name: "Cat", slug: "cat" },
+  { name: "Bird", slug: "bird" },
+  { name: "Fish", slug: "fish" },
+  { name: "Horse", slug: "horse" },
+  { name: "Cow", slug: "cow" },
+  { name: "Rabbit", slug: "rabbit" },
+  { name: "Duck", slug: "duck" },
+  { name: "Elephant", slug: "elephant" },
+  { name: "Lion", slug: "lion" },
+  { name: "Tiger", slug: "tiger" },
+  { name: "Bear", slug: "bear" },
+  { name: "Penguin", slug: "penguin" },
+  { name: "Dolphin", slug: "dolphin" },
+  { name: "Butterfly", slug: "butterfly" },
+  { name: "Zebra", slug: "zebra" },
+  { name: "Whale", slug: "whale" },
+  { name: "Snake", slug: "snake" },
+  { name: "Bee", slug: "bee" },
+  { name: "Fox", slug: "fox" },
+];
+
+/** Draw Words — 20 short words (3–4 letters), every one of them
+    already a word in the app's vocabulary decks. */
+export const DRAW_WORDS: string[] = [
+  "Ant", "Ball", "Bear", "Bee", "Bird",
+  "Book", "Cat", "Cow", "Dog", "Duck",
+  "Egg", "Fish", "Frog", "Lion", "Milk",
+  "Moon", "Pig", "Star", "Sun", "Tree",
+];
