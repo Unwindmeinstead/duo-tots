@@ -11,51 +11,130 @@ function getVoice(): SpeechSynthesisVoice | null {
 
   const voices = window.speechSynthesis.getVoices();
   /* AMERICAN ONLY (Grey's order, 2026-11-07): the read-back must be a
-     clear American voice a kid can understand — no British/Australian/
-     Irish accents. US voices are searched first; other English voices
-     are only a last resort when the device has no en-US voice at all. */
-  const usEnglish = voices.filter((v) => /^en[-_]US/i.test(v.lang));
-  const english = voices.filter((v) => /^en[-_]/i.test(v.lang));
+     clear American voice a kid can understand — never British,
+     Australian, or Irish. Only en-US voices are EVER selected. When
+     the device has no en-US voice at all we return null WITHOUT
+     locking: the utterance still requests lang "en-US", so the
+     engine makes its own best US match instead of us pinning a
+     foreign voice — and a later voiceschanged can still find one.
+     Within en-US, the clearest voices win: the named natural voices
+     (Google US English, Microsoft's Aria/Jenny, Apple's Ava and
+     Samantha, Zira), then any natural/neural/premium/enhanced US
+     voice, then any US voice at all. */
+  const us = voices.filter((v) => /^en[-_]US/i.test(v.lang));
 
-  const ranked = [
+  const named = [
     /Google US English/i,
     /Microsoft Aria/i,
     /Microsoft Jenny/i,
-    /Ava/i,
-    /Samantha/i,
+    /\bAva\b/i,
+    /\bSamantha\b/i,
     /Microsoft Zira/i,
-    /Natural/i,
-    /Neural/i,
-    /Premium/i,
-    /Enhanced/i,
   ];
-
-  for (const pool of [usEnglish, english]) {
-    for (const re of ranked) {
-      const match = pool.find((v) => re.test(v.name));
-      if (match) { lockedVoice = match; return match; }
-    }
-    if (pool.length > 0) { lockedVoice = pool[0]; return lockedVoice; }
+  for (const re of named) {
+    const match = us.find((v) => re.test(v.name));
+    if (match) { lockedVoice = match; return match; }
   }
-
-  lockedVoice = voices[0] ?? null;
-  return lockedVoice;
+  const polished = us.find((v) => /natural|neural|premium|enhanced/i.test(v.name));
+  if (polished) { lockedVoice = polished; return polished; }
+  if (us.length > 0) { lockedVoice = us[0]; return lockedVoice; }
+  return null;
 }
 
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
   window.speechSynthesis.onvoiceschanged = () => { lockedVoice = null; getVoice(); };
 }
 
+/* ─── Real American recordings (wired 2026-11-08) ───
+   For single words, /api/tts returns a real en-US human recording
+   (dictionaryapi.dev, US clips only — the route filters out the
+   British/Australian clips Grey rejected). A warm human voice beats
+   any device synth for a learning toddler, so it is tried first;
+   anything that goes wrong (offline, no US clip, playback error)
+   falls straight through to the device voice below. Sentences and
+   phrases skip the lookup entirely — a dictionary has no phrase
+   audio — and go direct to device speech. Results cache for the
+   session so repeat taps never refetch. */
+const clipCache = new Map<string, string | null>();
+let clipPlayer: HTMLAudioElement | null = null;
+
+async function fetchUsClip(word: string): Promise<string | null> {
+  const key = word.toLowerCase();
+  const cached = clipCache.get(key);
+  if (cached !== undefined) return cached;
+  try {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), 2500);
+    const res = await fetch(`/api/tts?word=${encodeURIComponent(key)}`, {
+      signal: ctrl.signal,
+    });
+    window.clearTimeout(timer);
+    if (!res.ok) {
+      clipCache.set(key, null);
+      return null;
+    }
+    const data = (await res.json()) as { audioUrl?: string | null };
+    const url =
+      typeof data.audioUrl === "string" && data.audioUrl ? data.audioUrl : null;
+    clipCache.set(key, url);
+    return url;
+  } catch {
+    clipCache.set(key, null);
+    return null;
+  }
+}
+
+function playClip(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      if (!clipPlayer) clipPlayer = new Audio();
+      const audio = clipPlayer;
+      let settled = false;
+      const done = (ok: boolean) => {
+        if (settled) return;
+        settled = true;
+        audio.onended = null;
+        audio.onerror = null;
+        resolve(ok);
+      };
+      audio.onended = () => done(true);
+      audio.onerror = () => done(false);
+      /* A stuck clip must never wedge a caller's speak button. */
+      window.setTimeout(() => done(true), 6000);
+      audio.src = url;
+      void audio.play().catch(() => done(false));
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
 export async function speakWord(word: string): Promise<{ source: string }> {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+  if (typeof window === "undefined") {
     return { source: "none" };
   }
 
-  window.speechSynthesis.cancel();
+  /* A new speak always wins: stop whatever voice or clip is mid-word. */
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (clipPlayer) {
+    try { clipPlayer.pause(); } catch { /* ignore */ }
+  }
 
   /* Single uppercase letters (e.g. "A") cause many TTS engines to say
      "Capital A" — normalise to lowercase so it simply says the letter. */
   const text = /^[A-Z]$/.test(word) ? word.toLowerCase() : word;
+
+  /* Single words get the real American recording when one exists. */
+  if (!/\s/.test(text)) {
+    const clip = await fetchUsClip(text);
+    if (clip && (await playClip(clip))) {
+      return { source: "dictionary-us" };
+    }
+  }
+
+  if (!("speechSynthesis" in window)) {
+    return { source: "none" };
+  }
 
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = getVoice();
