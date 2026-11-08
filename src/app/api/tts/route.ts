@@ -58,6 +58,32 @@ async function probePattern(word: string): Promise<string | null> {
   return null;
 }
 
+/* Fallback 2: Wikimedia Commons carries the classic Wiktionary US
+   recordings under a deterministic name — En-us-<word>.ogg —
+   served by the upload.wikimedia.org CDN. Coverage is broad
+   (it has a US "hello", which dictionaryapi lacks entirely), and
+   the host does not share dictionaryapi's egress flakiness.
+   Special:FilePath redirects to the real file; a word with no US
+   recording 404s and the answer stays null. The canonical
+   FilePath URL is what we return — browsers follow the redirect
+   when the clip plays. */
+async function probeCommons(word: string): Promise<string | null> {
+  const url = `https://commons.wikimedia.org/wiki/Special:FilePath/En-us-${word}.ogg`;
+  try {
+    const res = await fetch(url, {
+      headers: { range: "bytes=0-0" },
+      next: { revalidate: MONTH },
+    });
+    if (res.ok || res.status === 206) {
+      void res.body?.cancel().catch(() => { /* already got our answer */ });
+      return url;
+    }
+  } catch {
+    /* no Commons recording */
+  }
+  return null;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const word = searchParams.get("word");
@@ -89,9 +115,13 @@ export async function GET(request: Request) {
   }
 
   /* No clip from the entries (unreachable upstream, or the word
-     genuinely lists none): probe the deterministic media address
-     before giving up. A word with no US recording anywhere
-     (e.g. "hello" has only -uk/-au) still correctly answers null. */
+     lists none): try the Wikimedia Commons US recording, then the
+     dictionaryapi media-pattern probe, before giving up. A word
+     with no US recording anywhere still correctly answers null. */
+  if (!audioUrl) {
+    audioUrl = await probeCommons(clean);
+    if (audioUrl) source = "wikimedia-us";
+  }
   if (!audioUrl) {
     audioUrl = await probePattern(clean);
     if (audioUrl) source = "dictionaryapi-us-pattern";
