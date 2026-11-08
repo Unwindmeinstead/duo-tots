@@ -21,6 +21,7 @@ import {
   type ProgressState,
 } from "@/lib/progress";
 import { worldNodeId, type WorldLesson } from "@/lib/world-book";
+import { WorldScene, hasWorldScene } from "@/components/world-scenes";
 import { useScrollLock } from "@/lib/scroll-lock";
 
 const STEP_LABELS = ["Big idea", "Say it", "See it", "Do it", "One question"] as const;
@@ -194,13 +195,20 @@ export function WorldLessonClient({
                 pill is the same goNext. Root is a div so the pill's
                 real button never nests inside another button. */}
             <span className="relative block max-h-full max-w-full overflow-hidden rounded-[30px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={lesson.image}
-                alt={lesson.title}
-                className="block max-h-full max-w-full"
-                draggable={false}
-              />
+              {/* Animated lessons (2026-11-08): the scene IS the card
+                  — same 2:3 stage, same chrome, the concept in motion.
+                  Lessons without a scene keep their photo card. */}
+              {hasWorldScene(lesson.id) ? (
+                <WorldScene lessonId={lesson.id} />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={lesson.image}
+                  alt={lesson.title}
+                  className="block max-h-full max-w-full"
+                  draggable={false}
+                />
+              )}
               <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-4 pt-14">
                 <span className="block text-[24px] font-black leading-tight tracking-tight text-white [text-shadow:0_2px_10px_rgba(0,0,0,0.45)]">
                   {lesson.title}
