@@ -7,7 +7,9 @@
    game-color-finder, game-odd-one-out, game-counting-fun,
    game-shadow-match, game-big-small, game-animal-pick,
    game-draw-letters, game-draw-numbers, game-draw-animals,
-   game-draw-words.
+   game-draw-words, game-push-car, game-pedal-power,
+   game-bowling-roll, game-rocket-launch, game-airplane-fly,
+   game-add-it-up.
 
    REGENERATION LAW (Grey's order, 2026-11-07): the Play Zone trains
    IDENTIFICATION, not memorization — so nothing here is a fixed
@@ -32,7 +34,13 @@ export type GameId =
   | "game-draw-letters"
   | "game-draw-numbers"
   | "game-draw-animals"
-  | "game-draw-words";
+  | "game-draw-words"
+  | "game-push-car"
+  | "game-pedal-power"
+  | "game-bowling-roll"
+  | "game-rocket-launch"
+  | "game-airplane-fly"
+  | "game-add-it-up";
 
 /** Fisher–Yates shuffle on a copy — never mutates the source array. */
 export function shuffle<T>(items: readonly T[]): T[] {

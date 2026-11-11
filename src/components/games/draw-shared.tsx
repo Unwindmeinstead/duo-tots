@@ -127,9 +127,12 @@ function buildMask(maskCanvas: HTMLCanvasElement, w: number, h: number): Mask {
   return { cols, rows, cells, total, painted: 0 };
 }
 
-/* ─── One tracing stage (one round) ─── */
+/* ─── One tracing stage (one round) ───
+   Exported so other games (Add It Up's trace-the-answer rounds)
+   can seat a single trace board inside their own shell; the four
+   drawing decks reach it through TraceGame below. */
 
-function TraceStage({
+export function TraceStage({
   item,
   accent,
   aspect,

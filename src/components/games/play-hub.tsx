@@ -1,7 +1,7 @@
 "use client";
 
 /* ─── Play hub (/play) ───
-   Fourteen big game cards on the white sheet, in the reference card
+   Twenty big game cards on the white sheet, in the reference card
    anatomy: each game carries its own matte-clay thumbnail (the
    game's idea at a glance), bold name, soft label, star row,
    play pill. Tapping one swaps the view to that game (single
@@ -30,6 +30,12 @@ import { DrawLetters } from "./draw-letters";
 import { DrawNumbers } from "./draw-numbers";
 import { DrawAnimals } from "./draw-animals";
 import { DrawWords } from "./draw-words";
+import { PushCar } from "./push-car";
+import { PedalPower } from "./pedal-power";
+import { BowlingRoll } from "./bowling-roll";
+import { RocketLaunch } from "./rocket-launch";
+import { AirplaneFly } from "./airplane-fly";
+import { AddItUp } from "./add-it-up";
 
 type GameDef = {
   id: GameId;
@@ -152,6 +158,54 @@ const GAMES: GameDef[] = [
     color: "#D64FD6",
     thumb: "/images/play/draw-words.webp",
     Component: DrawWords,
+  },
+  {
+    id: "game-push-car",
+    name: "Push the car",
+    label: "Push! Make the car roll",
+    color: "#FF5A3C",
+    thumb: "/images/play/push-car.webp",
+    Component: PushCar,
+  },
+  {
+    id: "game-pedal-power",
+    name: "Pedal power",
+    label: "Pedal the bike and ride",
+    color: "#12B5A5",
+    thumb: "/images/play/pedal-power.webp",
+    Component: PedalPower,
+  },
+  {
+    id: "game-bowling-roll",
+    name: "Bowling roll",
+    label: "Roll the ball, count the pins",
+    color: "#8B5CF6",
+    thumb: "/images/play/bowling-roll.webp",
+    Component: BowlingRoll,
+  },
+  {
+    id: "game-rocket-launch",
+    name: "Rocket launch",
+    label: "Count down and blast off",
+    color: "#2B7FFF",
+    thumb: "/images/play/rocket-launch.webp",
+    Component: RocketLaunch,
+  },
+  {
+    id: "game-airplane-fly",
+    name: "Airplane fly",
+    label: "Fly through the golden rings",
+    color: "#38BDF8",
+    thumb: "/images/play/airplane-fly.webp",
+    Component: AirplaneFly,
+  },
+  {
+    id: "game-add-it-up",
+    name: "Add it up",
+    label: "Add the numbers together",
+    color: "#F0519B",
+    thumb: "/images/play/add-it-up.webp",
+    Component: AddItUp,
   },
 ];
 
