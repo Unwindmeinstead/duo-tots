@@ -1,20 +1,21 @@
 "use client";
 
 /* ─── Game 15 — Push the Car (physics: force & motion) ───
-   A car waits at the start of the road and a gold flag waits at
-   the end. HOLD the big PUSH button and the power meter fills;
-   let go and the car rolls — a strong push rolls it fast and
-   far, a small push rolls it a little, and a gentle hill slows
-   it on the way up and speeds it on the way down. If the car
-   stops short of the flag it simply waits there: push again,
-   from right where it is. There is no way to lose — only
-   rolling, stopping, and rolling some more. Three roads are
-   dealt fresh every playthrough (car colour + hill shuffled). */
+   A real car (photoreal sprite) waits at the start of a real
+   dirt road (photo textures) and a gold flag waits at the end.
+   HOLD the big PUSH button and the power meter fills; let go
+   and the car launches — it accelerates up to push speed,
+   coasts with rolling friction, slows climbing the hill and
+   speeds back down it, body pitching with the slope and the
+   shove. If the car stops short of the flag it simply waits
+   there: push again, from right where it is. There is no way
+   to lose — only rolling, stopping, and rolling some more.
+   Three roads are dealt fresh every playthrough (car colour
+   via hue shift + hill shuffled). */
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { isSoundEnabled, playCorrect, playPop, speakWord } from "@/lib/audio";
 import { shuffle } from "@/lib/games-data";
-import { deepen, tint } from "@/lib/theme";
 import {
   GameCelebration,
   GameHeader,
@@ -30,11 +31,18 @@ const TOTAL = 3;
 
 /* Stage geometry, in SVG units. */
 const BASE_Y = 178;
-const START_X = 34;
+const START_X = 56;
 const FLAG_X = 314;
 const HILL_CX = 224;
 const HILL_HALF = 68;
 const HILL_H = 36;
+
+/* The photo car is 1770×692 — drawn 96 wide, wheels on the
+   ground line. HUE rotates the red paint to each round's
+   colour (same four colours the flat car used to deal). */
+const CAR_W = 96;
+const CAR_H = CAR_W * (692 / 1770);
+const CAR_HUES = [0, 215, 32, 272];
 
 function groundY(x: number, hill: boolean): number {
   if (!hill) return BASE_Y;
@@ -52,16 +60,16 @@ type Phase = "ready" | "rolling" | "done";
 export function PushCar({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
   const [session, setSession] = useState(0);
-  const [carX, setCarX] = useState(START_X);
+  const [frame, setFrame] = useState({ x: START_X, pitch: 0, bob: 0 });
   const [power, setPower] = useState(0);
   const [phase, setPhase] = useState<Phase>("ready");
   const [stoppedShort, setStoppedShort] = useState(false);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-push-car");
 
   const configs = useMemo(() => {
-    const colors = shuffle(["#F24949", "#2B7FFF", "#FF9F2E", "#8B5CF6"]).slice(0, TOTAL);
+    const hues = shuffle(CAR_HUES).slice(0, TOTAL);
     const hills = shuffle([false, true, true]);
-    return colors.map((color, i) => ({ color, hill: hills[i] }));
+    return hues.map((hue, i) => ({ hue, hill: hills[i] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
   const config = configs[round];
@@ -69,6 +77,8 @@ export function PushCar({ onBack }: { onBack: () => void }) {
   /* Physics lives in refs; React state mirrors it for the render. */
   const xRef = useRef(START_X);
   const vRef = useRef(0);
+  const thrustRef = useRef(0); // remaining launch shove (units/s of target speed)
+  const pitchRef = useRef(0);
   const powerRef = useRef(0);
   const chargingRef = useRef(false);
   const phaseRef = useRef<Phase>("ready");
@@ -91,26 +101,41 @@ export function PushCar({ onBack }: { onBack: () => void }) {
       }
       if (phaseRef.current === "rolling") {
         let v = vRef.current;
+        const prevV = v;
+        /* Launch: the shove feeds in as real acceleration
+           (up to ~0.4s) instead of teleporting to full speed. */
+        if (thrustRef.current > 0) {
+          const target = thrustRef.current;
+          v = Math.min(target, v + 620 * dt);
+          if (v >= target) thrustRef.current = 0;
+        }
         /* Gravity along the ground: the hill slows the climb
-           and feeds the roll back down. Plus plain friction. */
+           and feeds the roll back down. Plus rolling friction
+           (steady drag + a little speed-squared air drag). */
         v += groundSlope(xRef.current, hillRef.current) * 340 * dt;
-        v -= 120 * dt;
+        v -= 108 * dt + v * v * 0.00035 * dt * 60;
         if (v < 0) v = 0;
         xRef.current += v * dt;
         vRef.current = v;
-        if (xRef.current + 30 >= FLAG_X) {
-          xRef.current = FLAG_X - 30;
+        /* Body pitch: lean back under the shove, nose down as
+           it brakes — smoothed so it reads as suspension. */
+        const accel = dt > 0 ? (v - prevV) / dt : 0;
+        const targetPitch = Math.max(-7, Math.min(6, -accel * 0.011));
+        pitchRef.current += (targetPitch - pitchRef.current) * Math.min(1, dt * 7);
+        const bob = v > 24 ? Math.sin(now / 68) * Math.min(1.6, v / 190) : 0;
+        if (xRef.current + 44 >= FLAG_X) {
+          xRef.current = FLAG_X - 44;
           phaseRef.current = "done";
           setPhase("done");
           playCorrect();
           if (isSoundEnabled()) void speakWord("Hooray! The car rolled to the flag!");
-        } else if (v <= 0) {
+        } else if (v <= 0 && thrustRef.current <= 0) {
           phaseRef.current = "ready";
           setPhase("ready");
           setStoppedShort(xRef.current > START_X + 30);
           if (isSoundEnabled()) void speakWord("So close! Push again!");
         }
-        setCarX(xRef.current);
+        setFrame({ x: xRef.current, pitch: pitchRef.current, bob });
       }
       raf = requestAnimationFrame(tick);
     };
@@ -137,7 +162,7 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     const p = powerRef.current;
     powerRef.current = 0;
     setPower(0);
-    vRef.current = 110 + p * 3.4;
+    thrustRef.current = 110 + p * 3.4;
     phaseRef.current = "rolling";
     setPhase("rolling");
     setStoppedShort(false);
@@ -154,8 +179,9 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     }
     xRef.current = START_X;
     vRef.current = 0;
+    thrustRef.current = 0;
     phaseRef.current = "ready";
-    setCarX(START_X);
+    setFrame({ x: START_X, pitch: 0, bob: 0 });
     setPhase("ready");
     setStoppedShort(false);
     setRound((r) => r + 1);
@@ -165,8 +191,9 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     resetCompletion();
     xRef.current = START_X;
     vRef.current = 0;
+    thrustRef.current = 0;
     phaseRef.current = "ready";
-    setCarX(START_X);
+    setFrame({ x: START_X, pitch: 0, bob: 0 });
     setPhase("ready");
     setStoppedShort(false);
     setSession((s) => s + 1);
@@ -185,13 +212,18 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     );
   }
 
+  const carX = frame.x;
   const slope = groundSlope(carX, config.hill);
-  const carTilt = Math.atan(slope) * (180 / Math.PI) * 0.8;
-  const wheelRot = (carX / 9) * (180 / Math.PI);
+  const carTilt = Math.atan(slope) * (180 / Math.PI) * 0.8 + frame.pitch;
   const groundPath = Array.from({ length: 37 }, (_, i) => {
     const x = i * 10;
     return `${i === 0 ? "M" : "L"}${x},${groundY(x, config.hill)}`;
   }).join(" ");
+  /* The dirt road as a filled ribbon hugging the ground curve. */
+  const roadPath = `${groundPath} ${Array.from({ length: 37 }, (_, i) => {
+    const x = 360 - i * 10;
+    return `L${x},${groundY(x, config.hill) + 15}`;
+  }).join(" ")} Z`;
   const trees = [66, 148, 292];
 
   return (
@@ -206,47 +238,56 @@ export function PushCar({ onBack }: { onBack: () => void }) {
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div className="w-full max-w-md overflow-hidden" style={{ borderRadius: 28 }}>
             <svg viewBox="0 0 360 220" className="block h-auto w-full" role="img" aria-label="A car on a road with a flag at the end">
-              <rect x="0" y="0" width="360" height="220" fill="#BDE6FF" />
-              <circle cx="322" cy="34" r="17" fill="#FFC531" />
-              {/* Ground + road following the same curve */}
-              <path d={`${groundPath} L360,220 L0,220 Z`} fill="#58C172" />
-              <path d={groundPath} fill="none" stroke="#C98A5A" strokeWidth="13" strokeLinejoin="round" strokeLinecap="round" />
-              <path d={groundPath} fill="none" stroke="#FFF3D6" strokeWidth="3" strokeDasharray="14 12" strokeLinecap="round" />
-              {/* Trees rooted on the ground line */}
+              <defs>
+                <pattern id="pc-grass" width="72" height="72" patternUnits="userSpaceOnUse">
+                  <image href="/images/play/tex-grass.webp" width="72" height="72" preserveAspectRatio="none" />
+                </pattern>
+                <pattern id="pc-dirt" width="64" height="64" patternUnits="userSpaceOnUse">
+                  <image href="/images/play/tex-dirt.webp" width="64" height="64" preserveAspectRatio="none" />
+                </pattern>
+                <linearGradient id="pc-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6FC4FF" />
+                  <stop offset="70%" stopColor="#BDE6FF" />
+                  <stop offset="100%" stopColor="#DFF6FF" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="360" height="220" fill="url(#pc-sky)" />
+              {/* Photoreal clouds */}
+              <image href="/images/play/sprite-cloud.webp" x="18" y="6" width="86" height="58" opacity="0.95" />
+              <image href="/images/play/sprite-cloud.webp" x="238" y="0" width="64" height="43" opacity="0.85" />
+              <circle cx="330" cy="26" r="15" fill="#FFD94D" opacity="0.9" />
+              {/* Ground covered in real grass */}
+              <path d={`${groundPath} L360,220 L0,220 Z`} fill="url(#pc-grass)" />
+              <path d={`${groundPath} L360,220 L0,220 Z`} fill="#3E9B4F" opacity="0.28" />
+              {/* The dirt road ribbon */}
+              <path d={roadPath} fill="url(#pc-dirt)" stroke="#A9805A" strokeWidth="1.5" />
+              {/* Photoreal trees rooted on the ground line */}
               {trees.map((tx) => (
-                <g key={tx} transform={`translate(${tx} ${groundY(tx, config.hill)})`}>
-                  <rect x="-2.5" y="-8" width="5" height="9" rx="2" fill="#8A5A33" />
-                  <circle cx="0" cy="-16" r="10" fill="#34C759" />
-                  <circle cx="-8" cy="-10" r="7" fill="#34C759" />
-                  <circle cx="8" cy="-10" r="7" fill="#34C759" />
-                </g>
+                <image
+                  key={tx}
+                  href="/images/play/sprite-tree.webp"
+                  x={tx - 19}
+                  y={groundY(tx, config.hill) - 56}
+                  width="38"
+                  height="57"
+                />
               ))}
               {/* The flag */}
               <g transform={`translate(${FLAG_X} ${groundY(FLAG_X, config.hill)})`}>
                 <line x1="0" y1="0" x2="0" y2="-46" stroke="#5A6B8C" strokeWidth="4" strokeLinecap="round" />
                 <polygon points="0,-46 24,-38 0,-30" fill="#FFC531" stroke="#EDA900" strokeWidth="2" strokeLinejoin="round" />
               </g>
-              {/* The car */}
-              <g transform={`translate(${carX} ${groundY(carX, config.hill)}) rotate(${carTilt})`}>
-                <path
-                  d="M-17,-22 L-11,-35 Q-9,-39 -3,-39 L9,-39 Q15,-39 17,-22 Z"
-                  fill={config.color}
-                  stroke={deepen(config.color)}
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
+              {/* Soft shadow, then the photo car pitched with the road */}
+              <ellipse cx={carX} cy={groundY(carX, config.hill) + 3} rx="46" ry="5" fill="#1d4d24" opacity="0.35" />
+              <g transform={`translate(${carX} ${groundY(carX, config.hill) - frame.bob}) rotate(${carTilt})`}>
+                <image
+                  href="/images/play/sprite-car.webp"
+                  x={-CAR_W / 2}
+                  y={-CAR_H + 2}
+                  width={CAR_W}
+                  height={CAR_H}
+                  style={config.hue ? { filter: `hue-rotate(${config.hue}deg)` } : undefined}
                 />
-                <rect x="-12" y="-36" width="9" height="11" rx="3" fill={tint(config.color, 0.45)} />
-                <rect x="2" y="-36" width="9" height="11" rx="3" fill={tint(config.color, 0.45)} />
-                <rect x="-33" y="-23" width="66" height="17" rx="8" fill={config.color} stroke={deepen(config.color)} strokeWidth="2.5" />
-                <circle cx="26" cy="-14" r="3.4" fill="#FFC531" />
-                {[-19, 19].map((wx) => (
-                  <g key={wx} transform={`translate(${wx} 0) rotate(${wheelRot})`}>
-                    <circle r="9.5" fill="#2B3550" />
-                    <line x1="-6.5" y1="0" x2="6.5" y2="0" stroke="#E8EEFB" strokeWidth="2.6" strokeLinecap="round" />
-                    <line x1="0" y1="-6.5" x2="0" y2="6.5" stroke="#E8EEFB" strokeWidth="2.6" strokeLinecap="round" />
-                    <circle r="2.6" fill="#E8EEFB" />
-                  </g>
-                ))}
               </g>
             </svg>
           </div>
@@ -278,11 +319,11 @@ export function PushCar({ onBack }: { onBack: () => void }) {
                 onPointerLeave={releaseCharge}
                 onPointerCancel={releaseCharge}
                 onContextMenu={(e) => e.preventDefault()}
-                className="btn-led inline-flex min-h-[64px] w-full max-w-md touch-none select-none items-center justify-center rounded-full text-[22px] font-black"
+                className="btn-led inline-flex min-h-[64px] w-full max-w-md touch-none select-none items-center justify-center rounded-full text-[22px] font-black transition-transform active:scale-[0.97]"
                 style={
                   {
                     "--btn": ACCENT,
-                    "--btn-deep": deepen(ACCENT),
+                    "--btn-deep": "#D63A1F",
                     "--btn-ink": "#FFFFFF",
                   } as CSSProperties
                 }

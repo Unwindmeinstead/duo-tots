@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# raw generated art sources (processed outputs live in public/images/play)
+assets-src/
