@@ -1,17 +1,17 @@
 "use client";
 
-/* ─── Game 16 — Pedal Power (physics: rotation) ───
-   A bicycle waits at the start of the path. Every tap on the
-   big PEDAL button spins the pedals — the crank turns, the
-   wheels turn, and the bike rides forward through the trees
-   and houses toward the finish flag. Stop tapping and the
-   bike gently slows; tap again and off it goes. No falling,
-   no failing — just pedalling. Three rides per playthrough,
-   each to a different place (park, beach, playground), with
-   the bike repainted and the distance changed every time. */
+/* ─── Game 16 — Pedal Power (physics: rotation & momentum) ───
+   A real bicycle (photoreal sprite) waits at the start of the
+   path. Every tap on the big PEDAL button gives the bike a
+   real shove of momentum — it surges, then rolling drag
+   gently bleeds the speed away; tap again and off it goes.
+   Photo trees and houses roll past (nearer = faster), clouds
+   drift slower still — true parallax. No falling, no failing
+   — just pedalling. Three rides per playthrough, each to a
+   different place (park, beach, playground), with the bike
+   repainted (hue shift) and the distance changed every time. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { PillButton } from "@/components/kit";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { isSoundEnabled, playCorrect, playPop, speakWord } from "@/lib/audio";
 import { shuffle } from "@/lib/games-data";
 import { GREEN_DEEP, deepen } from "@/lib/theme";
@@ -31,6 +31,12 @@ const GROUND_Y = 188;
 const GOALS = [650, 800, 950];
 const DESTINATIONS = ["the park", "the beach", "the playground"];
 
+/* The photo bike is 1649×1167 — drawn 124 wide, wheels down. */
+const BIKE_W = 124;
+const BIKE_H = BIKE_W * (1167 / 1649);
+const BIKE_X = 30;
+const BIKE_HUES = [0, 215, 32, 272];
+
 /* Scenery pattern — repeats every 900 world units. */
 const SCENERY = [
   { dx: 30, kind: "tree" },
@@ -41,10 +47,10 @@ const SCENERY = [
   { dx: 790, kind: "house" },
 ] as const;
 const CLOUDS = [
-  { dx: 80, y: 34, s: 1 },
-  { dx: 330, y: 58, s: 0.7 },
-  { dx: 560, y: 28, s: 0.85 },
-  { dx: 800, y: 52, s: 0.6 },
+  { dx: 80, y: 30, s: 1 },
+  { dx: 330, y: 54, s: 0.7 },
+  { dx: 560, y: 24, s: 0.85 },
+  { dx: 800, y: 48, s: 0.6 },
 ] as const;
 
 type Phase = "ride" | "done";
@@ -57,9 +63,9 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-pedal-power");
 
   const configs = useMemo(() => {
-    const colors = shuffle(["#F24949", "#2B7FFF", "#FF9F2E", "#8B5CF6"]).slice(0, TOTAL);
+    const hues = shuffle(BIKE_HUES).slice(0, TOTAL);
     const dests = shuffle(DESTINATIONS);
-    return colors.map((color, i) => ({ color, goal: GOALS[i], destination: dests[i] }));
+    return hues.map((hue, i) => ({ hue, goal: GOALS[i], destination: dests[i] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
   const config = configs[round];
@@ -83,7 +89,9 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       if (phaseRef.current === "ride") {
-        speedRef.current = Math.max(0, speedRef.current - 135 * dt);
+        /* Rolling drag: a steady bite plus a whisper of air
+           drag, so a shove coasts out smoothly, never jerky. */
+        speedRef.current = Math.max(0, speedRef.current - (96 + speedRef.current * 0.24) * dt);
         distRef.current += speedRef.current * dt;
         if (distRef.current >= goalRef.current) {
           distRef.current = goalRef.current;
@@ -102,7 +110,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
 
   const pedal = () => {
     if (phaseRef.current !== "ride") return;
-    speedRef.current = Math.min(330, speedRef.current + 62);
+    speedRef.current = Math.min(330, speedRef.current + 66);
     playPop();
   };
 
@@ -143,55 +151,45 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
   }
 
   const { dist, speed } = frame;
-  const wheelRot = dist * 2.73;
-  const crankRot = dist * 3.4;
-  const crankRad = (crankRot * Math.PI) / 180;
-  const pedalAx = 27 + 11 * Math.cos(crankRad);
-  const pedalAy = 156 + 11 * Math.sin(crankRad);
-  const pedalBx = 27 - 11 * Math.cos(crankRad);
-  const pedalBy = 156 - 11 * Math.sin(crankRad);
   const flagX = config.goal - dist + 96;
   const progress = Math.min(100, (dist / config.goal) * 100);
+  /* Riding bob: the faster it rolls, the livelier the bounce. */
+  const bob = speed > 18 ? Math.sin(dist * 0.11) * Math.min(2.2, speed / 130) : 0;
 
   const sceneryNodes: React.ReactNode[] = [];
   for (const item of SCENERY) {
     for (let k = 0; k < 3; k++) {
       const sx = item.dx + k * 900 - dist + 40;
-      if (sx < -80 || sx > 440) continue;
+      if (sx < -90 || sx > 450) continue;
       sceneryNodes.push(
-        <g key={`${item.dx}-${k}`} transform={`translate(${sx} ${GROUND_Y})`}>
+        <g key={`${item.dx}-${k}`}>
           {item.kind === "tree" ? (
-            <>
-              <rect x="-3" y="-12" width="6" height="13" rx="2.5" fill="#8A5A33" />
-              <circle cx="0" cy="-24" r="14" fill="#34C759" />
-              <circle cx="-11" cy="-15" r="9" fill="#34C759" />
-              <circle cx="11" cy="-15" r="9" fill="#34C759" />
-            </>
+            <image href="/images/play/sprite-tree.webp" x={sx - 26} y={GROUND_Y - 78} width="52" height="78" />
           ) : item.kind === "house" ? (
-            <>
-              <rect x="-17" y="-26" width="34" height="26" rx="3" fill="#FFF3D6" stroke="#E3C98F" strokeWidth="2" />
-              <polygon points="-21,-26 21,-26 0,-42" fill="#F24949" />
-              <rect x="-5" y="-14" width="10" height="14" rx="2" fill="#8A5A33" />
-            </>
+            <image href="/images/play/sprite-house.webp" x={sx - 34} y={GROUND_Y - 54} width="68" height="54" />
           ) : (
-            <>
+            <g transform={`translate(${sx} ${GROUND_Y})`}>
               <line x1="0" y1="0" x2="0" y2="-10" stroke="#28A745" strokeWidth="3" strokeLinecap="round" />
               <circle cx="0" cy="-14" r="5.5" fill="#F0519B" />
               <circle cx="0" cy="-14" r="2" fill="#FFC531" />
-            </>
+            </g>
           )}
         </g>,
       );
     }
   }
   const cloudNodes = CLOUDS.map((c) => {
-    const cx = ((((c.dx - dist * 0.35) % 900) + 900) % 900) - 50;
+    const cx = ((((c.dx - dist * 0.35) % 900) + 900) % 900) - 60;
     return (
-      <g key={c.dx} transform={`translate(${cx} ${c.y}) scale(${c.s})`} fill="#FFFFFF" opacity="0.95">
-        <ellipse cx="0" cy="0" rx="24" ry="12" />
-        <ellipse cx="-14" cy="4" rx="15" ry="9" />
-        <ellipse cx="15" cy="4" rx="16" ry="9" />
-      </g>
+      <image
+        key={c.dx}
+        href="/images/play/sprite-cloud.webp"
+        x={cx}
+        y={c.y - 20}
+        width={92 * c.s}
+        height={62 * c.s}
+        opacity="0.95"
+      />
     );
   });
 
@@ -207,11 +205,27 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div className="w-full max-w-md overflow-hidden" style={{ borderRadius: 28 }}>
             <svg viewBox="0 0 360 220" className="block h-auto w-full" role="img" aria-label="A bicycle riding along a path to a flag">
-              <rect x="0" y="0" width="360" height="220" fill="#BDE6FF" />
-              <circle cx="36" cy="32" r="16" fill="#FFC531" />
+              <defs>
+                <pattern id="pp-grass" width="72" height="72" patternUnits="userSpaceOnUse">
+                  <image href="/images/play/tex-grass.webp" width="72" height="72" preserveAspectRatio="none" />
+                </pattern>
+                <pattern id="pp-dirt" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform={`translate(${-dist % 64} 0)`}>
+                  <image href="/images/play/tex-dirt.webp" width="64" height="64" preserveAspectRatio="none" />
+                </pattern>
+                <linearGradient id="pp-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#6FC4FF" />
+                  <stop offset="70%" stopColor="#BDE6FF" />
+                  <stop offset="100%" stopColor="#DFF6FF" />
+                </linearGradient>
+              </defs>
+              <rect x="0" y="0" width="360" height="220" fill="url(#pp-sky)" />
+              <circle cx="36" cy="30" r="15" fill="#FFD94D" opacity="0.9" />
               {cloudNodes}
-              <rect x="0" y={GROUND_Y} width="360" height={220 - GROUND_Y} fill="#58C172" />
-              <rect x="0" y={GROUND_Y} width="360" height="7" fill="#C98A5A" />
+              {/* Real grass below, a real dirt path on top of it —
+                  the path texture scrolls with the ride. */}
+              <rect x="0" y={GROUND_Y} width="360" height={220 - GROUND_Y} fill="url(#pp-grass)" />
+              <rect x="0" y={GROUND_Y} width="360" height={220 - GROUND_Y} fill="#3E9B4F" opacity="0.25" />
+              <rect x="0" y={GROUND_Y - 2} width="360" height="13" fill="url(#pp-dirt)" />
               {sceneryNodes}
               {/* Finish flag */}
               {flagX > -40 && flagX < 420 ? (
@@ -223,38 +237,21 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
               {/* Speed lines while riding fast */}
               {speed > 190 ? (
                 <g stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" opacity={Math.min(0.9, (speed - 190) / 140)}>
-                  <line x1="18" y1="138" x2="46" y2="138" />
-                  <line x1="8" y1="156" x2="42" y2="156" />
-                  <line x1="20" y1="174" x2="48" y2="174" />
+                  <line x1="6" y1="128" x2="30" y2="128" />
+                  <line x1="2" y1="148" x2="28" y2="148" />
+                  <line x1="8" y1="168" x2="32" y2="168" />
                 </g>
               ) : null}
-              {/* The bicycle — wheels + crank spin with the ride */}
-              <g transform="translate(66 0)">
-                {[0, 58].map((wx) => (
-                  <g key={wx} transform={`translate(${wx} 168) rotate(${wheelRot})`}>
-                    <circle r="21" fill="none" stroke="#2B3550" strokeWidth="4.5" />
-                    <line x1="-21" y1="0" x2="21" y2="0" stroke="#5A6B8C" strokeWidth="2.4" />
-                    <line x1="0" y1="-21" x2="0" y2="21" stroke="#5A6B8C" strokeWidth="2.4" />
-                    <line x1="-15" y1="-15" x2="15" y2="15" stroke="#5A6B8C" strokeWidth="2.4" />
-                    <line x1="-15" y1="15" x2="15" y2="-15" stroke="#5A6B8C" strokeWidth="2.4" />
-                    <circle r="3.4" fill="#2B3550" />
-                  </g>
-                ))}
-                <g stroke={config.color} strokeWidth="5.5" strokeLinecap="round" fill="none">
-                  <line x1="0" y1="168" x2="10" y2="130" />
-                  <line x1="10" y1="130" x2="27" y2="156" />
-                  <line x1="27" y1="156" x2="0" y2="168" />
-                  <line x1="27" y1="156" x2="52" y2="128" />
-                  <line x1="52" y1="128" x2="58" y2="168" />
-                </g>
-                <rect x="0" y="124" width="17" height="6" rx="3" fill="#2B3550" />
-                <path d="M46,128 Q52,120 60,124" fill="none" stroke="#2B3550" strokeWidth="4.5" strokeLinecap="round" />
-                {/* Crank + pedals */}
-                <line x1={pedalBx} y1={pedalBy} x2={pedalAx} y2={pedalAy} stroke="#2B3550" strokeWidth="4" strokeLinecap="round" />
-                <circle cx="27" cy="156" r="4.5" fill="#2B3550" />
-                <rect x={pedalAx - 6} y={pedalAy - 2.5} width="12" height="5" rx="2.5" fill={deepen(config.color)} />
-                <rect x={pedalBx - 6} y={pedalBy - 2.5} width="12" height="5" rx="2.5" fill={deepen(config.color)} />
-              </g>
+              {/* Shadow, then the photo bicycle with its riding bob */}
+              <ellipse cx={BIKE_X + BIKE_W / 2} cy={GROUND_Y + 4} rx="56" ry="5" fill="#1d4d24" opacity="0.32" />
+              <image
+                href="/images/play/sprite-bike.webp"
+                x={BIKE_X}
+                y={GROUND_Y - BIKE_H + 3 - bob}
+                width={BIKE_W}
+                height={BIKE_H}
+                style={config.hue ? { filter: `hue-rotate(${config.hue}deg)` } : undefined}
+              />
             </svg>
           </div>
           {/* Ride progress */}
@@ -266,14 +263,29 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
           </p>
         </div>
 
-        {/* Pedal zone / next — fixed-height slot */}
+        {/* Pedal zone / next — fixed-height slot. PEDAL fires on
+            pointer-DOWN so the shove lands the instant the finger
+            does — no click delay for little hands. */}
         <div className="flex min-h-[96px] flex-col justify-center">
           {phase === "done" ? (
             <NextButton label={round + 1 >= TOTAL ? "Finish" : "Next ride"} accent={ACCENT} onClick={next} />
           ) : (
-            <PillButton color={ACCENT} onClick={pedal} className="min-h-[68px] w-full text-[22px]">
+            <button
+              type="button"
+              aria-label="Pedal the bicycle"
+              onPointerDown={pedal}
+              onContextMenu={(e) => e.preventDefault()}
+              className="btn-led inline-flex min-h-[68px] w-full touch-none select-none items-center justify-center rounded-full text-[22px] font-black transition-transform active:scale-[0.97]"
+              style={
+                {
+                  "--btn": ACCENT,
+                  "--btn-deep": deepen(ACCENT),
+                  "--btn-ink": "#FFFFFF",
+                } as CSSProperties
+              }
+            >
               PEDAL!
-            </PillButton>
+            </button>
           )}
         </div>
       </GameSheet>
