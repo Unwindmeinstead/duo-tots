@@ -69,7 +69,11 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
 
   /* The photo ball is purple marble; hue shifts deal the
      other colours round by round. */
-  const ballHues = useMemo(() => shuffle([0, 95, -45, 55]).slice(0, TOTAL), [session]);
+  const ballHues = useMemo(
+    () => shuffle([0, 95, -45, 55]).slice(0, TOTAL),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session],
+  );
   const ballHue = ballHues[round];
 
   const phaseRef = useRef<Phase>("aim");
@@ -111,11 +115,12 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
       t: 0,
     };
     setPins(simRef.current.pins);
-    let last = performance.now();
+    let last = 0;
     let crashSpoken = false;
     const step = (now: number) => {
       const sim = simRef.current;
       if (!sim) return;
+      if (!last) last = now;
       const dt = Math.min(0.04, (now - last) / 1000);
       last = now;
       sim.t += dt;
