@@ -1,14 +1,17 @@
 "use client";
 
 /* ─── Game 19 — Airplane Fly (science: flight) ───
-   The plane cruises across the sky on its own; the child
-   holds and drags up or down and the plane gently climbs
-   or dives to follow their finger. Golden rings drift by —
-   steer through one and it chimes, bursts a star, and the
-   count climbs. Miss one and it simply floats away: there
-   is no crashing and no failing in this sky. Five rings
-   complete the flight. Ring heights are dealt fresh all
-   flight long, so the path is never the same twice. */
+   A real little airplane (photoreal sprite) cruises across
+   a real sky; the child holds and drags up or down and the
+   plane answers like a plane — it has lift and momentum, so
+   it eases toward the finger on a spring of air, banking
+   into climbs and dives, propeller already a blur. Golden
+   rings drift by — steer through one and it chimes, bursts
+   a star, and the count climbs. Miss one and it simply
+   floats away: there is no crashing and no failing in this
+   sky. Five rings complete the flight. Ring heights are
+   dealt fresh all flight long, so the path is never the
+   same twice. */
 
 import { useEffect, useRef, useState } from "react";
 import { GlyphStar } from "@/components/glyphs";
@@ -31,15 +34,17 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
   const [session, setSession] = useState(0);
   const [collected, setCollected] = useState(0);
   const [burst, setBurst] = useState<number>(0);
-  const [frame, setFrame] = useState<{ planeY: number; tilt: number; rings: Ring[]; t: number }>({
+  const [frame, setFrame] = useState<{ planeY: number; tilt: number; bob: number; rings: Ring[]; t: number }>({
     planeY: 50,
     tilt: 0,
+    bob: 0,
     rings: [],
     t: 0,
   });
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-airplane-fly");
 
   const planeYRef = useRef(50);
+  const planeVRef = useRef(0);
   const targetYRef = useRef(50);
   const ringsRef = useRef<Ring[]>([]);
   const collectedRef = useRef(0);
@@ -61,11 +66,16 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
       last = now;
       const t = (now - start) / 1000;
 
-      /* The plane eases toward the finger — soft, never jerky. */
-      const prevY = planeYRef.current;
-      planeYRef.current += (targetYRef.current - planeYRef.current) * Math.min(1, dt * 5.5);
-      const vel = dt > 0 ? (planeYRef.current - prevY) / dt : 0;
-      const tilt = Math.max(-18, Math.min(18, vel * 0.55));
+      /* Flight model: a spring of lift pulls the plane toward
+         the finger while air damping bleeds the speed — it
+         overshoots a whisper, settles smooth, and banks with
+         its true vertical velocity. Never jerky, never late. */
+      const accel = (targetYRef.current - planeYRef.current) * 26 - planeVRef.current * 7.2;
+      planeVRef.current += accel * dt;
+      planeYRef.current += planeVRef.current * dt;
+      planeYRef.current = Math.max(6, Math.min(90, planeYRef.current));
+      const tilt = Math.max(-20, Math.min(20, planeVRef.current * 0.62));
+      const bob = Math.sin(t * 2.1) * 0.7;
 
       /* Spawn rings at fresh heights while the flight lasts. */
       if (!finishedRef.current && now >= nextRingAtRef.current && ringsRef.current.length < 3) {
@@ -103,7 +113,7 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
       }
       ringsRef.current = kept;
 
-      setFrame({ planeY: planeYRef.current, tilt, rings: kept, t });
+      setFrame({ planeY: planeYRef.current, tilt, bob, rings: kept, t });
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -124,6 +134,7 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
   const replay = () => {
     resetCompletion();
     planeYRef.current = 50;
+    planeVRef.current = 0;
     targetYRef.current = 50;
     ringsRef.current = [];
     collectedRef.current = 0;
@@ -144,8 +155,6 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
     );
   }
 
-  const propRot = (frame.t * 720) % 360;
-
   return (
     <div className="kt-fade-in flex min-h-dvh flex-col bg-royal">
       <GameHeader title="Airplane fly" onBack={onBack} step={collected} total={TOTAL} />
@@ -158,7 +167,7 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div
             className="relative h-[290px] w-full max-w-md touch-none select-none overflow-hidden"
-            style={{ borderRadius: 28, background: "linear-gradient(180deg, #7ED0FF 0%, #CDEFFF 78%, #E8FBFF 100%)" }}
+            style={{ borderRadius: 28, background: "linear-gradient(180deg, #6FC4FF 0%, #AEE6FF 55%, #DFF6FF 100%)" }}
             role="img"
             aria-label="An airplane flying through golden rings in the sky"
             onPointerDown={(e) => {
@@ -176,25 +185,20 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
               downRef.current = false;
             }}
           >
-            {/* Drifting clouds */}
+            {/* Drifting photoreal clouds */}
             {CLOUD_BASES.map((base, i) => {
               const cx = ((((base - frame.t * 1.7) % 130) + 130) % 130) - 15;
               return (
-                <svg
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   key={i}
-                  width="86"
-                  height="40"
-                  viewBox="0 0 86 40"
-                  className="absolute"
-                  style={{ left: `${cx}%`, top: `${8 + (i % 3) * 16}%`, opacity: 0.9 }}
+                  src="/images/play/sprite-cloud.webp"
+                  alt=""
+                  draggable={false}
+                  className="pointer-events-none absolute"
+                  style={{ left: `${cx}%`, top: `${6 + (i % 3) * 15}%`, width: 96, opacity: 0.95 }}
                   aria-hidden
-                >
-                  <g fill="#FFFFFF">
-                    <ellipse cx="43" cy="24" rx="26" ry="12" />
-                    <ellipse cx="26" cy="28" rx="17" ry="9" />
-                    <ellipse cx="60" cy="28" rx="18" ry="9" />
-                  </g>
-                </svg>
+                />
               );
             })}
 
@@ -226,44 +230,40 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
               </span>
             ) : null}
 
-            {/* The plane */}
+            {/* The plane — photoreal sprite, flipped to face the
+                rings, banked by its real vertical velocity */}
             <div
-              className="absolute"
+              className="pointer-events-none absolute"
               style={{
                 left: `${PLANE_X}%`,
-                top: `${frame.planeY}%`,
+                top: `${frame.planeY + frame.bob}%`,
                 transform: `translate(-50%, -50%) rotate(${frame.tilt}deg)`,
+                filter: "drop-shadow(0 10px 10px rgba(23, 68, 120, 0.35))",
               }}
               aria-hidden
             >
-              <svg width="98" height="64" viewBox="0 0 98 64">
-                <path d="M12,26 L3,13 Q1,8 7,10 L18,15 Q22,19 20,27 Z" fill="#2B7FFF" />
-                <path
-                  d="M8,34 Q10,24 27,22 L58,20 Q84,20 90,29 Q93,34 88,38 Q79,45 57,45 L28,45 Q12,45 8,34 Z"
-                  fill="#F24949"
-                  stroke="#C93333"
-                  strokeWidth="2.5"
-                />
-                <path d="M40,22 L57,22 L50,11 Q47,7 43,12 Z" fill="#2B7FFF" />
-                <path d="M39,43 L58,43 L50,56 Q47,60 42,55 Z" fill="#2B7FFF" />
-                <circle cx="61" cy="29" r="3.6" fill="#BDE6FF" />
-                <circle cx="72" cy="29" r="3.6" fill="#BDE6FF" />
-                <g transform={`rotate(${propRot} 93 32)`}>
-                  <line x1="93" y1="19" x2="93" y2="45" stroke="#5A6B8C" strokeWidth="4" strokeLinecap="round" />
-                </g>
-                <circle cx="93" cy="32" r="3.4" fill="#2B3550" />
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/play/sprite-plane.webp"
+                alt=""
+                draggable={false}
+                style={{ width: 122, transform: "scaleX(-1)" }}
+              />
             </div>
 
-            {/* Rolling ground far below */}
-            <div className="absolute inset-x-0 bottom-0 h-9 bg-[#58C172]">
+            {/* Green fields far below, photo trees rolling past */}
+            <div className="absolute inset-x-0 bottom-0 h-9 overflow-hidden bg-[#58C172]">
               {TREE_BASES.map((base, i) => {
                 const tx = ((((base - frame.t * 6) % 120) + 120) % 120) - 10;
                 return (
-                  <span
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     key={i}
-                    className="absolute bottom-1 block rounded-full bg-[#34C759]"
-                    style={{ left: `${tx}%`, width: 22, height: 14 }}
+                    src="/images/play/sprite-tree.webp"
+                    alt=""
+                    draggable={false}
+                    className="pointer-events-none absolute"
+                    style={{ left: `${tx}%`, bottom: -6, width: 24 }}
                     aria-hidden
                   />
                 );
