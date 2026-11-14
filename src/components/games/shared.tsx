@@ -7,7 +7,7 @@
    runs the same beat — fanfare → completeActivity(2 stars) → save →
    celebration — and returns the XP actually earned. */
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PillButton, Pips, RoundButton } from "@/components/kit";
 import { GlyphChevronL, GlyphSpeaker } from "@/components/glyphs";
 import { CelebrationScreen } from "@/components/celebration";
@@ -174,7 +174,40 @@ export function NextButton({
   );
 }
 
-/* ─── A chunky tappable choice card ─── */
+/* ─── Tap burst — a little star pop wherever a finger lands ───
+   Instant, visible proof that the tap registered: six sparks fly
+   out of the tap point and fade (the kt-sparkle motion). Purely
+   decorative, pointer-events-none, cleans itself up. */
+
+const BURST_ANGLES = [0, 60, 120, 180, 240, 300];
+
+export function TapBurst({ burstKey, color = "#FFC531" }: { burstKey: number; color?: string }) {
+  if (burstKey === 0) return null;
+  return (
+    <span key={burstKey} className="pointer-events-none absolute inset-0 z-10" aria-hidden>
+      {BURST_ANGLES.map((deg) => (
+        <span
+          key={deg}
+          className="kt-sparkle"
+          style={
+            {
+              left: "50%",
+              top: "50%",
+              background: color,
+              "--dx": `${Math.cos((deg * Math.PI) / 180) * 44}px`,
+              "--dy": `${Math.sin((deg * Math.PI) / 180) * 44}px`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </span>
+  );
+}
+
+/* ─── A chunky tappable choice card ───
+   Fires on pointer-DOWN (no click delay for little hands) and
+   bursts a star pop at the tap, so every tap answers back the
+   instant it lands. */
 
 export function ChoiceButton({
   label,
@@ -187,16 +220,21 @@ export function ChoiceButton({
   onTap: () => void;
   children: ReactNode;
 }) {
+  const [burst, setBurst] = useState(0);
   return (
     <button
       type="button"
       aria-label={label}
-      onClick={onTap}
-      className={`kt-card flex min-h-[104px] min-w-[88px] flex-1 flex-col items-center justify-center gap-1 px-3 py-3 transition-transform active:scale-95 ${
+      onPointerDown={() => {
+        setBurst((b) => b + 1);
+        onTap();
+      }}
+      className={`kt-card kt-press relative flex min-h-[104px] min-w-[88px] flex-1 flex-col items-center justify-center gap-1 px-3 py-3 ${
         wiggling ? "kt-wiggle" : ""
       }`}
     >
       {children}
+      <TapBurst burstKey={burst} />
     </button>
   );
 }
@@ -220,18 +258,26 @@ export function useGameCompletion(nodeId: GameId) {
   return { xpEarned, finish, resetCompletion };
 }
 
-/** The shared celebration, wired the same way for every game. */
+/** The shared celebration, wired the same way for every game.
+    "All games" MUST be an action (onHome → the game's onBack),
+    never a Link to /play: the Play hub is a single route and the
+    game is state-selected, so the app is ALREADY on /play when
+    this screen shows — a link to the current URL is a no-op and
+    the button looked dead (Grey's bug report, 2026-11-14). */
 export function GameCelebration({
   title,
   subtitle,
   xpEarned,
   onReplay,
+  onExit,
   accent,
 }: {
   title: string;
   subtitle?: string;
   xpEarned: number;
   onReplay: () => void;
+  /** Return to the Play Zone games list (the game's onBack). */
+  onExit: () => void;
   accent?: string;
 }) {
   return (
@@ -243,7 +289,7 @@ export function GameCelebration({
       accent={accent}
       keepGoingLabel="Play again"
       onKeepGoing={onReplay}
-      homeHref="/play"
+      onHome={onExit}
       exitLabel="All games"
     />
   );

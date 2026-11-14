@@ -32,6 +32,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
   const [wiggleId, setWiggleId] = useState<string | null>(null);
   const [dropY, setDropY] = useState<number | null>(null);
   const [wobble, setWobble] = useState(0);
+  const [squashKey, setSquashKey] = useState(0); // landing squash — the block compresses on impact
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-stacking-blocks");
 
@@ -78,10 +79,12 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
                the tower takes a wobble from the landing. */
             drop.v = -drop.v * RESTITUTION;
             wobbleRef.current.va += Math.min(3.2, Math.abs(drop.v) * 0.006);
+            setSquashKey((k) => k + 1);
             playPop();
           } else {
             dropRef.current = null;
             setDropY(null);
+            setSquashKey((k) => k + 1);
             playPop();
             if (placedRef.current >= TOTAL) {
               window.setTimeout(() => finishRef.current(), 350);
@@ -140,6 +143,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -202,7 +206,8 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
                     <div key={block.id} className="flex items-center justify-center" style={{ height: slotHeight }}>
                       {isPlaced ? (
                         <span
-                          className="inline-flex"
+                          key={i === placed - 1 ? `${block.id}-land${squashKey}` : block.id}
+                          className={!isDropping && i === placed - 1 && squashKey > 0 ? "kt-squash inline-flex" : "inline-flex"}
                           style={isDropping ? { transform: `translateY(${dropY}px)` } : undefined}
                         >
                           <ShapeSvg shape={block.shape} color={block.color} size={display} mode="real" />
@@ -228,7 +233,7 @@ export function StackingBlocks({ onBack }: { onBack: () => void }) {
                   type="button"
                   aria-label={block.label}
                   onClick={() => tapBlock(block)}
-                  className={`kt-card flex min-h-[104px] min-w-[96px] flex-col items-center justify-center gap-1 px-3 py-2 transition-transform active:scale-95 ${
+                  className={`kt-card kt-press flex min-h-[104px] min-w-[96px] flex-col items-center justify-center gap-1 px-3 py-2 ${
                     wiggleId === block.id ? "kt-wiggle" : ""
                   }`}
                 >

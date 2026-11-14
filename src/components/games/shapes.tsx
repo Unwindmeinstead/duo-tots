@@ -33,14 +33,57 @@ export function ShapeSvg({
 }) {
   const ghost = mode === "ghost";
   const real = mode === "real";
+  const solid = mode === "solid";
+  /* Solid shapes are LIT, not flat (Grey's game-feel order,
+     2026-11-14): a top-light gradient — tint at the top, the
+     true colour mid-way, a deepened foot — plus a gloss
+     highlight clipped to the shape. Same id per colour is
+     fine: every instance paints identical stops. */
+  const gradId = `kt-shape-grad-${color.replace("#", "")}`;
+  const clipId = `kt-shape-clip-${color.replace("#", "")}-${shape}`;
   const common: ShapeProps = {
-    fill: ghost ? tint(color, 0.84) : color,
+    fill: ghost ? tint(color, 0.84) : solid ? `url(#${gradId})` : color,
     stroke: ghost ? color : deepen(color),
     strokeWidth: ghost ? 4 : 3,
     strokeDasharray: ghost ? "8 6" : undefined,
     strokeLinejoin: "round",
     strokeLinecap: "round",
   };
+  const solidDefs = solid ? (
+    <defs>
+      <linearGradient id={gradId} x1="0" y1="0" x2="0.35" y2="1">
+        <stop offset="0%" stopColor={tint(color, 0.38)} />
+        <stop offset="55%" stopColor={color} />
+        <stop offset="100%" stopColor={deepen(color)} />
+      </linearGradient>
+      <clipPath id={clipId}>
+        {shape === "circle" && <circle cx="50" cy="50" r="37" />}
+        {shape === "square" && <rect x="14" y="14" width="72" height="72" rx="16" />}
+        {shape === "triangle" && <polygon points="50,11 91,87 9,87" />}
+        {shape === "star" && <polygon points="50,7 61.5,37.5 93.5,38 67.8,57.2 77.2,89.5 50,69.8 22.8,89.5 32.2,57.2 6.5,38 38.5,37.5" />}
+        {shape === "heart" && <path d="M50 86 C22 65 11 47 11 31 C11 17 21 8 33.5 8 C41.5 8 47.5 12.5 50 20 C52.5 12.5 58.5 8 66.5 8 C79 8 89 17 89 31 C89 47 78 65 50 86 Z" />}
+        {shape === "diamond" && <polygon points="50,6 90,50 50,94 10,50" />}
+        {shape === "oval" && <ellipse cx="50" cy="50" rx="31" ry="41" />}
+        {shape === "rectangle" && <rect x="8" y="26" width="84" height="48" rx="14" />}
+        {shape === "crescent" && <path d="M50 6 A44 44 0 1 0 50 94 A35 35 0 1 1 50 6 Z" />}
+        {shape === "pentagon" && <polygon points="50,7 93,38 76,90 24,90 7,38" />}
+        {shape === "hexagon" && <polygon points="50,8 86,29 86,71 50,92 14,71 14,29" />}
+        {shape === "octagon" && <polygon points="35,8 65,8 92,35 92,65 65,92 35,92 8,65 8,35" />}
+        {shape === "cross" && <path d="M38 10 H62 V38 H90 V62 H62 V90 H38 V62 H10 V38 H38 Z" />}
+        {shape === "arrow" && <polygon points="50,8 88,50 62,50 62,92 38,92 38,50 12,50" />}
+        {shape === "sphere" && <circle cx="50" cy="50" r="37" />}
+        {shape === "cylinder" && <path d="M22 26 V74 A28 10 0 0 0 78 74 V26 Z" />}
+        {shape === "cone" && <polygon points="50,10 76,76 24,76" />}
+        {shape === "pyramid" && <polygon points="50,10 92,88 8,88" />}
+      </clipPath>
+    </defs>
+  ) : null;
+  const gloss =
+    solid && shape !== "spiral" ? (
+      <g clipPath={`url(#${clipId})`}>
+        <ellipse cx="36" cy="26" rx="26" ry="13" fill="#FFFFFF" opacity="0.30" transform="rotate(-18 36 26)" />
+      </g>
+    ) : null;
 
   /* One geometry, several paints: the base colour, then (for
      "real") the same geometry painted with the wood-grain
@@ -154,6 +197,7 @@ export function ShapeSvg({
     return (
       <svg width={size} height={Math.round(size * 0.42)} viewBox="0 0 200 84" aria-hidden focusable="false" style={realStyle}>
         {realDefs}
+        {solidDefs}
         <rect x="6" y="6" width="188" height="72" rx="16" {...common} />
         {real ? (
           <>
@@ -168,7 +212,9 @@ export function ShapeSvg({
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden focusable="false" style={realStyle}>
       {realDefs}
+      {solidDefs}
       {geom(common, false)}
+      {gloss}
       {overlays}
     </svg>
   );

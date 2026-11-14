@@ -937,6 +937,7 @@ export function FixIt({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }

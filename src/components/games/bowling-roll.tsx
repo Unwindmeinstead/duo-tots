@@ -65,6 +65,9 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
   const [ball, setBall] = useState<BallSim | null>(null);
   const [pins, setPins] = useState<PinSim[]>(freshPins);
   const [badges, setBadges] = useState<Map<number, number>>(new Map());
+  /* Impact shake — the crash is FELT, not just seen. */
+  const [shake, setShake] = useState(0);
+  const shakeRef = useRef(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-bowling-roll");
 
   /* The photo ball is purple marble; hue shifts deal the
@@ -148,6 +151,7 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
           pin.hit = true;
           pin.vx = dx * 2.6 + b.vx * 0.7 + (dx >= 0 ? 26 : -26);
           pin.va = (dx >= 0 ? 1 : -1) * (150 + Math.abs(dx) * 4 + b.v * 0.22);
+          shakeRef.current = Math.min(8, shakeRef.current + 4.5);
           if (!crashSpoken) {
             crashSpoken = true;
             playCorrect();
@@ -228,6 +232,10 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
         setPhaseBoth("count");
         return;
       }
+      if (shakeRef.current > 0) {
+        shakeRef.current = Math.max(0, shakeRef.current - dt * 30);
+        setShake(shakeRef.current);
+      }
       rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
@@ -277,6 +285,7 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -297,6 +306,11 @@ export function BowlingRoll({ onBack }: { onBack: () => void }) {
               className="block h-auto w-full touch-none select-none"
               role="img"
               aria-label="A bowling lane with six pins"
+              style={
+                shake > 0.05
+                  ? { transform: `translate(${Math.sin(performance.now() / 13) * shake * 0.45}px, ${Math.cos(performance.now() / 17) * shake * 0.32}px)` }
+                  : undefined
+              }
               onPointerDown={(e) => {
                 swipeRef.current = { y: e.clientY };
               }}

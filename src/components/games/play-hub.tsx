@@ -271,7 +271,7 @@ export function PlayHub() {
                   setSelected(id);
                 }}
                 aria-label={`${name} — ${label}`}
-                className="kt-card flex items-center gap-3.5 p-3.5 text-left"
+                className="kt-card kt-press flex items-center gap-3.5 p-3.5 text-left"
               >
                 <span
                   className="block h-[84px] w-[84px] shrink-0 overflow-hidden"

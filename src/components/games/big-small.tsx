@@ -78,6 +78,7 @@ export function BigSmall({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }

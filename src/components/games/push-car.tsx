@@ -57,10 +57,15 @@ function groundSlope(x: number, hill: boolean): number {
 
 type Phase = "ready" | "rolling" | "done";
 
+/* Dust puffs — kicked up at the wheels while the push charges
+   and while the car rolls. Pure feel: the screen answers the
+   finger before the car even moves. */
+type Dust = { id: number; x: number; y: number; vx: number; vy: number; r: number; life: number };
+
 export function PushCar({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
   const [session, setSession] = useState(0);
-  const [frame, setFrame] = useState({ x: START_X, pitch: 0, bob: 0 });
+  const [frame, setFrame] = useState({ x: START_X, pitch: 0, bob: 0, strain: 0, shake: 0, dust: [] as Dust[] });
   const [power, setPower] = useState(0);
   const [phase, setPhase] = useState<Phase>("ready");
   const [stoppedShort, setStoppedShort] = useState(false);
@@ -81,6 +86,8 @@ export function PushCar({ onBack }: { onBack: () => void }) {
   const pitchRef = useRef(0);
   const powerRef = useRef(0);
   const chargingRef = useRef(false);
+  const dustRef = useRef<Dust[]>([]);
+  const dustIdRef = useRef(0);
   const phaseRef = useRef<Phase>("ready");
   const hillRef = useRef(config.hill);
   useEffect(() => {
@@ -99,6 +106,38 @@ export function PushCar({ onBack }: { onBack: () => void }) {
         powerRef.current = Math.min(100, powerRef.current + dt * 95);
         setPower(powerRef.current);
       }
+      /* Dust: spawn at the rear wheel while the push charges
+         (strain) and while the car rolls (speed), drift back,
+         swell, and fade. */
+      const spawnDust = (rate: number) => {
+        if (Math.random() > rate) return;
+        dustRef.current.push({
+          id: dustIdRef.current++,
+          x: xRef.current - 30 + Math.random() * 8,
+          y: groundY(xRef.current, hillRef.current) - 2,
+          vx: -18 - Math.random() * 26,
+          vy: -8 - Math.random() * 14,
+          r: 3 + Math.random() * 4,
+          life: 1,
+        });
+      };
+      if (chargingRef.current && powerRef.current > 10) spawnDust(0.25 + powerRef.current / 160);
+      if (phaseRef.current === "rolling" && vRef.current > 55) spawnDust(Math.min(0.85, vRef.current / 420));
+      if (dustRef.current.length) {
+        for (const d of dustRef.current) {
+          d.x += d.vx * dt;
+          d.y += d.vy * dt;
+          d.vy -= 10 * dt;
+          d.r += 9 * dt;
+          d.life -= dt * 1.5;
+        }
+        dustRef.current = dustRef.current.filter((d) => d.life > 0);
+      }
+      const fx = {
+        strain: chargingRef.current ? powerRef.current / 100 : 0,
+        shake: chargingRef.current ? Math.sin(now / 24) * (powerRef.current / 100) * 1.7 : 0,
+        dust: dustRef.current,
+      };
       if (phaseRef.current === "rolling") {
         let v = vRef.current;
         const prevV = v;
@@ -135,7 +174,9 @@ export function PushCar({ onBack }: { onBack: () => void }) {
           setStoppedShort(xRef.current > START_X + 30);
           if (isSoundEnabled()) void speakWord("So close! Push again!");
         }
-        setFrame({ x: xRef.current, pitch: pitchRef.current, bob });
+        setFrame({ x: xRef.current, pitch: pitchRef.current, bob, ...fx });
+      } else if (chargingRef.current || dustRef.current.length) {
+        setFrame({ x: xRef.current, pitch: pitchRef.current, bob: 0, ...fx });
       }
       raf = requestAnimationFrame(tick);
     };
@@ -181,7 +222,7 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     vRef.current = 0;
     thrustRef.current = 0;
     phaseRef.current = "ready";
-    setFrame({ x: START_X, pitch: 0, bob: 0 });
+    setFrame({ x: START_X, pitch: 0, bob: 0, strain: 0, shake: 0, dust: [] });
     setPhase("ready");
     setStoppedShort(false);
     setRound((r) => r + 1);
@@ -193,7 +234,7 @@ export function PushCar({ onBack }: { onBack: () => void }) {
     vRef.current = 0;
     thrustRef.current = 0;
     phaseRef.current = "ready";
-    setFrame({ x: START_X, pitch: 0, bob: 0 });
+    setFrame({ x: START_X, pitch: 0, bob: 0, strain: 0, shake: 0, dust: [] });
     setPhase("ready");
     setStoppedShort(false);
     setSession((s) => s + 1);
@@ -208,6 +249,7 @@ export function PushCar({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -277,9 +319,16 @@ export function PushCar({ onBack }: { onBack: () => void }) {
                 <line x1="0" y1="0" x2="0" y2="-46" stroke="#5A6B8C" strokeWidth="4" strokeLinecap="round" />
                 <polygon points="0,-46 24,-38 0,-30" fill="#FFC531" stroke="#EDA900" strokeWidth="2" strokeLinejoin="round" />
               </g>
-              {/* Soft shadow, then the photo car pitched with the road */}
+              {/* Dust puffs at the wheels */}
+              {frame.dust.map((d) => (
+                <circle key={d.id} cx={d.x} cy={d.y} r={d.r} fill="#C9A877" opacity={d.life * 0.45} />
+              ))}
+              {/* Soft shadow, then the photo car pitched with the road.
+                  While PUSH is held the car STRAINS: it squashes down
+                  and shivers harder as the power climbs — the push is
+                  felt on screen before the car even rolls. */}
               <ellipse cx={carX} cy={groundY(carX, config.hill) + 3} rx="46" ry="5" fill="#1d4d24" opacity="0.35" />
-              <g transform={`translate(${carX} ${groundY(carX, config.hill) - frame.bob}) rotate(${carTilt})`}>
+              <g transform={`translate(${carX + frame.shake} ${groundY(carX, config.hill) - frame.bob}) rotate(${carTilt}) scale(${1 + frame.strain * 0.035} ${1 - frame.strain * 0.05})`}>
                 <image
                   href="/images/play/sprite-car.webp"
                   x={-CAR_W / 2}

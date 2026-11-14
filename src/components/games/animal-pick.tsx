@@ -105,6 +105,7 @@ export function AnimalPick({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -151,7 +152,7 @@ export function AnimalPick({ onBack }: { onBack: () => void }) {
                 type="button"
                 aria-label={`Hear it again: find the ${target.word.toLowerCase()}`}
                 onClick={() => void speakWord(`Find the ${target.word.toLowerCase()}!`)}
-                className="kt-pulse-soft grid h-28 w-28 place-items-center rounded-full text-white transition-transform active:scale-95"
+                className="kt-pulse-soft kt-press grid h-28 w-28 place-items-center rounded-full text-white"
                 style={{ background: ACCENT }}
               >
                 <GlyphSpeaker size={52} />

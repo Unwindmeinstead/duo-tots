@@ -14,7 +14,7 @@ import { playCorrect, playGentle } from "@/lib/audio";
 import { makeOddRounds } from "@/lib/games-data";
 import { GREEN, GREEN_DEEP } from "@/lib/theme";
 import { ShapeSvg } from "./shapes";
-import { GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, useGameCompletion, useAutoAnnounce } from "./shared";
+import { GameCelebration, GameHeader, GameSheet, NextButton, PromptRow, TapBurst, useGameCompletion, useAutoAnnounce } from "./shared";
 
 const ACCENT = "#17BEBB";
 const TOTAL = 5;
@@ -23,6 +23,7 @@ export function OddOneOut({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
   const [found, setFound] = useState(false);
   const [wiggleIdx, setWiggleIdx] = useState<number | null>(null);
+  const [burst, setBurst] = useState<{ idx: number; n: number }>({ idx: -1, n: 0 });
   const [session, setSession] = useState(0);
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-odd-one-out");
 
@@ -72,6 +73,7 @@ export function OddOneOut({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -94,14 +96,18 @@ export function OddOneOut({ onBack }: { onBack: () => void }) {
                   key={`${round}-${session}-${i}`}
                   type="button"
                   aria-label={found && isOdd ? "The different one" : "A tile"}
-                  onClick={() => pick(i)}
-                  className={`kt-card relative flex min-h-[104px] items-center justify-center px-2 py-3 transition-transform active:scale-95 ${
+                  onPointerDown={() => {
+                    setBurst({ idx: i, n: burst.n + 1 });
+                    pick(i);
+                  }}
+                  className={`kt-card kt-press relative flex min-h-[104px] items-center justify-center px-2 py-3 ${
                     wiggleIdx === i ? "kt-wiggle" : ""
                   }`}
                 >
                   <span className={found && isOdd ? "kt-pop-in inline-flex" : "inline-flex"}>
                     <ShapeSvg shape={tile.shape} color={tile.color} size={64} />
                   </span>
+                  {burst.idx === i ? <TapBurst burstKey={burst.n} color={ACCENT} /> : null}
                   {found && isOdd && (
                     <span
                       className="kt-pop-in absolute -right-2 -top-2 grid h-9 w-9 place-items-center rounded-full text-white"

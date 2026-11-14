@@ -284,24 +284,55 @@ export function TraceStage({
     };
   };
 
-  const strokeTo = (from: { x: number; y: number }, to: { x: number; y: number }) => {
-    const canvas = drawRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = BRUSH;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
+  const markSegment = (from: { x: number; y: number }, to: { x: number; y: number }) => {
     /* Walk the segment so fast swipes still paint every zone. */
     const dist = Math.hypot(to.x - from.x, to.y - from.y);
     const steps = Math.max(1, Math.floor(dist / 6));
     for (let i = 0; i <= steps; i++) {
       markAt(from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps);
     }
+  };
+
+  /* Ink, smoothed (Grey's game-feel order, 2026-11-14): the old
+     stroke drew straight chords between raw pointer events, so
+     a fast little hand got angular, connect-the-dots lines.
+     Now each segment is a quadratic curve through the midpoint
+     of the last two points — the ink flows around corners like
+     a real crayon, and a soft under-glow gives it body. */
+  const midRef = useRef<{ x: number; y: number } | null>(null);
+
+  const paintDot = (p: { x: number; y: number }) => {
+    const ctx = drawRef.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = BRUSH;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  };
+
+  const paintCurve = (fromMid: { x: number; y: number }, ctrl: { x: number; y: number }, toMid: { x: number; y: number }) => {
+    const ctx = drawRef.current?.getContext("2d");
+    if (!ctx) return;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    /* Soft body under the ink — a wider, faint pass first. */
+    ctx.strokeStyle = strokeColor;
+    ctx.globalAlpha = 0.16;
+    ctx.lineWidth = BRUSH * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(fromMid.x, fromMid.y);
+    ctx.quadraticCurveTo(ctrl.x, ctrl.y, toMid.x, toMid.y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = BRUSH;
+    ctx.beginPath();
+    ctx.moveTo(fromMid.x, fromMid.y);
+    ctx.quadraticCurveTo(ctrl.x, ctrl.y, toMid.x, toMid.y);
+    ctx.stroke();
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -311,21 +342,33 @@ export function TraceStage({
     drawingRef.current = true;
     const p = pos(e);
     lastRef.current = p;
+    midRef.current = p;
     setHasInk(true);
-    strokeTo(p, p);
+    paintDot(p);
+    markSegment(p, p);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drawingRef.current || doneRef.current) return;
     const p = pos(e);
     const last = lastRef.current ?? p;
-    strokeTo(last, p);
+    const prevMid = midRef.current ?? last;
+    const mid = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 };
+    paintCurve(prevMid, last, mid);
+    markSegment(last, p);
+    midRef.current = mid;
     lastRef.current = p;
   };
 
   const endStroke = () => {
+    /* Finish the tail: curve out to the final point so the
+       stroke ends where the finger lifted, not a midpoint shy. */
+    if (drawingRef.current && lastRef.current && midRef.current) {
+      paintCurve(midRef.current, lastRef.current, lastRef.current);
+    }
     drawingRef.current = false;
     lastRef.current = null;
+    midRef.current = null;
   };
 
   const clear = () => {
@@ -487,6 +530,7 @@ export function TraceGame({
         xpEarned={xpEarned}
         accent={accent}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }

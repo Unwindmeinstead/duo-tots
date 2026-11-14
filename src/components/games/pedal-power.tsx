@@ -55,10 +55,13 @@ const CLOUDS = [
 
 type Phase = "ride" | "done";
 
+/* Dust puffs kicked up at the rear wheel while the bike rolls. */
+type Dust = { id: number; x: number; y: number; vx: number; vy: number; r: number; life: number };
+
 export function PedalPower({ onBack }: { onBack: () => void }) {
   const [round, setRound] = useState(0);
   const [session, setSession] = useState(0);
-  const [frame, setFrame] = useState({ dist: 0, speed: 0 });
+  const [frame, setFrame] = useState({ dist: 0, speed: 0, lunge: 0, dust: [] as Dust[] });
   const [phase, setPhase] = useState<Phase>("ride");
   const { xpEarned, finish, resetCompletion } = useGameCompletion("game-pedal-power");
 
@@ -72,6 +75,13 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
 
   const distRef = useRef(0);
   const speedRef = useRef(0);
+  /* The lunge: every PEDAL tap kicks the bike forward on a
+     spring, so the shove is SEEN the instant the finger lands —
+     surge, overshoot a hair, settle. */
+  const lungeRef = useRef(0);
+  const lungeVRef = useRef(0);
+  const dustRef = useRef<Dust[]>([]);
+  const dustIdRef = useRef(0);
   const phaseRef = useRef<Phase>("ride");
   const goalRef = useRef(config.goal);
   const destRef = useRef(config.destination);
@@ -93,6 +103,32 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
            drag, so a shove coasts out smoothly, never jerky. */
         speedRef.current = Math.max(0, speedRef.current - (96 + speedRef.current * 0.24) * dt);
         distRef.current += speedRef.current * dt;
+        /* Lunge spring — kicked by every pedal tap. */
+        const la = -lungeRef.current * 190 - lungeVRef.current * 13;
+        lungeVRef.current += la * dt;
+        lungeRef.current += lungeVRef.current * dt;
+        /* Dust at the rear wheel, thicker the faster it rolls. */
+        if (speedRef.current > 45 && Math.random() < Math.min(0.8, speedRef.current / 380)) {
+          dustRef.current.push({
+            id: dustIdRef.current++,
+            x: BIKE_X + 16 + Math.random() * 6,
+            y: GROUND_Y - 2,
+            vx: -22 - Math.random() * 30,
+            vy: -6 - Math.random() * 12,
+            r: 2.5 + Math.random() * 3.5,
+            life: 1,
+          });
+        }
+        if (dustRef.current.length) {
+          for (const d of dustRef.current) {
+            d.x += d.vx * dt;
+            d.y += d.vy * dt;
+            d.vy -= 9 * dt;
+            d.r += 8 * dt;
+            d.life -= dt * 1.6;
+          }
+          dustRef.current = dustRef.current.filter((d) => d.life > 0);
+        }
         if (distRef.current >= goalRef.current) {
           distRef.current = goalRef.current;
           phaseRef.current = "done";
@@ -100,7 +136,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
           playCorrect();
           if (isSoundEnabled()) void speakWord(`You rode to ${destRef.current}!`);
         }
-        setFrame({ dist: distRef.current, speed: speedRef.current });
+        setFrame({ dist: distRef.current, speed: speedRef.current, lunge: lungeRef.current, dust: dustRef.current });
       }
       raf = requestAnimationFrame(tick);
     };
@@ -111,6 +147,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
   const pedal = () => {
     if (phaseRef.current !== "ride") return;
     speedRef.current = Math.min(330, speedRef.current + 66);
+    lungeVRef.current += 300; // the visible surge — the tap made that happen
     playPop();
   };
 
@@ -122,7 +159,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
     distRef.current = 0;
     speedRef.current = 0;
     phaseRef.current = "ride";
-    setFrame({ dist: 0, speed: 0 });
+    setFrame({ dist: 0, speed: 0, lunge: 0, dust: [] });
     setPhase("ride");
     setRound((r) => r + 1);
   };
@@ -132,7 +169,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
     distRef.current = 0;
     speedRef.current = 0;
     phaseRef.current = "ride";
-    setFrame({ dist: 0, speed: 0 });
+    setFrame({ dist: 0, speed: 0, lunge: 0, dust: [] });
     setPhase("ride");
     setSession((s) => s + 1);
     setRound(0);
@@ -146,6 +183,7 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -242,11 +280,16 @@ export function PedalPower({ onBack }: { onBack: () => void }) {
                   <line x1="8" y1="168" x2="32" y2="168" />
                 </g>
               ) : null}
-              {/* Shadow, then the photo bicycle with its riding bob */}
-              <ellipse cx={BIKE_X + BIKE_W / 2} cy={GROUND_Y + 4} rx="56" ry="5" fill="#1d4d24" opacity="0.32" />
+              {/* Dust puffs at the rear wheel */}
+              {frame.dust.map((d) => (
+                <circle key={d.id} cx={d.x} cy={d.y} r={d.r} fill="#C9A877" opacity={d.life * 0.45} />
+              ))}
+              {/* Shadow, then the photo bicycle with its riding bob
+                  and the pedal lunge — every tap visibly surges it */}
+              <ellipse cx={BIKE_X + BIKE_W / 2 + frame.lunge} cy={GROUND_Y + 4} rx="56" ry="5" fill="#1d4d24" opacity="0.32" />
               <image
                 href="/images/play/sprite-bike.webp"
-                x={BIKE_X}
+                x={BIKE_X + frame.lunge}
                 y={GROUND_Y - BIKE_H + 3 - bob}
                 width={BIKE_W}
                 height={BIKE_H}

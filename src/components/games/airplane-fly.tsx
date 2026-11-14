@@ -70,7 +70,7 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
          the finger while air damping bleeds the speed — it
          overshoots a whisper, settles smooth, and banks with
          its true vertical velocity. Never jerky, never late. */
-      const accel = (targetYRef.current - planeYRef.current) * 26 - planeVRef.current * 7.2;
+      const accel = (targetYRef.current - planeYRef.current) * 34 - planeVRef.current * 8.4;
       planeVRef.current += accel * dt;
       planeYRef.current += planeVRef.current * dt;
       planeYRef.current = Math.max(6, Math.min(90, planeYRef.current));
@@ -151,6 +151,7 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
         xpEarned={xpEarned}
         accent={ACCENT}
         onReplay={replay}
+        onExit={onBack}
       />
     );
   }
@@ -230,6 +231,23 @@ export function AirplaneFly({ onBack }: { onBack: () => void }) {
               </span>
             ) : null}
 
+            {/* Slipstream — a soft white trail that stretches with
+                the plane's real speed, so fast climbs and dives
+                are visible, not just felt */}
+            <div
+              className="pointer-events-none absolute rounded-full"
+              style={{
+                left: `${PLANE_X - 4}%`,
+                top: `${frame.planeY + frame.bob}%`,
+                width: `${46 + Math.abs(frame.tilt) * 3.4}%`,
+                height: 13,
+                transform: `translate(-100%, -50%) rotate(${frame.tilt * 0.55}deg)`,
+                transformOrigin: "100% 50%",
+                background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 100%)",
+                opacity: 0.35 + Math.min(0.55, Math.abs(frame.tilt) / 26),
+              }}
+              aria-hidden
+            />
             {/* The plane — photoreal sprite, flipped to face the
                 rings, banked by its real vertical velocity */}
             <div
